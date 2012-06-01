@@ -19,7 +19,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name="StandOutHelloWorld"></service>
+        <service android:name=".StandOutDraggableWindow"></service>
     </application>
 
 </manifest>

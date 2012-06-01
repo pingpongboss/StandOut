@@ -14,7 +14,11 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class StandOutHelloWorld extends StandOutWindow {
+/**
+ * @author Mark Wei <markwei@gmail.com>
+ * 
+ */
+public class StandOutDraggableWindow extends StandOutWindow {
 
 	@Override
 	protected View createView(final int id) {
@@ -109,7 +113,7 @@ public class StandOutHelloWorld extends StandOutWindow {
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
 
 		Intent notificationIntent = StandOutWindow.getShowIntent(this,
-				StandOutHelloWorld.class, id + 1);
+				StandOutDraggableWindow.class, id + 1);
 
 		PendingIntent contentIntent = PendingIntent.getService(this, 0,
 				notificationIntent,
@@ -123,7 +127,7 @@ public class StandOutHelloWorld extends StandOutWindow {
 	}
 
 	@Override
-	protected Notification getMinimizedNotification(int id) {
+	protected Notification getHiddenNotification(int id) {
 		int icon = android.R.drawable.ic_menu_info_details;
 		long when = System.currentTimeMillis();
 		Context c = getApplicationContext();
@@ -132,7 +136,7 @@ public class StandOutHelloWorld extends StandOutWindow {
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
 
 		Intent notificationIntent = StandOutWindow.getShowIntent(this,
-				StandOutHelloWorld.class, id);
+				StandOutDraggableWindow.class, id);
 
 		PendingIntent contentIntent = PendingIntent.getService(this, 0,
 				notificationIntent,
@@ -146,10 +150,12 @@ public class StandOutHelloWorld extends StandOutWindow {
 	}
 
 	@Override
-	protected void onShow(int id, View view) {
+	protected boolean onShow(int id, View view) {
 		super.onShow(id, view);
 
 		this.nextId = Math.max(this.nextId, id) + 1;
+
+		return false;
 	}
 
 	private class CustomTag {
