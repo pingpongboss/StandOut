@@ -310,15 +310,21 @@ public abstract class StandOutWindow extends Service {
 	 * will request a notification for every id that is hidden.
 	 * 
 	 * <p>
+	 * If null is returned, StandOut will assume you do not wish to support
+	 * hiding this window, and will {@link #close(int)} it for you.
+	 * 
+	 * <p>
 	 * See the StandOutExample project for an implementation of
 	 * {@link #getHiddenNotification(int)} that for every hidden window keeps a
-	 * notification that restores that window on click.
+	 * notification which restores that window upon user's click.
 	 * 
 	 * @param id
 	 *            The unique id of the window.
 	 * @return The {@link Notification} corresponding to the id or null.
 	 */
-	protected abstract Notification getHiddenNotification(int id);
+	protected Notification getHiddenNotification(int id) {
+		return null;
+	}
 
 	/**
 	 * Implement this method to be alerted to touch events on the window
@@ -497,6 +503,14 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 */
 	protected final void hide(int id) {
+		// get the hidden notification for this view
+		Notification notification = getHiddenNotification(id);
+
+		if (notification == null) {
+			close(id);
+			return;
+		}
+
 		// get the view corresponding to the id
 		View view = getWrappedView(id);
 
@@ -517,17 +531,11 @@ public abstract class StandOutWindow extends Service {
 			ex.printStackTrace();
 		}
 
-		// get the hidden notification for this view
-		Notification notification = getHiddenNotification(id);
-
 		// display the notification
-		if (notification != null) {
-			notification.flags = notification.flags
-					| Notification.FLAG_NO_CLEAR
-					| Notification.FLAG_AUTO_CANCEL;
+		notification.flags = notification.flags | Notification.FLAG_NO_CLEAR
+				| Notification.FLAG_AUTO_CANCEL;
 
-			mNotificationManager.notify(id, notification);
-		}
+		mNotificationManager.notify(id, notification);
 	}
 
 	/**
