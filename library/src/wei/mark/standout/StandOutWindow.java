@@ -156,6 +156,12 @@ public abstract class StandOutWindow extends Service implements OnTouchListener 
 		}
 
 		Notification notification = getPersistentNotification(id);
+
+		if (notification == null) {
+			throw new RuntimeException(
+					"Your StandOutWindow service must provide a persistent notification. The notification prevents Android from killing your service in low memory situations.");
+		}
+
 		notification.flags = notification.flags | Notification.FLAG_NO_CLEAR;
 
 		if (!started) {
@@ -192,10 +198,14 @@ public abstract class StandOutWindow extends Service implements OnTouchListener 
 		}
 
 		Notification notification = getMinimizedNotification(id);
-		notification.flags = notification.flags | Notification.FLAG_NO_CLEAR
-				| Notification.FLAG_AUTO_CANCEL;
 
-		mNotificationManager.notify(id, notification);
+		if (notification != null) {
+			notification.flags = notification.flags
+					| Notification.FLAG_NO_CLEAR
+					| Notification.FLAG_AUTO_CANCEL;
+
+			mNotificationManager.notify(id, notification);
+		}
 
 		onHide(id, view);
 	}
