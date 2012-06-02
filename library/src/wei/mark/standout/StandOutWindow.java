@@ -12,6 +12,7 @@ import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -60,39 +61,49 @@ public abstract class StandOutWindow extends Service {
 
 	/**
 	 * This default flag indicates that the window requires no window
-	 * decorations (titlebar, hide/close buttons, resize handle, etc)
+	 * decorations (titlebar, hide/close buttons, resize handle, etc).
 	 */
 	public static final int FLAG_DECORATION_NONE = 0x00000000;
 
 	/**
 	 * Setting this flag indicates that the window wants the system provided
-	 * window decorations (titlebar, hide/close buttons, resize handle, etc)
+	 * window decorations (titlebar, hide/close buttons, resize handle, etc).
 	 */
 	public static final int FLAG_DECORATION_SYSTEM = 0x00000001;
 
 	/**
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, this default flag indicates
-	 * that the window decorator should provide a hide button
+	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
+	 * that the window decorator should NOT provide a hide button.
 	 */
-	public static final int FLAG_DECORATION_HIDE_ENABLE = 0x00000000;
+	public static final int FLAG_DECORATION_HIDE_DISABLE = 0x00000002;
 
 	/**
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
-	 * that the window decorator should NOT provide a hide button
+	 * that the window decorator should NOT provide a close button.
 	 */
-	public static final int FLAG_DECORATION_HIDE_DISABLE = 0x00000010;
-
-	/**
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, this default flag indicates
-	 * that the window decorator should provide a resize handle
-	 */
-	public static final int FLAG_DECORATION_RESIZE_ENABLE = 0x00000000;
+	public static final int FLAG_DECORATION_CLOSE_DISABLE = 0x00000004;
 
 	/**
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
-	 * that the window decorator should NOT provide a resize handle
+	 * that the window decorator should NOT provide a resize handle.
 	 */
-	public static final int FLAG_DECORATION_RESIZE_DISABLE = 0x00000100;
+	public static final int FLAG_DECORATION_RESIZE_DISABLE = 0x00000008;
+
+	/**
+	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
+	 * that the window decorator should NOT provide a resize handle.
+	 */
+	public static final int FLAG_DECORATION_MOVE_DISABLE = 0x00000010;
+
+	/**
+	 * Setting this flag indicates that the window can be moved by dragging the
+	 * body.
+	 * 
+	 * <p>
+	 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
+	 * always be moved by dragging the titlebar.
+	 */
+	public static final int FLAG_BODY_MOVE_ENABLE = 0x00000020;
 
 	// internal map of ids to shown/hidden views
 	private static WeakHashMap<Integer, View> views;
@@ -336,16 +347,20 @@ public abstract class StandOutWindow extends Service {
 	 * Implement this method to change modify the behavior and appearance of the
 	 * window corresponding to the id.
 	 * 
-	 * You may return the bitwise OR of any flags defined in
-	 * {@link StandOutWindow} such as {@link #FLAG_DECORATION_NONE}.
+	 * <p>
+	 * You may use any of the flags defined in {@link StandOutWindow} such as
+	 * {@link #FLAG_DECORATION_NONE}.
+	 * 
+	 * <p>
+	 * Use bitwise OR (|) to set flags, and bitwise XOR (^) to unset flags. To
+	 * test if a flag is set, use (getFlags(id) & flag) != 0.
 	 * 
 	 * @param id
 	 *            The id of the window.
 	 * @return Bitwise OR'd flags
 	 */
 	protected int getFlags(int id) {
-		return FLAG_DECORATION_NONE | FLAG_DECORATION_HIDE_ENABLE
-				| FLAG_DECORATION_RESIZE_ENABLE;
+		return FLAG_DECORATION_NONE;
 	}
 
 	/**
@@ -426,7 +441,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return Return true to cancel the view from being shown, or false to
 	 *         continue.
 	 */
-	protected boolean onShow(int id, View view) {
+	protected boolean onShow(int id, View window) {
 		return false;
 	}
 
@@ -442,7 +457,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return Return true to cancel the view from being closed, or false to
 	 *         continue.
 	 */
-	protected boolean onClose(int id, View view) {
+	protected boolean onClose(int id, View window) {
 		return false;
 	}
 
@@ -459,7 +474,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return Return true to cancel the view from being hidden, or false to
 	 *         continue.
 	 */
-	protected boolean onHide(int id, View view) {
+	protected boolean onHide(int id, View window) {
 		return false;
 	}
 
@@ -471,27 +486,31 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected final void show(int id) {
 		// get the view corresponding to the id
-		View view = getWrappedView(id);
+		View window = getWrappedView(id);
 
-		if (view == null) {
+		if (window == null) {
 			Log.w("StandOutWindow", "Tried to show(" + id + ") a null view");
 			return;
 		}
 
 		// alert callbacks
-		onShow(id, view);
+		onShow(id, window);
 
-		((WrappedTag) view.getTag()).shown = true;
+		((WrappedTag) window.getTag()).shown = true;
 
 		// add view to internal map
-		views.put(id, view);
+		views.put(id, window);
 
 		// get the params corresponding to the id
-		StandOutWindow.LayoutParams params = getParams(id, view);
+		StandOutWindow.LayoutParams params = (LayoutParams) window
+				.getLayoutParams();
+		if (params == null) {
+			params = getParams(id, window);
+		}
 
 		try {
 			// add the view to the window manager
-			mWindowManager.addView(view, params);
+			mWindowManager.addView(window, params);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -530,22 +549,22 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected final void close(int id) {
 		// get the view corresponding to the id
-		View view = getWrappedView(id);
+		View window = getWrappedView(id);
 
-		if (view == null) {
+		if (window == null) {
 			Log.w("StandOutWindow", "Tried to close(" + id + ") a null view");
 			return;
 		}
 
 		// alert callbacks
-		onClose(id, view);
+		onClose(id, window);
 
-		WrappedTag tag = (WrappedTag) view.getTag();
+		WrappedTag tag = (WrappedTag) window.getTag();
 
 		if (tag.shown) {
 			try {
 				// remove the view from the window manager
-				mWindowManager.removeView(view);
+				mWindowManager.removeView(window);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -583,21 +602,21 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// get the view corresponding to the id
-		View view = getWrappedView(id);
+		View window = getWrappedView(id);
 
-		if (view == null) {
+		if (window == null) {
 			Log.w("StandOutWindow", "Tried to hide(" + id + ") a null view");
 			return;
 		}
 
 		// alert callbacks
-		onHide(id, view);
+		onHide(id, window);
 
-		((WrappedTag) view.getTag()).shown = false;
+		((WrappedTag) window.getTag()).shown = false;
 
 		try {
 			// remove the view from the window manager
-			mWindowManager.removeView(view);
+			mWindowManager.removeView(window);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -607,20 +626,6 @@ public abstract class StandOutWindow extends Service {
 				| Notification.FLAG_AUTO_CANCEL;
 
 		mNotificationManager.notify(id, notification);
-	}
-
-	/**
-	 * Update the window corresponding to this id with an updated
-	 * {@link StandOutWindow.LayoutParams} from {@link #getParams(int, View)}.
-	 * 
-	 * @param id
-	 *            The id of the window.
-	 */
-	protected final void updateViewLayout(int id) {
-		View view = getWrappedView(id);
-		StandOutWindow.LayoutParams params = getParams(id, view);
-
-		updateViewLayout(view, params);
 	}
 
 	/**
@@ -650,7 +655,11 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected final void bringToFront(int id) {
 		View view = getWrappedView(id);
-		StandOutWindow.LayoutParams params = getParams(id, view);
+		StandOutWindow.LayoutParams params = (LayoutParams) view
+				.getLayoutParams();
+		if (params == null) {
+			params = getParams(id, view);
+		}
 
 		bringToFront(view, params);
 	}
@@ -659,27 +668,27 @@ public abstract class StandOutWindow extends Service {
 	 * Bring the window corresponding to this view in front of all other
 	 * windows.
 	 * 
-	 * @param view
+	 * @param window
 	 *            The view of the window to bring to the front.
 	 * @param params
 	 *            The layout params to apply to the view when re-adding to the
 	 *            window manager, or null to apply the existing layout params
 	 *            from the view
 	 */
-	protected final void bringToFront(View view,
+	protected final void bringToFront(View window,
 			StandOutWindow.LayoutParams params) {
-		if (view == null) {
+		if (window == null) {
 			Log.w("StandOutWindow", "Tried to bringToFront() a null view");
 			return;
 		}
 
-		mWindowManager.removeView(view);
+		mWindowManager.removeView(window);
 
 		if (params == null) {
-			params = (StandOutWindow.LayoutParams) view.getLayoutParams();
+			params = (StandOutWindow.LayoutParams) window.getLayoutParams();
 		}
 
-		mWindowManager.addView(view, params);
+		mWindowManager.addView(window, params);
 	}
 
 	// wraps the view from getView() into a frame that is easier to manage.
@@ -698,7 +707,9 @@ public abstract class StandOutWindow extends Service {
 		final View window;
 		FrameLayout body;
 
-		if ((getFlags(id) & FLAG_DECORATION_SYSTEM) != 0) {
+		int flags = getFlags(id);
+
+		if ((flags & FLAG_DECORATION_SYSTEM) != 0) {
 			// requested system window decorations
 			window = getSystemWindow(id);
 			body = (FrameLayout) window.findViewById(R.id.body);
@@ -725,17 +736,6 @@ public abstract class StandOutWindow extends Service {
 		// wrap the existing tag and attach it to the frame
 		window.setTag(new WrappedTag(id, false, view.getTag()));
 
-		// capture all touch events
-		body.setOnTouchListener(new OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				int id = ((WrappedTag) window.getTag()).id;
-				// pass all touch events to the implementation
-				return StandOutWindow.this.onTouch(id, window, v, event);
-			}
-		});
-
 		return window;
 	}
 
@@ -755,8 +755,8 @@ public abstract class StandOutWindow extends Service {
 		final View window = mLayoutInflater.inflate(R.layout.window, null);
 
 		// hide
-		Button hideButton = (Button) window.findViewById(R.id.hide);
-		hideButton.setOnClickListener(new OnClickListener() {
+		Button hide = (Button) window.findViewById(R.id.hide);
+		hide.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
@@ -766,8 +766,8 @@ public abstract class StandOutWindow extends Service {
 		});
 
 		// close
-		Button closeButton = (Button) window.findViewById(R.id.close);
-		closeButton.setOnClickListener(new OnClickListener() {
+		Button close = (Button) window.findViewById(R.id.close);
+		close.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
@@ -777,8 +777,7 @@ public abstract class StandOutWindow extends Service {
 		});
 
 		// move
-		View titlebar = window.findViewById(R.id.titlebar);
-		titlebar.setOnTouchListener(new OnTouchListener() {
+		final OnTouchListener moveTouchListener = new OnTouchListener() {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
@@ -786,9 +785,13 @@ public abstract class StandOutWindow extends Service {
 					default:
 						WindowTouchInfo touchInfo = ((WrappedTag) window
 								.getTag()).touchInfo;
+						StandOutWindow.LayoutParams params = (LayoutParams) window
+								.getLayoutParams();
 
 						switch (event.getAction()) {
 							case MotionEvent.ACTION_DOWN:
+								touchInfo.x = params.x;
+								touchInfo.y = params.y;
 								touchInfo.downX = (int) event.getRawX();
 								touchInfo.downY = (int) event.getRawY();
 								touchInfo.deltaX = touchInfo.deltaY = 0;
@@ -810,15 +813,14 @@ public abstract class StandOutWindow extends Service {
 								}
 
 								touchInfo.deltaX = touchInfo.deltaY = 0;
-								touchInfo.downX = touchInfo.x;
-								touchInfo.downY = touchInfo.y;
+								touchInfo.downX = touchInfo.downY = 0;
 								break;
 						}
 
-						Log.d("StandOutWindow", "Handle touch: " + event);
+						Log.d("StandOutWindow", "Titlebar handle touch: "
+								+ event);
 
-						StandOutWindow.LayoutParams params = (LayoutParams) window
-								.getLayoutParams();
+						// update the position of the window
 						params.x = touchInfo.x + touchInfo.deltaX;
 						params.y = touchInfo.y + touchInfo.deltaY;
 						updateViewLayout(window, params);
@@ -826,7 +828,10 @@ public abstract class StandOutWindow extends Service {
 						return true;
 				}
 			}
-		});
+		};
+
+		final View titlebar = window.findViewById(R.id.titlebar);
+		titlebar.setOnTouchListener(moveTouchListener);
 
 		// resize
 		View corner = window.findViewById(R.id.corner);
@@ -834,8 +839,86 @@ public abstract class StandOutWindow extends Service {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				// TODO resizing
-				return false;
+				switch (id) {
+					default:
+						WindowTouchInfo touchInfo = ((WrappedTag) window
+								.getTag()).touchInfo;
+						StandOutWindow.LayoutParams params = (LayoutParams) window
+								.getLayoutParams();
+
+						switch (event.getAction()) {
+							case MotionEvent.ACTION_DOWN:
+								touchInfo.width = params.width;
+								touchInfo.height = params.height;
+								touchInfo.downX = (int) event.getRawX();
+								touchInfo.downY = (int) event.getRawY();
+								touchInfo.deltaX = touchInfo.deltaY = 0;
+								break;
+							case MotionEvent.ACTION_MOVE:
+								touchInfo.deltaX = (int) event.getRawX()
+										- touchInfo.downX;
+								touchInfo.deltaY = (int) event.getRawY()
+										- touchInfo.downY;
+								break;
+							case MotionEvent.ACTION_UP:
+								touchInfo.width = touchInfo.width
+										+ touchInfo.deltaX;
+								touchInfo.height = touchInfo.height
+										+ touchInfo.deltaY;
+
+								touchInfo.deltaX = touchInfo.deltaY = 0;
+								touchInfo.downX = touchInfo.downY = 0;
+								break;
+						}
+
+						Log.d("StandOutWindow", "Corner handle touch: " + event);
+
+						// update the position of the window
+						params.width = Math.max(0, touchInfo.width
+								+ touchInfo.deltaX);
+						params.height = Math.max(0, touchInfo.height
+								+ touchInfo.deltaY);
+						updateViewLayout(window, params);
+
+						return true;
+				}
+			}
+		});
+
+		// set window appearance and behavior based on flags
+		int flags = getFlags(id);
+
+		if ((flags & FLAG_DECORATION_HIDE_DISABLE) != 0) {
+			hide.setVisibility(View.GONE);
+		}
+		if ((flags & FLAG_DECORATION_CLOSE_DISABLE) != 0) {
+			close.setVisibility(View.GONE);
+		}
+		if ((flags & FLAG_DECORATION_MOVE_DISABLE) != 0) {
+			titlebar.setOnTouchListener(null);
+		}
+		if ((flags & FLAG_DECORATION_RESIZE_DISABLE) != 0) {
+			corner.setVisibility(View.GONE);
+		}
+
+		// body should always send touch events
+		final boolean bodyMoveEnabled = (flags & FLAG_BODY_MOVE_ENABLE) != 0;
+		View body = window.findViewById(R.id.body);
+		body.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				// pass all touch events to the implementation
+				int id = ((WrappedTag) window.getTag()).id;
+				boolean consumed = StandOutWindow.this.onTouch(id, window, v,
+						event);
+
+				// if set FLAG_BODY_MOVE_ENABLE, move the window
+				if (bodyMoveEnabled) {
+					consumed = consumed || moveTouchListener.onTouch(v, event);
+				}
+
+				return consumed;
 			}
 		});
 
@@ -871,20 +954,15 @@ public abstract class StandOutWindow extends Service {
 			super();
 			this.id = id;
 			this.shown = shown;
-			this.touchInfo = new WindowTouchInfo(id);
+			this.touchInfo = new WindowTouchInfo();
 			this.tag = tag;
 		}
 	}
 
 	public class WindowTouchInfo {
-		public int x, y;
+		public int x, y, width, height;
 		public int downX, downY;
 		public int deltaX, deltaY;
-
-		public WindowTouchInfo(int id) {
-			x = 50 + (50 * id) % 300;
-			y = 50 + (50 * id) % 300;
-		}
 	}
 
 	/**
@@ -899,6 +977,10 @@ public abstract class StandOutWindow extends Service {
 			super(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT,
 					TYPE_SYSTEM_ALERT, FLAG_NOT_FOCUSABLE,
 					PixelFormat.TRANSLUCENT);
+
+			width = height = 200;
+			x = y = 50 + (50 * views.size()) % 300;
+			gravity = Gravity.TOP | Gravity.LEFT;
 		}
 
 		public LayoutParams(int w, int h) {

@@ -5,10 +5,7 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -37,35 +34,18 @@ public class StandOutDraggableWindow extends StandOutWindow {
 
 	@Override
 	protected LayoutParams getParams(int id, View view) {
-		WindowTouchInfo touchInfo = ((WrappedTag) view.getTag()).touchInfo;
-
-		return new LayoutParams(200, 200, touchInfo.x, touchInfo.y, Gravity.TOP
-				| Gravity.LEFT);
+		LayoutParams params = (LayoutParams) view.getLayoutParams();
+		if (params == null) {
+			return new LayoutParams(200, 200);
+		} else {
+			return params;
+		}
 	}
 
+	// we want the system window decorations
 	@Override
 	protected int getFlags(int id) {
-		return super.getFlags(id) | FLAG_DECORATION_SYSTEM;
-	}
-
-	@Override
-	protected boolean onTouch(int id, View window, View view, MotionEvent event) {
-		switch (id) {
-			default:
-				Log.d("StandOutHelloWorld", "Handle touch: " + event);
-
-				switch (event.getAction()) {
-					case MotionEvent.ACTION_UP:
-						WindowTouchInfo touchInfo = ((WrappedTag) window
-								.getTag()).touchInfo;
-
-						// tap
-						if (touchInfo.deltaX == 0 && touchInfo.deltaY == 0) {
-							bringToFront(id);
-						}
-				}
-				return true;
-		}
+		return FLAG_DECORATION_SYSTEM | FLAG_BODY_MOVE_ENABLE;
 	}
 
 	@Override
