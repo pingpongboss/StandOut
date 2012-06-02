@@ -914,7 +914,7 @@ public abstract class StandOutWindow extends Service {
 
 		if ((flags & FLAG_DECORATION_SYSTEM) != 0) {
 			// requested system window decorations
-			content = getSystemWindow(id);
+			content = getSystemWindowContent(id);
 			body = (FrameLayout) content.findViewById(R.id.body);
 		} else {
 			// did not request decorations. will provide own implementation
@@ -923,6 +923,7 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		window.addView(content);
+		content.setTag(window);
 
 		// body should always send touch events to onTouchBody()
 		final boolean bodyMoveEnabled = (flags & FLAG_BODY_MOVE_ENABLE) != 0;
@@ -978,11 +979,11 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The frame view containing the system window decorations.
 	 */
-	private View getSystemWindow(final int id) {
-		final View window = mLayoutInflater.inflate(R.layout.window, null);
+	private View getSystemWindowContent(final int id) {
+		final View content = mLayoutInflater.inflate(R.layout.window, null);
 
 		// hide
-		View hide = window.findViewById(R.id.hide);
+		View hide = content.findViewById(R.id.hide);
 		hide.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -993,7 +994,7 @@ public abstract class StandOutWindow extends Service {
 		});
 
 		// close
-		View close = window.findViewById(R.id.close);
+		View close = content.findViewById(R.id.close);
 		close.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -1004,26 +1005,29 @@ public abstract class StandOutWindow extends Service {
 		});
 
 		// move
-		View titlebar = window.findViewById(R.id.titlebar);
+		View titlebar = content.findViewById(R.id.titlebar);
 		titlebar.setOnTouchListener(new OnTouchListener() {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
 				// handle dragging to move
-				boolean consumed = onTouchWindow(id, window, v, event);
-				consumed = onTouchHandleMove(id, window, v, event) || consumed;
+				boolean consumed = onTouchWindow(id, (View) content.getTag(),
+						v, event);
+				consumed = onTouchHandleMove(id, (View) content.getTag(), v,
+						event) || consumed;
 				return consumed;
 			}
 		});
 
 		// resize
-		View corner = window.findViewById(R.id.corner);
+		View corner = content.findViewById(R.id.corner);
 		corner.setOnTouchListener(new OnTouchListener() {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
 				switch (id) {
 					default:
+						View window = (View) content.getTag();
 						WindowTouchInfo touchInfo = ((WrappedTag) window
 								.getTag()).touchInfo;
 						StandOutWindow.LayoutParams params = (LayoutParams) window
@@ -1082,7 +1086,7 @@ public abstract class StandOutWindow extends Service {
 			corner.setVisibility(View.GONE);
 		}
 
-		return window;
+		return content;
 	}
 
 	/**
@@ -1352,8 +1356,7 @@ public abstract class StandOutWindow extends Service {
 			int displayWidth = display.getWidth();
 			int displayHeight = display.getHeight();
 
-			return (x + 200 * (100 * getCacheSize())
-					/ (displayWidth - width))
+			return (x + 200 * (100 * getCacheSize()) / (displayWidth - width))
 					% (displayHeight - height);
 		}
 	}
