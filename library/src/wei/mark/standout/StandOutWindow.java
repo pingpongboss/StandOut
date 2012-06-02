@@ -21,7 +21,6 @@ import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.FrameLayout;
 
 /**
@@ -115,14 +114,6 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static final int FLAG_BODY_MOVE_ENABLE = 0x00000020;
 
-	// internal map of ids to shown/hidden views
-	private static WeakHashMap<Integer, View> views;
-
-	// static constructor
-	static {
-		views = new WeakHashMap<Integer, View>();
-	}
-
 	/**
 	 * Show a new window corresponding to the id, or restore a previously hidden
 	 * window.
@@ -209,10 +200,8 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static Intent getShowIntent(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
-		// Show or restore window depending on whether the id exists
-		String action = views.containsKey(id) ? ACTION_RESTORE : ACTION_SHOW;
-		Uri uri = views.containsKey(id) ? Uri.parse("standout://" + id) : null;
-
+		String action = mViews.containsKey(id) ? ACTION_RESTORE : ACTION_SHOW;
+		Uri uri = mViews.containsKey(id) ? Uri.parse("standout://" + id) : null;
 		return new Intent(context, cls).putExtra("id", id).setAction(action)
 				.setData(uri);
 	}
@@ -273,6 +262,13 @@ public abstract class StandOutWindow extends Service {
 	public static Intent getCloseAllIntent(Context context,
 			Class<? extends StandOutWindow> cls) {
 		return new Intent(context, cls).setAction(ACTION_CLOSE_ALL);
+	}
+
+	// internal map of ids to shown/hidden views
+	private static WeakHashMap<Integer, View> mViews;
+
+	static {
+		mViews = new WeakHashMap<Integer, View>();
 	}
 
 	// internal system services
@@ -598,7 +594,7 @@ public abstract class StandOutWindow extends Service {
 		tag.shown = true;
 
 		// add view to internal map
-		views.put(id, window);
+		mViews.put(id, window);
 
 		// get the params corresponding to the id
 		StandOutWindow.LayoutParams params = (LayoutParams) window
@@ -720,10 +716,10 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// remove view from internal map
-		views.remove(id);
+		mViews.remove(id);
 
 		// if we just released the last view, quit
-		if (views.isEmpty()) {
+		if (mViews.isEmpty()) {
 			// tell Android to remove the persistent notification
 			// the Service will be shutdown by the system on low memory
 			startedForeground = false;
@@ -741,7 +737,7 @@ public abstract class StandOutWindow extends Service {
 
 		// add ids to temporary set to avoid concurrent modification
 		LinkedList<Integer> ids = new LinkedList<Integer>();
-		for (int id : views.keySet()) {
+		for (int id : mViews.keySet()) {
 			ids.add(id);
 		}
 		// close each window
@@ -818,7 +814,7 @@ public abstract class StandOutWindow extends Service {
 	// and set a WrappedTag to keep track of the id and visibility
 	private View getWrappedView(int id) {
 		// try get the wrapped view from the internal map
-		View cachedView = views.get(id);
+		View cachedView = mViews.get(id);
 
 		// if the wrapped view exists, then return it rather than creating one
 		if (cachedView != null) {
@@ -897,7 +893,7 @@ public abstract class StandOutWindow extends Service {
 		final View window = mLayoutInflater.inflate(R.layout.window, null);
 
 		// hide
-		Button hide = (Button) window.findViewById(R.id.hide);
+		View hide = window.findViewById(R.id.hide);
 		hide.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -908,7 +904,7 @@ public abstract class StandOutWindow extends Service {
 		});
 
 		// close
-		Button close = (Button) window.findViewById(R.id.close);
+		View close = window.findViewById(R.id.close);
 		close.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -966,8 +962,6 @@ public abstract class StandOutWindow extends Service {
 								touchInfo.downX = touchInfo.downY = 0;
 								break;
 						}
-
-						Log.d("StandOutWindow", "Corner handle touch: " + event);
 
 						// update the position of the window
 						params.width = Math.max(0, touchInfo.width
@@ -1031,8 +1025,6 @@ public abstract class StandOutWindow extends Service {
 				touchInfo.downX = touchInfo.downY = 0;
 				break;
 		}
-
-		Log.d("StandOutWindow", "Titlebar handle touch: " + event);
 
 		// update the position of the window
 		params.x = touchInfo.x + touchInfo.deltaX;
@@ -1099,7 +1091,7 @@ public abstract class StandOutWindow extends Service {
 					PixelFormat.TRANSLUCENT);
 
 			width = height = 200;
-			x = y = 50 + (50 * views.size()) % 300;
+			x = y = 50 + (50 * mViews.size()) % 300;
 			gravity = Gravity.TOP | Gravity.LEFT;
 		}
 
