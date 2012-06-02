@@ -1,5 +1,6 @@
 package wei.mark.standout;
 
+import java.util.LinkedList;
 import java.util.WeakHashMap;
 
 import android.app.Notification;
@@ -34,6 +35,7 @@ public abstract class StandOutWindow extends Service {
 	 * StandOut window id: You may use this sample id for your first window.
 	 */
 	public static final int DEFAULT_ID = 0;
+
 	/**
 	 * StandOut window id: You may NOT use this id for any windows.
 	 */
@@ -43,15 +45,23 @@ public abstract class StandOutWindow extends Service {
 	 * Intent action: Show a new window corresponding to the id.
 	 */
 	public static final String ACTION_SHOW = "SHOW";
+
 	/**
 	 * Intent action: Restore a previously hidden window corresponding to the
 	 * id. The window should be previously hidden with {@link #ACTION_HIDE}.
 	 */
 	public static final String ACTION_RESTORE = "RESTORE";
+
 	/**
 	 * Intent action: Close an existing window with an existing id.
 	 */
 	public static final String ACTION_CLOSE = "CLOSE";
+
+	/**
+	 * Intent action: Close all existing windows.
+	 */
+	public static final String ACTION_CLOSE_ALL = "CLOSE_ALL";
+
 	/**
 	 * Intent action: Hide an existing window with an existing id. To enable the
 	 * ability to restore this window, make sure you implement
@@ -140,8 +150,8 @@ public abstract class StandOutWindow extends Service {
 	 * @param context
 	 *            A Context of the application package implementing this class.
 	 * @param cls
-	 *            The Service extending {@link StandOutWindow} that will be used
-	 *            to create and manage the window.
+	 *            The Service extending {@link StandOutWindow} that is managing
+	 *            the window.
 	 * @param id
 	 *            The id representing this window. The window must previously be
 	 *            shown.
@@ -157,8 +167,8 @@ public abstract class StandOutWindow extends Service {
 	 * @param context
 	 *            A Context of the application package implementing this class.
 	 * @param cls
-	 *            The Service extending {@link StandOutWindow} that will be used
-	 *            to create and manage the window.
+	 *            The Service extending {@link StandOutWindow} that is managing
+	 *            the window.
 	 * @param id
 	 *            The id representing this window. The window must previously be
 	 *            shown.
@@ -166,6 +176,20 @@ public abstract class StandOutWindow extends Service {
 	public static void close(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
 		context.startService(getCloseIntent(context, cls, id));
+	}
+
+	/**
+	 * Close all existing windows.
+	 * 
+	 * @param context
+	 *            A Context of the application package implementing this class.
+	 * @param cls
+	 *            The Service extending {@link StandOutWindow} that is managing
+	 *            the window.
+	 */
+	public static void closeAll(Context context,
+			Class<? extends StandOutWindow> cls) {
+		context.startService(getCloseAllIntent(context, cls));
 	}
 
 	/**
@@ -199,8 +223,8 @@ public abstract class StandOutWindow extends Service {
 	 * @param context
 	 *            A Context of the application package implementing this class.
 	 * @param cls
-	 *            The Service extending {@link StandOutWindow} that will be used
-	 *            to create and manage the window.
+	 *            The Service extending {@link StandOutWindow} that is managing
+	 *            the window.
 	 * @param id
 	 *            The id representing this window. If the id exists, and the
 	 *            corresponding window was previously hidden, then that window
@@ -220,8 +244,8 @@ public abstract class StandOutWindow extends Service {
 	 * @param context
 	 *            A Context of the application package implementing this class.
 	 * @param cls
-	 *            The Service extending {@link StandOutWindow} that will be used
-	 *            to create and manage the window.
+	 *            The Service extending {@link StandOutWindow} that is managing
+	 *            the window.
 	 * @param id
 	 *            The id representing this window. If the id exists, and the
 	 *            corresponding window was previously hidden, then that window
@@ -233,6 +257,22 @@ public abstract class StandOutWindow extends Service {
 			Class<? extends StandOutWindow> cls, int id) {
 		return new Intent(context, cls).putExtra("id", id).setAction(
 				ACTION_CLOSE);
+	}
+
+	/**
+	 * See {@link #closeAll(Context, Class, int)}.
+	 * 
+	 * @param context
+	 *            A Context of the application package implementing this class.
+	 * @param cls
+	 *            The Service extending {@link StandOutWindow} that is managing
+	 *            the window.
+	 * @return An {@link Intent} to use with
+	 *         {@link Context#startService(Intent)}.
+	 */
+	public static Intent getCloseAllIntent(Context context,
+			Class<? extends StandOutWindow> cls) {
+		return new Intent(context, cls).setAction(ACTION_CLOSE_ALL);
 	}
 
 	// internal system services
@@ -278,10 +318,12 @@ public abstract class StandOutWindow extends Service {
 
 			if (ACTION_SHOW.equals(action) || ACTION_RESTORE.equals(action)) {
 				show(id);
-			} else if (ACTION_CLOSE.equals(action)) {
-				close(id);
 			} else if (ACTION_HIDE.equals(action)) {
 				hide(id);
+			} else if (ACTION_CLOSE.equals(action)) {
+				close(id);
+			} else if (ACTION_CLOSE_ALL.equals(action)) {
+				closeAll();
 			}
 		} else {
 			Log.w("StandOutWindow",
@@ -298,9 +340,7 @@ public abstract class StandOutWindow extends Service {
 		super.onDestroy();
 
 		// closes all windows
-		for (int id : views.keySet()) {
-			close(id);
-		}
+		closeAll();
 	}
 
 	/**
@@ -576,12 +616,28 @@ public abstract class StandOutWindow extends Service {
 
 		// remove view from internal map
 		views.remove(id);
+
 		// if we just released the last view, quit
 		if (views.isEmpty()) {
 			// tell Android to remove the persistent notification
 			// the Service will be shutdown by the system on low memory
 			startedForeground = false;
 			stopForeground(true);
+		}
+	}
+
+	/**
+	 * Close all existing windows.
+	 */
+	protected final void closeAll() {
+		// add ids to temporary set to avoid concurrent modification
+		LinkedList<Integer> ids = new LinkedList<Integer>();
+		for (int id : views.keySet()) {
+			ids.add(id);
+		}
+		// close each window
+		for (int id : ids) {
+			close(id);
 		}
 	}
 
