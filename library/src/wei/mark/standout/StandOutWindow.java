@@ -3,6 +3,7 @@ package wei.mark.standout;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -211,11 +212,9 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static Intent getShowIntent(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
-		FullId fullId = new FullId(cls, id);
-		String action = sViews.containsKey(fullId) ? ACTION_RESTORE
-				: ACTION_SHOW;
-		Uri uri = sViews.containsKey(fullId) ? Uri.parse("standout://"
-				+ fullId.hashCode()) : null;
+		boolean cached = isCached(cls, id);
+		String action = cached ? ACTION_RESTORE : ACTION_SHOW;
+		Uri uri = cached ? Uri.parse("standout://" + cls + '/' + id) : null;
 		return new Intent(context, cls).putExtra("id", id).setAction(action)
 				.setData(uri);
 	}
@@ -279,11 +278,27 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	// internal map of ids to shown/hidden views
-	private static Map<FullId, View> sViews;
+	private static Map<Class<? extends StandOutWindow>, Map<Integer, View>> sViews;
 
 	// static constructors
 	static {
-		sViews = new HashMap<FullId, View>();
+		sViews = new HashMap<Class<? extends StandOutWindow>, Map<Integer, View>>();
+	}
+
+	/**
+	 * Returns whether the window corresponding to the class and id exists in
+	 * the {@link #sViews} cache.
+	 * 
+	 * @param cls
+	 *            Class corresponding to the window.
+	 * @param id
+	 *            The id representing the window.
+	 * @return True if the window corresponding to the class and id exists in
+	 *         the cache, or false if it does not exist.
+	 */
+	private static boolean isCached(Class<? extends StandOutWindow> cls, int id) {
+		Map<Integer, View> l2 = sViews.get(cls);
+		return l2 != null && l2.containsKey(id);
 	}
 
 	// internal system services
@@ -609,7 +624,7 @@ public abstract class StandOutWindow extends Service {
 		tag.shown = true;
 
 		// add view to internal map
-		sViews.put(new FullId(getClass(), id), window);
+		putCache(id, window);
 
 		// get the params corresponding to the id
 		StandOutWindow.LayoutParams params = (LayoutParams) window
@@ -636,7 +651,7 @@ public abstract class StandOutWindow extends Service {
 			// only show notification if not shown before
 			if (!startedForeground) {
 				// tell Android system to show notification
-				startForeground(new FullId(getClass(), RESERVED_ID).hashCode(),
+				startForeground(getClass().hashCode() + RESERVED_ID,
 						notification);
 				startedForeground = true;
 			}
@@ -694,8 +709,7 @@ public abstract class StandOutWindow extends Service {
 		notification.flags = notification.flags | Notification.FLAG_NO_CLEAR
 				| Notification.FLAG_AUTO_CANCEL;
 
-		mNotificationManager.notify(new FullId(getClass(), id).hashCode(),
-				notification);
+		mNotificationManager.notify(getClass().hashCode() + id, notification);
 	}
 
 	/**
@@ -733,10 +747,10 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// remove view from internal map
-		sViews.remove(new FullId(getClass(), id));
+		removeCache(id);
 
 		// if we just released the last view, quit
-		if (sViews.isEmpty()) {
+		if (getCacheSize() == 0) {
 			// tell Android to remove the persistent notification
 			// the Service will be shutdown by the system on low memory
 			startedForeground = false;
@@ -754,8 +768,8 @@ public abstract class StandOutWindow extends Service {
 
 		// add ids to temporary set to avoid concurrent modification
 		LinkedList<Integer> ids = new LinkedList<Integer>();
-		for (FullId fullId : sViews.keySet()) {
-			ids.add(fullId.id);
+		for (int id : getCacheIds()) {
+			ids.add(id);
 		}
 
 		// close each window
@@ -827,22 +841,24 @@ public abstract class StandOutWindow extends Service {
 		}
 	}
 
-	// wraps the view from getView() into a frame that is easier to manage.
-	// the frame allows us to pass touch input to implementations
-	// and set a WrappedTag to keep track of the id and visibility
+	/**
+	 * Wraps the view from getView() into a frame that is easier to manage. The
+	 * frame allows us to pass touch input to implementations and set a
+	 * {@link WrappedTag} to keep track of the id, visibility, etc.
+	 * 
+	 * @param id
+	 *            The id representing the wrapped view.
+	 * @return The wrapped view from cache, or created from the implementation.
+	 */
 	private View getWrappedView(int id) {
 		// try get the wrapped view from the internal map
-		FullId fullId = new FullId(getClass(), id);
-		View cachedView = sViews.get(fullId);
+		View cachedView = getCache(id);
 
 		// if the wrapped view exists, then return it rather than creating one
 		if (cachedView != null) {
-			Log.d("StandOutWindow", "Wrapped view: found cached for " + fullId);
 			return cachedView;
 		}
 
-		Log.d("StandOutWindow", "sViews view: " + sViews.keySet());
-		Log.d("StandOutWindow", "Wrapped view: Creating new view for " + fullId);
 		// create the wrapping frame and body
 		final View window;
 		FrameLayout body;
@@ -1020,6 +1036,18 @@ public abstract class StandOutWindow extends Service {
 		return window;
 	}
 
+	/**
+	 * Generic internal touch handler for window-level views such as the
+	 * titlebar and body.
+	 * 
+	 * @see {@link View#onTouchEvent(MotionEvent)}
+	 * 
+	 * @param id
+	 * @param window
+	 * @param view
+	 * @param event
+	 * @return
+	 */
 	private boolean onTouchWindow(int id, View window, View view,
 			MotionEvent event) {
 		switch (event.getAction()) {
@@ -1035,6 +1063,17 @@ public abstract class StandOutWindow extends Service {
 		return false;
 	}
 
+	/**
+	 * Internal touch handler for handling moving the window.
+	 * 
+	 * @see {@link View#onTouchEvent(MotionEvent)}
+	 * 
+	 * @param id
+	 * @param window
+	 * @param view
+	 * @param event
+	 * @return
+	 */
 	private boolean onTouchHandleMove(int id, View window, View view,
 			MotionEvent event) {
 		WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
@@ -1068,6 +1107,95 @@ public abstract class StandOutWindow extends Service {
 		updateViewLayout(id, window, params);
 
 		return true;
+	}
+
+	/**
+	 * Add the window corresponding to the id in the {@link #sViews} cache.
+	 * 
+	 * @param id
+	 *            The id representing the window.
+	 * @param window
+	 *            The window to be put in the cache.
+	 */
+	private void putCache(int id, View window) {
+		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+				.get(getClass());
+		if (l2 == null) {
+			l2 = new HashMap<Integer, View>();
+			sViews.put(getClass(), l2);
+		}
+
+		l2.put(id, window);
+	}
+
+	/**
+	 * Remove the window corresponding to the id from the {@link #sViews} cache.
+	 * 
+	 * @param id
+	 *            The id representing the window.
+	 */
+	private void removeCache(int id) {
+		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+				.get(getClass());
+		if (l2 == null) {
+			l2 = new HashMap<Integer, View>();
+			sViews.put(getClass(), l2);
+		}
+
+		l2.remove(id);
+	}
+
+	/**
+	 * Returns whether the {@link #sViews} cache is empty.
+	 * 
+	 * @return True if the cache corresponding to this class is empty, false if
+	 *         it is not empty.
+	 */
+	private int getCacheSize() {
+		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+				.get(getClass());
+		if (l2 == null) {
+			l2 = new HashMap<Integer, View>();
+			sViews.put(getClass(), l2);
+		}
+
+		return l2.size();
+	}
+
+	/**
+	 * Returns the ids in the {@link #sViews} cache.
+	 * 
+	 * @return The ids representing the cached windows.
+	 */
+	private Set<Integer> getCacheIds() {
+		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+				.get(getClass());
+		if (l2 == null) {
+			l2 = new HashMap<Integer, View>();
+			sViews.put(getClass(), l2);
+		}
+
+		return l2.keySet();
+	}
+
+	/**
+	 * Returns the window corresponding to the id from the {@link #sViews}
+	 * cache.
+	 * 
+	 * @param id
+	 *            The id representing the window.
+	 * @return The window corresponding to the id if it exists in the cache, or
+	 *         null if it does not.
+	 */
+	private View getCache(int id) {
+		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+				.get(getClass());
+		if (l2 == null) {
+			l2 = new HashMap<Integer, View>();
+			sViews.put(getClass(), l2);
+		}
+
+		return l2.get(id);
 	}
 
 	/**
@@ -1133,7 +1261,7 @@ public abstract class StandOutWindow extends Service {
 					PixelFormat.TRANSLUCENT);
 
 			width = height = 200;
-			x = y = 50 + (50 * sViews.size()) % 300;
+			x = y = 50 + (50 * getCacheSize()) % 300;
 			gravity = Gravity.TOP | Gravity.LEFT;
 		}
 
@@ -1155,36 +1283,6 @@ public abstract class StandOutWindow extends Service {
 			x = xpos;
 			y = ypos;
 			gravity = gravityFlag;
-		}
-	}
-
-	private static class FullId {
-		public Class<? extends StandOutWindow> cls;
-		public int id;
-
-		public FullId(Class<? extends StandOutWindow> cls, int id) {
-			super();
-			this.cls = cls;
-			this.id = id;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (o instanceof FullId) {
-				FullId other = (FullId) o;
-				return this.cls.equals(other.cls) && this.id == other.id;
-			}
-			return false;
-		}
-
-		@Override
-		public int hashCode() {
-			return cls.hashCode() + id;
-		}
-
-		@Override
-		public String toString() {
-			return String.format("[%s: %s]", cls.getSimpleName(), id);
 		}
 	}
 }
