@@ -14,7 +14,7 @@ import android.widget.TextView;
  * @author Mark Wei <markwei@gmail.com>
  * 
  */
-public class StandOutDraggableWindow extends StandOutWindow {
+public class StandOutMultiWindow extends StandOutWindow {
 
 	@Override
 	protected View createAndAttachView(int id, ViewGroup root) {
@@ -58,7 +58,7 @@ public class StandOutDraggableWindow extends StandOutWindow {
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
 
 		Intent notificationIntent = StandOutWindow.getShowIntent(this,
-				StandOutDraggableWindow.class, id + 1);
+				StandOutMultiWindow.class, id + 1);
 
 		PendingIntent contentIntent = PendingIntent.getService(this, 0,
 				notificationIntent,
@@ -81,7 +81,7 @@ public class StandOutDraggableWindow extends StandOutWindow {
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
 
 		Intent notificationIntent = StandOutWindow.getShowIntent(this,
-				StandOutDraggableWindow.class, id);
+				StandOutMultiWindow.class, id);
 
 		PendingIntent contentIntent = PendingIntent.getService(this, 0,
 				notificationIntent,

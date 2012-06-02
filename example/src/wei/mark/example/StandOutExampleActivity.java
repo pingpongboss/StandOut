@@ -10,9 +10,9 @@ public class StandOutExampleActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		StandOutWindow.closeAll(this, StandOutDraggableWindow.class);
+		StandOutWindow.closeAll(this, StandOutMultiWindow.class);
 		
-		StandOutWindow.show(this, StandOutDraggableWindow.class,
+		StandOutWindow.show(this, StandOutMultiWindow.class,
 				StandOutWindow.DEFAULT_ID);
 		
 		finish();
