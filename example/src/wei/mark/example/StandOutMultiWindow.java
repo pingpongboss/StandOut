@@ -52,8 +52,8 @@ public class StandOutMultiWindow extends StandOutWindow {
 		int icon = android.R.drawable.ic_menu_add;
 		long when = System.currentTimeMillis();
 		Context c = getApplicationContext();
-		String contentTitle = "StandOutWindow Example";
-		String contentText = "Click to add a new StandOutWindow.";
+		String contentTitle = "StandOutMultiWindow Example";
+		String contentText = "Click to add a new StandOutMultiWindow.";
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
 
 		// getPersistentNotification() is called for every new window
@@ -80,7 +80,7 @@ public class StandOutMultiWindow extends StandOutWindow {
 		int icon = android.R.drawable.ic_menu_info_details;
 		long when = System.currentTimeMillis();
 		Context c = getApplicationContext();
-		String contentTitle = "Hidden StandOutWindow Example";
+		String contentTitle = "Hidden StandOutMultiWindow Example";
 		String contentText = "Click to restore #" + id + ".";
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
 

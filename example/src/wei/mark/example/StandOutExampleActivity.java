@@ -11,10 +11,12 @@ public class StandOutExampleActivity extends Activity {
 		super.onCreate(savedInstanceState);
 
 		StandOutWindow.closeAll(this, StandOutMultiWindow.class);
-		
-		StandOutWindow.show(this, StandOutMultiWindow.class,
+
+//		StandOutWindow.show(this, StandOutMultiWindow.class,
+//				StandOutWindow.DEFAULT_ID);
+		StandOutWindow.show(this, StandOutSimpleWindow.class,
 				StandOutWindow.DEFAULT_ID);
-		
+
 		finish();
 	}
 }

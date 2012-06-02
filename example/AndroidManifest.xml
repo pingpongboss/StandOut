@@ -20,6 +20,7 @@
             </intent-filter>
         </activity>
         <service android:name=".StandOutMultiWindow"></service>
+        <service android:name="StandOutSimpleWindow"></service>
     </application>
 
 </manifest>

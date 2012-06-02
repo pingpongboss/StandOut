@@ -37,7 +37,7 @@
     <FrameLayout
         android:id="@+id/body"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="fill_parent"
         android:layout_below="@+id/titlebar"
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="4dp"

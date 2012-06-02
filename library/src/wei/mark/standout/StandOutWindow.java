@@ -451,9 +451,12 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Implement this method to be alerted to touch events on the window
-	 * corresponding to the id. The events are passed directly from
-	 * {@link View.OnTouchListener#onTouch(View, MotionEvent)}
+	 * Implement this method to be alerted to touch events in the body of the
+	 * window corresponding to the id.
+	 * 
+	 * <p>
+	 * Note that even if you set {@link #FLAG_DECORATION_SYSTEM}, you will not
+	 * receive touch events from the system window decorations.
 	 * 
 	 * @see {@link View.OnTouchListener#onTouch(View, MotionEvent)}
 	 * @param id
@@ -465,7 +468,8 @@ public abstract class StandOutWindow extends Service {
 	 * @param event
 	 *            See linked method.
 	 */
-	protected boolean onTouch(int id, View window, View view, MotionEvent event) {
+	protected boolean onTouchBody(int id, View window, View view,
+			MotionEvent event) {
 		return false;
 	}
 
@@ -765,7 +769,11 @@ public abstract class StandOutWindow extends Service {
 			return;
 		}
 
-		mWindowManager.updateViewLayout(window, params);
+		try {
+			mWindowManager.updateViewLayout(window, params);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	/**
@@ -792,8 +800,17 @@ public abstract class StandOutWindow extends Service {
 			params = getParams(id, window);
 		}
 
-		mWindowManager.removeView(window);
-		mWindowManager.addView(window, params);
+		// remove from window manager then add back
+		try {
+			mWindowManager.removeView(window);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		try {
+			mWindowManager.addView(window, params);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	// wraps the view from getView() into a frame that is easier to manage.
@@ -824,6 +841,26 @@ public abstract class StandOutWindow extends Service {
 			body = (FrameLayout) window;
 		}
 
+		// body should always send touch events to onTouchBody()
+		final boolean bodyMoveEnabled = (flags & FLAG_BODY_MOVE_ENABLE) != 0;
+		body.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				// pass all touch events to the implementation
+				int id = ((WrappedTag) window.getTag()).id;
+				boolean consumed = onTouchBody(id, window, v, event);
+
+				// if set FLAG_BODY_MOVE_ENABLE, move the window
+				if (bodyMoveEnabled) {
+					consumed = consumed
+							|| onTouchHandleMove(id, window, v, event);
+				}
+
+				return consumed;
+			}
+		});
+
 		// attach the view corresponding to the id from the implementation
 		View view = createAndAttachView(id, body);
 
@@ -833,7 +870,7 @@ public abstract class StandOutWindow extends Service {
 					"Your view must not be null in createAndAttachView()");
 		}
 		// make sure the implementation attached the view
-		if (view.getParent() == null) {
+		if (view != body && view.getParent() == null) {
 			throw new RuntimeException(
 					"You must attach your view to the given root ViewGroup in createAndAttachView()");
 		}
@@ -882,61 +919,15 @@ public abstract class StandOutWindow extends Service {
 		});
 
 		// move
-		final OnTouchListener moveTouchListener = new OnTouchListener() {
+		View titlebar = window.findViewById(R.id.titlebar);
+		titlebar.setOnTouchListener(new OnTouchListener() {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				switch (id) {
-					default:
-						WindowTouchInfo touchInfo = ((WrappedTag) window
-								.getTag()).touchInfo;
-						StandOutWindow.LayoutParams params = (LayoutParams) window
-								.getLayoutParams();
-
-						switch (event.getAction()) {
-							case MotionEvent.ACTION_DOWN:
-								touchInfo.x = params.x;
-								touchInfo.y = params.y;
-								touchInfo.downX = (int) event.getRawX();
-								touchInfo.downY = (int) event.getRawY();
-								touchInfo.deltaX = touchInfo.deltaY = 0;
-								break;
-							case MotionEvent.ACTION_MOVE:
-								touchInfo.deltaX = (int) event.getRawX()
-										- touchInfo.downX;
-								touchInfo.deltaY = (int) event.getRawY()
-										- touchInfo.downY;
-								break;
-							case MotionEvent.ACTION_UP:
-								touchInfo.x = touchInfo.x + touchInfo.deltaX;
-								touchInfo.y = touchInfo.y + touchInfo.deltaY;
-
-								// tap
-								if (touchInfo.deltaX == 0
-										&& touchInfo.deltaY == 0) {
-									bringToFront(id);
-								}
-
-								touchInfo.deltaX = touchInfo.deltaY = 0;
-								touchInfo.downX = touchInfo.downY = 0;
-								break;
-						}
-
-						Log.d("StandOutWindow", "Titlebar handle touch: "
-								+ event);
-
-						// update the position of the window
-						params.x = touchInfo.x + touchInfo.deltaX;
-						params.y = touchInfo.y + touchInfo.deltaY;
-						updateViewLayout(id, window, params);
-
-						return true;
-				}
+				// handle dragging to move
+				return onTouchHandleMove(id, window, v, event);
 			}
-		};
-
-		final View titlebar = window.findViewById(R.id.titlebar);
-		titlebar.setOnTouchListener(moveTouchListener);
+		});
 
 		// resize
 		View corner = window.findViewById(R.id.corner);
@@ -1006,28 +997,49 @@ public abstract class StandOutWindow extends Service {
 			corner.setVisibility(View.GONE);
 		}
 
-		// body should always send touch events
-		final boolean bodyMoveEnabled = (flags & FLAG_BODY_MOVE_ENABLE) != 0;
-		View body = window.findViewById(R.id.body);
-		body.setOnTouchListener(new OnTouchListener() {
+		return window;
+	}
 
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				// pass all touch events to the implementation
-				int id = ((WrappedTag) window.getTag()).id;
-				boolean consumed = StandOutWindow.this.onTouch(id, window, v,
-						event);
+	private boolean onTouchHandleMove(int id, View window, View view,
+			MotionEvent event) {
+		WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
+		StandOutWindow.LayoutParams params = (LayoutParams) window
+				.getLayoutParams();
 
-				// if set FLAG_BODY_MOVE_ENABLE, move the window
-				if (bodyMoveEnabled) {
-					consumed = consumed || moveTouchListener.onTouch(v, event);
+		switch (event.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+				touchInfo.x = params.x;
+				touchInfo.y = params.y;
+				touchInfo.downX = (int) event.getRawX();
+				touchInfo.downY = (int) event.getRawY();
+				touchInfo.deltaX = touchInfo.deltaY = 0;
+				break;
+			case MotionEvent.ACTION_MOVE:
+				touchInfo.deltaX = (int) event.getRawX() - touchInfo.downX;
+				touchInfo.deltaY = (int) event.getRawY() - touchInfo.downY;
+				break;
+			case MotionEvent.ACTION_UP:
+				touchInfo.x = touchInfo.x + touchInfo.deltaX;
+				touchInfo.y = touchInfo.y + touchInfo.deltaY;
+
+				// tap
+				if (touchInfo.deltaX == 0 && touchInfo.deltaY == 0) {
+					bringToFront(id);
 				}
 
-				return consumed;
-			}
-		});
+				touchInfo.deltaX = touchInfo.deltaY = 0;
+				touchInfo.downX = touchInfo.downY = 0;
+				break;
+		}
 
-		return window;
+		Log.d("StandOutWindow", "Titlebar handle touch: " + event);
+
+		// update the position of the window
+		params.x = touchInfo.x + touchInfo.deltaX;
+		params.y = touchInfo.y + touchInfo.deltaY;
+		updateViewLayout(id, window, params);
+
+		return true;
 	}
 
 	/**
