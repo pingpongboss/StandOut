@@ -354,7 +354,7 @@ public abstract class StandOutWindow extends Service {
 	 * view to root. Set the ViewGroup to be root, and the boolean to true.
 	 * 
 	 * <p>
-	 * If you are creating your view programatically, make sure you use
+	 * If you are creating your view programmatically, make sure you use
 	 * {@link ViewGroup#addView(View)} to add your view to root.
 	 * 
 	 * @param id
@@ -582,6 +582,49 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Hide a window corresponding to the id. Show a notification for the hidden
+	 * window.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 */
+	protected final void hide(int id) {
+		// get the hidden notification for this view
+		Notification notification = getHiddenNotification(id);
+
+		if (notification == null) {
+			close(id);
+			return;
+		}
+
+		// get the view corresponding to the id
+		View window = getWrappedView(id);
+
+		if (window == null) {
+			Log.w("StandOutWindow", "Tried to hide(" + id + ") a null view");
+			return;
+		}
+
+		// alert callbacks
+		onHide(id, window);
+
+		((WrappedTag) window.getTag()).shown = false;
+
+		try {
+			// remove the view from the window manager
+			mWindowManager.removeView(window);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		// display the notification
+		notification.flags = notification.flags | Notification.FLAG_NO_CLEAR
+				| Notification.FLAG_AUTO_CANCEL;
+
+		mNotificationManager.notify(id, notification);
+	}
+
+	/**
 	 * Close a window corresponding to the id.
 	 * 
 	 * @param id
@@ -639,49 +682,6 @@ public abstract class StandOutWindow extends Service {
 		for (int id : ids) {
 			close(id);
 		}
-	}
-
-	/**
-	 * Hide a window corresponding to the id. Show a notification for the hidden
-	 * window.
-	 * 
-	 * @param id
-	 *            The id of the window.
-	 */
-	protected final void hide(int id) {
-		// get the hidden notification for this view
-		Notification notification = getHiddenNotification(id);
-
-		if (notification == null) {
-			close(id);
-			return;
-		}
-
-		// get the view corresponding to the id
-		View window = getWrappedView(id);
-
-		if (window == null) {
-			Log.w("StandOutWindow", "Tried to hide(" + id + ") a null view");
-			return;
-		}
-
-		// alert callbacks
-		onHide(id, window);
-
-		((WrappedTag) window.getTag()).shown = false;
-
-		try {
-			// remove the view from the window manager
-			mWindowManager.removeView(window);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-
-		// display the notification
-		notification.flags = notification.flags | Notification.FLAG_NO_CLEAR
-				| Notification.FLAG_AUTO_CANCEL;
-
-		mNotificationManager.notify(id, notification);
 	}
 
 	/**
