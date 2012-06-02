@@ -24,7 +24,7 @@ public class StandOutSimpleWindow extends StandOutWindow {
 	// the window will be 200x200
 	@Override
 	protected LayoutParams getParams(int id, View view) {
-		return new LayoutParams(200, 200, 0, 0, Gravity.CENTER);
+		return new LayoutParams(250, 150, 0, 0, Gravity.CENTER);
 	}
 
 	// move the window by dragging the view
