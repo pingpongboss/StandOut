@@ -54,6 +54,42 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static final String ACTION_HIDE = "HIDE";
 
+	/**
+	 * This default flag indicates that the window requires no window
+	 * decorations (titlebar, hide/close buttons, resize handle, etc)
+	 */
+	public static final int FLAG_DECORATION_NONE = 0x00000000;
+
+	/**
+	 * Setting this flag indicates that the window wants the system provided
+	 * window decorations (titlebar, hide/close buttons, resize handle, etc)
+	 */
+	public static final int FLAG_DECORATION_SYSTEM = 0x00000001;
+
+	/**
+	 * If {@link #FLAG_DECORATION_SYSTEM} is set, this default flag indicates
+	 * that the window decorator should provide a hide button
+	 */
+	public static final int FLAG_DECORATION_HIDE_ENABLE = 0x00000000;
+
+	/**
+	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
+	 * that the window decorator should NOT provide a hide button
+	 */
+	public static final int FLAG_DECORATION_HIDE_DISABLE = 0x00000010;
+
+	/**
+	 * If {@link #FLAG_DECORATION_SYSTEM} is set, this default flag indicates
+	 * that the window decorator should provide a resize handle
+	 */
+	public static final int FLAG_DECORATION_RESIZE_ENABLE = 0x00000000;
+
+	/**
+	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
+	 * that the window decorator should NOT provide a resize handle
+	 */
+	public static final int FLAG_DECORATION_RESIZE_DISABLE = 0x00000100;
+
 	// internal map of ids to shown/hidden views
 	private static WeakHashMap<Integer, View> views;
 
@@ -278,6 +314,22 @@ public abstract class StandOutWindow extends Service {
 	 *         be reused.
 	 */
 	protected abstract StandOutWindow.LayoutParams getParams(int id, View view);
+
+	/**
+	 * Implement this method to change modify the behavior and appearance of the
+	 * window corresponding to the id.
+	 * 
+	 * You may return the bitwise OR of any flags defined in
+	 * {@link StandOutWindow} such as {@link #FLAG_DECORATION_NONE}.
+	 * 
+	 * @param id
+	 *            The unique id of the window.
+	 * @return Bitwise OR'd flags
+	 */
+	protected int getFlags(int id) {
+		return FLAG_DECORATION_NONE | FLAG_DECORATION_HIDE_ENABLE
+				| FLAG_DECORATION_RESIZE_ENABLE;
+	}
 
 	/**
 	 * Return a persistent {@link Notification} for the corresponding id. You
@@ -650,6 +702,35 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * WrappedTag will be attached to views from
+	 * {@link StandOutWindow#getWrappedView(int)}
+	 * 
+	 * @author Mark Wei <markwei@gmail.com>
+	 * 
+	 */
+	public class WrappedTag {
+		/**
+		 * Unique id of the window
+		 */
+		public int id;
+		/**
+		 * Whether the window is shown or hidden/closed
+		 */
+		public boolean shown;
+		/**
+		 * Original tag of the wrapped view
+		 */
+		public Object tag;
+
+		public WrappedTag(int id, boolean shown, Object tag) {
+			super();
+			this.id = id;
+			this.shown = shown;
+			this.tag = tag;
+		}
+	}
+
+	/**
 	 * LayoutParams specific to floating StandOut windows.
 	 * 
 	 * @author Mark Wei <markwei@gmail.com>
@@ -681,35 +762,6 @@ public abstract class StandOutWindow extends Service {
 			x = xpos;
 			y = ypos;
 			gravity = gravityFlag;
-		}
-	}
-
-	/**
-	 * WrappedTag will be attached to views from
-	 * {@link StandOutWindow#getWrappedView(int)}
-	 * 
-	 * @author Mark Wei <markwei@gmail.com>
-	 * 
-	 */
-	public class WrappedTag {
-		/**
-		 * Unique id of the window
-		 */
-		public int id;
-		/**
-		 * Whether the window is shown or hidden/closed
-		 */
-		public boolean shown;
-		/**
-		 * Original tag of the wrapped view
-		 */
-		public Object tag;
-
-		public WrappedTag(int id, boolean shown, Object tag) {
-			super();
-			this.id = id;
-			this.shown = shown;
-			this.tag = tag;
 		}
 	}
 }
