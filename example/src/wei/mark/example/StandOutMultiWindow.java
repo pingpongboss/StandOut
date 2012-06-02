@@ -41,7 +41,8 @@ public class StandOutMultiWindow extends StandOutWindow {
 	// we want the system window decorations, and we want to drag the body
 	@Override
 	protected int getFlags(int id) {
-		return FLAG_DECORATION_SYSTEM | FLAG_BODY_MOVE_ENABLE;
+		return FLAG_DECORATION_SYSTEM | FLAG_BODY_MOVE_ENABLE
+				| FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH;
 	}
 
 	// our persistent notification creates a new window on every click

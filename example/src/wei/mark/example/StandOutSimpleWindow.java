@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -31,14 +32,19 @@ public class StandOutSimpleWindow extends StandOutWindow {
 		return super.getFlags(id) | FLAG_BODY_MOVE_ENABLE;
 	}
 
-	// on tap, hide intead of bring to front
+	// close the window on tap
 	@Override
-	protected boolean onBringToFront(int id, View window) {
-		super.onBringToFront(id, window);
+	protected boolean onTouchBody(int id, View window, View view,
+			MotionEvent event) {
+		WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
 
-		hide(id);
+		if (event.getAction() == MotionEvent.ACTION_UP) {
+			// tap
+			if (touchInfo.deltaX == 0 && touchInfo.deltaY == 0) {
+				hide(id);
+			}
+		}
 
-		// cancel bring to front
 		return true;
 	}
 

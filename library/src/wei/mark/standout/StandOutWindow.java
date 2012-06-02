@@ -116,6 +116,16 @@ public abstract class StandOutWindow extends Service {
 	public static final int FLAG_BODY_MOVE_ENABLE = 0x00000020;
 
 	/**
+	 * Setting this flag indicates that the window should be brought to the
+	 * front upon user interaction.
+	 * 
+	 * <p>
+	 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
+	 * always be moved by dragging the titlebar.
+	 */
+	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 0x00000040;
+
+	/**
 	 * Show a new window corresponding to the id, or restore a previously hidden
 	 * window.
 	 * 
@@ -859,10 +869,12 @@ public abstract class StandOutWindow extends Service {
 				int id = ((WrappedTag) window.getTag()).id;
 				boolean consumed = onTouchBody(id, window, v, event);
 
+				consumed = onTouchWindow(id, window, v, event) || consumed;
+
 				// if set FLAG_BODY_MOVE_ENABLE, move the window
 				if (bodyMoveEnabled) {
-					consumed = consumed
-							|| onTouchHandleMove(id, window, v, event);
+					consumed = onTouchHandleMove(id, window, v, event)
+							|| consumed;
 				}
 
 				return consumed;
@@ -933,7 +945,9 @@ public abstract class StandOutWindow extends Service {
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
 				// handle dragging to move
-				return onTouchHandleMove(id, window, v, event);
+				boolean consumed = onTouchWindow(id, window, v, event);
+				consumed = onTouchHandleMove(id, window, v, event) || consumed;
+				return consumed;
 			}
 		});
 
@@ -1006,6 +1020,21 @@ public abstract class StandOutWindow extends Service {
 		return window;
 	}
 
+	private boolean onTouchWindow(int id, View window, View view,
+			MotionEvent event) {
+		switch (event.getAction()) {
+			case MotionEvent.ACTION_UP:
+				int flags = getFlags(id);
+
+				if ((flags & FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH) != 0) {
+					bringToFront(id);
+				}
+				break;
+		}
+
+		return false;
+	}
+
 	private boolean onTouchHandleMove(int id, View window, View view,
 			MotionEvent event) {
 		WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
@@ -1027,11 +1056,6 @@ public abstract class StandOutWindow extends Service {
 			case MotionEvent.ACTION_UP:
 				touchInfo.x = touchInfo.x + touchInfo.deltaX;
 				touchInfo.y = touchInfo.y + touchInfo.deltaY;
-
-				// tap
-				if (touchInfo.deltaX == 0 && touchInfo.deltaY == 0) {
-					bringToFront(id);
-				}
 
 				touchInfo.deltaX = touchInfo.deltaY = 0;
 				touchInfo.downX = touchInfo.downY = 0;
