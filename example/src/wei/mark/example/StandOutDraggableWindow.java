@@ -30,8 +30,7 @@ public class StandOutDraggableWindow extends StandOutWindow {
 				TextView idText = (TextView) view.findViewById(R.id.id);
 				idText.setText(String.valueOf(id));
 
-				Button closeButton = (Button) view
-						.findViewById(R.id.close_button);
+				Button closeButton = (Button) view.findViewById(R.id.close);
 				closeButton.setOnClickListener(new OnClickListener() {
 
 					@Override
@@ -42,7 +41,7 @@ public class StandOutDraggableWindow extends StandOutWindow {
 				});
 
 				Button minimizeButton = (Button) view
-						.findViewById(R.id.minimize_button);
+						.findViewById(R.id.minimize);
 				minimizeButton.setOnClickListener(new OnClickListener() {
 
 					@Override

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/window"
     android:layout_width="200dp"
     android:layout_height="200dp"
-    android:background="#aa000000"
-    android:orientation="vertical" >
+    android:background="#aa000000" >
 
     <LinearLayout
         android:id="@+id/titlebar"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
         android:background="#000000"
         android:orientation="horizontal" >
 
@@ -22,13 +22,13 @@
             android:text="Title" />
 
         <Button
-            android:id="@+id/minimize_button"
+            android:id="@+id/minimize"
             android:layout_width="30dp"
             android:layout_height="wrap_content"
             android:text="-" />
 
         <Button
-            android:id="@+id/close_button"
+            android:id="@+id/close"
             android:layout_width="30dp"
             android:layout_height="wrap_content"
             android:text="x" />
@@ -38,6 +38,7 @@
         android:id="@+id/body"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/titlebar"
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="4dp"
         android:layout_marginRight="4dp" >
@@ -81,4 +82,4 @@
             android:textStyle="bold" />
     </FrameLayout>
 
-</LinearLayout>
+</RelativeLayout>
