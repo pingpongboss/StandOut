@@ -471,8 +471,8 @@ public abstract class StandOutWindow extends Service {
 
 	/**
 	 * Implement this callback to be alerted when a window corresponding to the
-	 * id is about to be shown. {@link #onShow(int, View)} will occur before the
-	 * view is added to the window manager.
+	 * id is about to be shown. This callback will occur before the view is
+	 * added to the window manager.
 	 * 
 	 * @param id
 	 *            The id of the view, provided as a courtesy.
@@ -480,6 +480,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The view about to be shown.
 	 * @return Return true to cancel the view from being shown, or false to
 	 *         continue.
+	 * @see #show(int)
 	 */
 	protected boolean onShow(int id, View window) {
 		return false;
@@ -487,25 +488,9 @@ public abstract class StandOutWindow extends Service {
 
 	/**
 	 * Implement this callback to be alerted when a window corresponding to the
-	 * id is about to be closed. {@link #onClose(int, View)} will occur before
-	 * the view is removed from the window manager.
-	 * 
-	 * @param id
-	 *            The id of the view, provided as a courtesy.
-	 * @param view
-	 *            The view about to be closed.
-	 * @return Return true to cancel the view from being closed, or false to
-	 *         continue.
-	 */
-	protected boolean onClose(int id, View window) {
-		return false;
-	}
-
-	/**
-	 * Implement this callback to be alerted when a window corresponding to the
-	 * id is about to be hidden. {@link #onClose(int, View)} will occur before
-	 * the view is removed from the window manager and
-	 * {@link #getHiddenNotification(int)} is called.
+	 * id is about to be hidden. This callback will occur before the view is
+	 * removed from the window manager and {@link #getHiddenNotification(int)}
+	 * is called.
 	 * 
 	 * @param id
 	 *            The id of the view, provided as a courtesy.
@@ -513,8 +498,76 @@ public abstract class StandOutWindow extends Service {
 	 *            The view about to be hidden.
 	 * @return Return true to cancel the view from being hidden, or false to
 	 *         continue.
+	 * @see #hide(int)
 	 */
 	protected boolean onHide(int id, View window) {
+		return false;
+	}
+
+	/**
+	 * Implement this callback to be alerted when a window corresponding to the
+	 * id is about to be closed. This callback will occur before the view is
+	 * removed from the window manager.
+	 * 
+	 * @param id
+	 *            The id of the view, provided as a courtesy.
+	 * @param view
+	 *            The view about to be closed.
+	 * @return Return true to cancel the view from being closed, or false to
+	 *         continue.
+	 * @see #close(int)
+	 */
+	protected boolean onClose(int id, View window) {
+		return false;
+	}
+
+	/**
+	 * Implement this callback to be alerted when all windowsare about to be
+	 * closed. This callback will occur before any views are removed from the
+	 * window manager.
+	 * 
+	 * @return Return true to cancel the views from being closed, or false to
+	 *         continue.
+	 * @see #closeAll()
+	 */
+	protected boolean onCloseAll() {
+		return false;
+	}
+
+	/**
+	 * Implement this callback to be alerted when a window corresponding to the
+	 * id is about to be updated in the layout. This callback will occur before
+	 * the view is updated by the window manager.
+	 * 
+	 * @param id
+	 *            The id of the view, provided as a courtesy.
+	 * @param view
+	 *            The view about to be closed.
+	 * @param params
+	 *            The updated layout params.
+	 * @return Return true to cancel the view from being updated, or false to
+	 *         continue.
+	 * @see #updateViewLayout(int, View, LayoutParams)
+	 */
+	protected boolean onUpdate(int id, View window,
+			StandOutWindow.LayoutParams params) {
+		return false;
+	}
+
+	/**
+	 * Implement this callback to be alerted when a window corresponding to the
+	 * id is about to be bought to the front. This callback will occur before
+	 * the view is brought to the front by the window manager.
+	 * 
+	 * @param id
+	 *            The id of the view, provided as a courtesy.
+	 * @param view
+	 *            The view about to be brought to the front.
+	 * @return Return true to cancel the view from being brought to the front,
+	 *         or false to continue.
+	 * @see #bringToFront(int)
+	 */
+	protected boolean onBringToFront(int id, View window) {
 		return false;
 	}
 
@@ -533,10 +586,12 @@ public abstract class StandOutWindow extends Service {
 			return;
 		}
 
-		// alert callbacks
-		onShow(id, window);
+		// alert callbacks and cancel if instructed
+		if (onShow(id, window))
+			return;
 
-		((WrappedTag) window.getTag()).shown = true;
+		WrappedTag tag = (WrappedTag) window.getTag();
+		tag.shown = true;
 
 		// add view to internal map
 		views.put(id, window);
@@ -605,10 +660,12 @@ public abstract class StandOutWindow extends Service {
 			return;
 		}
 
-		// alert callbacks
-		onHide(id, window);
+		// alert callbacks and cancel if instructed
+		if (onHide(id, window))
+			return;
 
-		((WrappedTag) window.getTag()).shown = false;
+		WrappedTag tag = (WrappedTag) window.getTag();
+		tag.shown = false;
 
 		try {
 			// remove the view from the window manager
@@ -639,8 +696,9 @@ public abstract class StandOutWindow extends Service {
 			return;
 		}
 
-		// alert callbacks
-		onClose(id, window);
+		// alert callbacks and cancel if instructed
+		if (onClose(id, window))
+			return;
 
 		WrappedTag tag = (WrappedTag) window.getTag();
 
@@ -673,6 +731,10 @@ public abstract class StandOutWindow extends Service {
 	 * Close all existing windows.
 	 */
 	protected final void closeAll() {
+		// alert callbacks and cancel if instructed
+		if (onCloseAll())
+			return;
+
 		// add ids to temporary set to avoid concurrent modification
 		LinkedList<Integer> ids = new LinkedList<Integer>();
 		for (int id : views.keySet()) {
@@ -692,8 +754,12 @@ public abstract class StandOutWindow extends Service {
 	 * @param params
 	 *            The updated layout params to apply.
 	 */
-	protected final void updateViewLayout(View window,
+	protected final void updateViewLayout(int id, View window,
 			StandOutWindow.LayoutParams params) {
+		// alert callbacks and cancel if instructed
+		if (onUpdate(id, window, params))
+			return;
+
 		if (window == null) {
 			Log.w("StandOutWindow", "Tried to updateViewLayout() a null window");
 			return;
@@ -710,40 +776,23 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window to bring to the front.
 	 */
 	protected final void bringToFront(int id) {
-		View view = getWrappedView(id);
-		StandOutWindow.LayoutParams params = (LayoutParams) view
-				.getLayoutParams();
-		if (params == null) {
-			params = getParams(id, view);
-		}
-
-		bringToFront(view, params);
-	}
-
-	/**
-	 * Bring the window corresponding to this view in front of all other
-	 * windows.
-	 * 
-	 * @param window
-	 *            The view of the window to bring to the front.
-	 * @param params
-	 *            The layout params to apply to the view when re-adding to the
-	 *            window manager, or null to apply the existing layout params
-	 *            from the view
-	 */
-	protected final void bringToFront(View window,
-			StandOutWindow.LayoutParams params) {
+		View window = getWrappedView(id);
 		if (window == null) {
 			Log.w("StandOutWindow", "Tried to bringToFront() a null view");
 			return;
 		}
 
-		mWindowManager.removeView(window);
+		// alert callbacks and cancel if instructed
+		if (onBringToFront(id, window))
+			return;
 
+		StandOutWindow.LayoutParams params = (LayoutParams) window
+				.getLayoutParams();
 		if (params == null) {
-			params = (StandOutWindow.LayoutParams) window.getLayoutParams();
+			params = getParams(id, window);
 		}
 
+		mWindowManager.removeView(window);
 		mWindowManager.addView(window, params);
 	}
 
@@ -879,7 +928,7 @@ public abstract class StandOutWindow extends Service {
 						// update the position of the window
 						params.x = touchInfo.x + touchInfo.deltaX;
 						params.y = touchInfo.y + touchInfo.deltaY;
-						updateViewLayout(window, params);
+						updateViewLayout(id, window, params);
 
 						return true;
 				}
@@ -934,7 +983,7 @@ public abstract class StandOutWindow extends Service {
 								+ touchInfo.deltaX);
 						params.height = Math.max(0, touchInfo.height
 								+ touchInfo.deltaY);
-						updateViewLayout(window, params);
+						updateViewLayout(id, window, params);
 
 						return true;
 				}
@@ -993,14 +1042,17 @@ public abstract class StandOutWindow extends Service {
 		 * Id of the window
 		 */
 		public int id;
+
 		/**
 		 * Whether the window is shown or hidden/closed
 		 */
 		public boolean shown;
+
 		/**
 		 * Touch information of the window
 		 */
 		public WindowTouchInfo touchInfo;
+
 		/**
 		 * Original tag of the wrapped view
 		 */
