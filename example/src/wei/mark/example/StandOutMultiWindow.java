@@ -52,7 +52,7 @@ public class StandOutMultiWindow extends StandOutWindow {
 		int icon = android.R.drawable.ic_menu_add;
 		long when = System.currentTimeMillis();
 		Context c = getApplicationContext();
-		String contentTitle = "StandOutMultiWindow Example";
+		String contentTitle = "Multi Window Example";
 		String contentText = "Click to add a new StandOutMultiWindow.";
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
 
@@ -80,7 +80,7 @@ public class StandOutMultiWindow extends StandOutWindow {
 		int icon = android.R.drawable.ic_menu_info_details;
 		long when = System.currentTimeMillis();
 		Context c = getApplicationContext();
-		String contentTitle = "Hidden StandOutMultiWindow Example";
+		String contentTitle = "Hidden Multi Window Example";
 		String contentText = "Click to restore #" + id + ".";
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
 

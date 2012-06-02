@@ -49,7 +49,7 @@ public class StandOutSimpleWindow extends StandOutWindow {
 		int icon = android.R.drawable.ic_menu_close_clear_cancel;
 		long when = System.currentTimeMillis();
 		Context c = getApplicationContext();
-		String contentTitle = "StandOutSimpleWindow Example";
+		String contentTitle = "Simple Window Example";
 		String contentText = "Click to close the StandOutSimpleWindow.";
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
 

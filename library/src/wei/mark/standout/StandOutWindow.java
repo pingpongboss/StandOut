@@ -1,7 +1,8 @@
 package wei.mark.standout;
 
+import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.WeakHashMap;
+import java.util.Map;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -200,8 +201,11 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static Intent getShowIntent(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
-		String action = mViews.containsKey(id) ? ACTION_RESTORE : ACTION_SHOW;
-		Uri uri = mViews.containsKey(id) ? Uri.parse("standout://" + id) : null;
+		FullId fullId = new FullId(cls, id);
+		String action = sViews.containsKey(fullId) ? ACTION_RESTORE
+				: ACTION_SHOW;
+		Uri uri = sViews.containsKey(fullId) ? Uri.parse("standout://"
+				+ fullId.hashCode()) : null;
 		return new Intent(context, cls).putExtra("id", id).setAction(action)
 				.setData(uri);
 	}
@@ -265,10 +269,11 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	// internal map of ids to shown/hidden views
-	private static WeakHashMap<Integer, View> mViews;
+	private static Map<FullId, View> sViews;
 
+	// static constructors
 	static {
-		mViews = new WeakHashMap<Integer, View>();
+		sViews = new HashMap<FullId, View>();
 	}
 
 	// internal system services
@@ -594,7 +599,7 @@ public abstract class StandOutWindow extends Service {
 		tag.shown = true;
 
 		// add view to internal map
-		mViews.put(id, window);
+		sViews.put(new FullId(getClass(), id), window);
 
 		// get the params corresponding to the id
 		StandOutWindow.LayoutParams params = (LayoutParams) window
@@ -621,7 +626,8 @@ public abstract class StandOutWindow extends Service {
 			// only show notification if not shown before
 			if (!startedForeground) {
 				// tell Android system to show notification
-				startForeground(RESERVED_ID, notification);
+				startForeground(new FullId(getClass(), RESERVED_ID).hashCode(),
+						notification);
 				startedForeground = true;
 			}
 		} else {
@@ -678,7 +684,8 @@ public abstract class StandOutWindow extends Service {
 		notification.flags = notification.flags | Notification.FLAG_NO_CLEAR
 				| Notification.FLAG_AUTO_CANCEL;
 
-		mNotificationManager.notify(id, notification);
+		mNotificationManager.notify(new FullId(getClass(), id).hashCode(),
+				notification);
 	}
 
 	/**
@@ -716,10 +723,10 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// remove view from internal map
-		mViews.remove(id);
+		sViews.remove(new FullId(getClass(), id));
 
 		// if we just released the last view, quit
-		if (mViews.isEmpty()) {
+		if (sViews.isEmpty()) {
 			// tell Android to remove the persistent notification
 			// the Service will be shutdown by the system on low memory
 			startedForeground = false;
@@ -737,9 +744,10 @@ public abstract class StandOutWindow extends Service {
 
 		// add ids to temporary set to avoid concurrent modification
 		LinkedList<Integer> ids = new LinkedList<Integer>();
-		for (int id : mViews.keySet()) {
-			ids.add(id);
+		for (FullId fullId : sViews.keySet()) {
+			ids.add(fullId.id);
 		}
+
 		// close each window
 		for (int id : ids) {
 			close(id);
@@ -814,13 +822,17 @@ public abstract class StandOutWindow extends Service {
 	// and set a WrappedTag to keep track of the id and visibility
 	private View getWrappedView(int id) {
 		// try get the wrapped view from the internal map
-		View cachedView = mViews.get(id);
+		FullId fullId = new FullId(getClass(), id);
+		View cachedView = sViews.get(fullId);
 
 		// if the wrapped view exists, then return it rather than creating one
 		if (cachedView != null) {
+			Log.d("StandOutWindow", "Wrapped view: found cached for " + fullId);
 			return cachedView;
 		}
 
+		Log.d("StandOutWindow", "sViews view: " + sViews.keySet());
+		Log.d("StandOutWindow", "Wrapped view: Creating new view for " + fullId);
 		// create the wrapping frame and body
 		final View window;
 		FrameLayout body;
@@ -898,7 +910,7 @@ public abstract class StandOutWindow extends Service {
 
 			@Override
 			public void onClick(View v) {
-				Log.d("StandOutHelloWorld", "Minimize button clicked");
+				Log.d("StandOutHelloWorld", "Minimize button clicked: " + id);
 				hide(id);
 			}
 		});
@@ -909,7 +921,7 @@ public abstract class StandOutWindow extends Service {
 
 			@Override
 			public void onClick(View v) {
-				Log.d("StandOutHelloWorld", "Close button clicked");
+				Log.d("StandOutHelloWorld", "Close button clicked: " + id);
 				close(id);
 			}
 		});
@@ -1071,6 +1083,12 @@ public abstract class StandOutWindow extends Service {
 		}
 	}
 
+	/**
+	 * This class holds temporal touch and gesture information.
+	 * 
+	 * @author Mark Wei <markwei@gmail.com>
+	 * 
+	 */
 	public class WindowTouchInfo {
 		public int x, y, width, height;
 		public int downX, downY;
@@ -1091,7 +1109,7 @@ public abstract class StandOutWindow extends Service {
 					PixelFormat.TRANSLUCENT);
 
 			width = height = 200;
-			x = y = 50 + (50 * mViews.size()) % 300;
+			x = y = 50 + (50 * sViews.size()) % 300;
 			gravity = Gravity.TOP | Gravity.LEFT;
 		}
 
@@ -1113,6 +1131,36 @@ public abstract class StandOutWindow extends Service {
 			x = xpos;
 			y = ypos;
 			gravity = gravityFlag;
+		}
+	}
+
+	private static class FullId {
+		public Class<? extends StandOutWindow> cls;
+		public int id;
+
+		public FullId(Class<? extends StandOutWindow> cls, int id) {
+			super();
+			this.cls = cls;
+			this.id = id;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o instanceof FullId) {
+				FullId other = (FullId) o;
+				return this.cls.equals(other.cls) && this.id == other.id;
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return cls.hashCode() + id;
+		}
+
+		@Override
+		public String toString() {
+			return String.format("[%s: %s]", cls.getSimpleName(), id);
 		}
 	}
 }
