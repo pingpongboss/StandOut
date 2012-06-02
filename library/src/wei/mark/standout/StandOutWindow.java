@@ -23,6 +23,9 @@ import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 
 /**
@@ -121,8 +124,9 @@ public abstract class StandOutWindow extends Service {
 	 * front upon user interaction.
 	 * 
 	 * <p>
-	 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
-	 * always be moved by dragging the titlebar.
+	 * Note that if you set this flag, there is a noticeable flashing of the
+	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
+	 * the system to bring the window to the front.
 	 */
 	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 0x00000040;
 
@@ -636,6 +640,11 @@ public abstract class StandOutWindow extends Service {
 		try {
 			// add the view to the window manager
 			mWindowManager.addView(window, params);
+
+			// animate
+			Animation animation = AnimationUtils.loadAnimation(this,
+					android.R.anim.fade_in);
+			((ViewGroup) window).getChildAt(0).startAnimation(animation);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -684,7 +693,7 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// get the view corresponding to the id
-		View window = getWrappedView(id);
+		final View window = getWrappedView(id);
 
 		if (window == null) {
 			Log.w("StandOutWindow", "Tried to hide(" + id + ") a null view");
@@ -699,8 +708,26 @@ public abstract class StandOutWindow extends Service {
 		tag.shown = false;
 
 		try {
-			// remove the view from the window manager
-			mWindowManager.removeView(window);
+			// animate
+			Animation animation = AnimationUtils.loadAnimation(this,
+					android.R.anim.fade_out);
+			animation.setAnimationListener(new AnimationListener() {
+
+				@Override
+				public void onAnimationStart(Animation animation) {
+				}
+
+				@Override
+				public void onAnimationRepeat(Animation animation) {
+				}
+
+				@Override
+				public void onAnimationEnd(Animation animation) {
+					// remove the view from the window manager
+					mWindowManager.removeView(window);
+				}
+			});
+			((ViewGroup) window).getChildAt(0).startAnimation(animation);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -720,7 +747,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected final void close(int id) {
 		// get the view corresponding to the id
-		View window = getWrappedView(id);
+		final View window = getWrappedView(id);
 
 		if (window == null) {
 			Log.w("StandOutWindow", "Tried to close(" + id + ") a null view");
@@ -735,8 +762,26 @@ public abstract class StandOutWindow extends Service {
 
 		if (tag.shown) {
 			try {
-				// remove the view from the window manager
-				mWindowManager.removeView(window);
+				// animate
+				Animation animation = AnimationUtils.loadAnimation(this,
+						android.R.anim.fade_out);
+				animation.setAnimationListener(new AnimationListener() {
+
+					@Override
+					public void onAnimationStart(Animation animation) {
+					}
+
+					@Override
+					public void onAnimationRepeat(Animation animation) {
+					}
+
+					@Override
+					public void onAnimationEnd(Animation animation) {
+						// remove the view from the window manager
+						mWindowManager.removeView(window);
+					}
+				});
+				((ViewGroup) window).getChildAt(0).startAnimation(animation);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -860,20 +905,23 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// create the wrapping frame and body
-		final View window;
+		final FrameLayout window = new FrameLayout(this);
+		View content;
 		FrameLayout body;
 
 		int flags = getFlags(id);
 
 		if ((flags & FLAG_DECORATION_SYSTEM) != 0) {
 			// requested system window decorations
-			window = getSystemWindow(id);
-			body = (FrameLayout) window.findViewById(R.id.body);
+			content = getSystemWindow(id);
+			body = (FrameLayout) content.findViewById(R.id.body);
 		} else {
 			// did not request decorations. will provide own implementation
-			window = new FrameLayout(this);
-			body = (FrameLayout) window;
+			content = new FrameLayout(this);
+			body = (FrameLayout) content;
 		}
+
+		window.addView(content);
 
 		// body should always send touch events to onTouchBody()
 		final boolean bodyMoveEnabled = (flags & FLAG_BODY_MOVE_ENABLE) != 0;
