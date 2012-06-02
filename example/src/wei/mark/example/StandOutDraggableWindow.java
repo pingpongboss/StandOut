@@ -64,8 +64,8 @@ public class StandOutDraggableWindow extends StandOutWindow {
 	protected LayoutParams getParams(int id, View view) {
 		CustomTag tag = (CustomTag) ((WrappedTag) view.getTag()).tag;
 
-		return new LayoutParams(tag.x + tag.deltaX, tag.y + tag.deltaY,
-				Gravity.TOP | Gravity.LEFT);
+		return new LayoutParams(200, 200, tag.x + tag.deltaX, tag.y
+				+ tag.deltaY, Gravity.TOP | Gravity.LEFT);
 	}
 
 	@Override

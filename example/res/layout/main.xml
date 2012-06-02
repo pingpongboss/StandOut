@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/window"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+    android:layout_width="200dp"
+    android:layout_height="200dp"
     android:background="#aa000000"
-    android:orientation="vertical">
+    android:orientation="vertical" >
 
     <LinearLayout
         android:id="@+id/titlebar"
@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
             android:layout_weight="1"
-            android:text="Title - Drag Me" />
+            android:text="Title" />
 
         <Button
             android:id="@+id/minimize_button"
@@ -36,7 +36,7 @@
 
     <FrameLayout
         android:id="@+id/body"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="4dp"
@@ -44,8 +44,8 @@
 
         <LinearLayout
             android:id="@+id/background"
-            android:layout_width="200dp"
-            android:layout_height="100dp" >
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" >
 
             <View
                 android:id="@+id/View02"
@@ -75,8 +75,10 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="id"
-            android:textAppearance="?android:attr/textAppearanceLarge" android:textStyle="bold" android:textSize="50sp" android:textColor="#000000"/>
-
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="#000000"
+            android:textSize="50sp"
+            android:textStyle="bold" />
     </FrameLayout>
 
 </LinearLayout>
