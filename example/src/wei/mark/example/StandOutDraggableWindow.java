@@ -10,8 +10,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 /**
@@ -21,37 +20,14 @@ import android.widget.TextView;
 public class StandOutDraggableWindow extends StandOutWindow {
 
 	@Override
-	protected View createView(final int id) {
+	protected View createAndAttachView(int id, ViewGroup root) {
 		switch (id) {
 			default:
 				LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-				View view = inflater.inflate(R.layout.main, null);
+				View view = inflater.inflate(R.layout.body, root, true);
 
 				TextView idText = (TextView) view.findViewById(R.id.id);
 				idText.setText(String.valueOf(id));
-
-				Button closeButton = (Button) view.findViewById(R.id.close);
-				closeButton.setOnClickListener(new OnClickListener() {
-
-					@Override
-					public void onClick(View v) {
-						Log.d("StandOutHelloWorld", "Close button clicked");
-						close(id);
-					}
-				});
-
-				Button minimizeButton = (Button) view
-						.findViewById(R.id.minimize);
-				minimizeButton.setOnClickListener(new OnClickListener() {
-
-					@Override
-					public void onClick(View v) {
-						Log.d("StandOutHelloWorld", "Minimize button clicked");
-						hide(id);
-					}
-				});
-
-				view.setTag(new CustomTag(id));
 
 				return view;
 		}
@@ -61,43 +37,33 @@ public class StandOutDraggableWindow extends StandOutWindow {
 
 	@Override
 	protected LayoutParams getParams(int id, View view) {
-		CustomTag tag = (CustomTag) ((WrappedTag) view.getTag()).tag;
+		WindowTouchInfo touchInfo = ((WrappedTag) view.getTag()).touchInfo;
 
-		return new LayoutParams(200, 200, tag.x + tag.deltaX, tag.y
-				+ tag.deltaY, Gravity.TOP | Gravity.LEFT);
+		return new LayoutParams(200, 200, touchInfo.x, touchInfo.y, Gravity.TOP
+				| Gravity.LEFT);
 	}
 
 	@Override
-	protected boolean onTouch(int id, View view, MotionEvent event) {
+	protected int getFlags(int id) {
+		return super.getFlags(id) | FLAG_DECORATION_SYSTEM;
+	}
+
+	@Override
+	protected boolean onTouch(int id, View window, View view, MotionEvent event) {
 		switch (id) {
 			default:
-				CustomTag tag = (CustomTag) ((WrappedTag) view.getTag()).tag;
-
-				int action = event.getAction();
-				if (action == MotionEvent.ACTION_DOWN) {
-					tag.downX = (int) event.getRawX();
-					tag.downY = (int) event.getRawY();
-					tag.deltaX = tag.deltaY = 0;
-				} else if (action == MotionEvent.ACTION_MOVE) {
-					tag.deltaX = (int) event.getRawX() - tag.downX;
-					tag.deltaY = (int) event.getRawY() - tag.downY;
-				} else if (action == MotionEvent.ACTION_UP) {
-					tag.x = tag.x + tag.deltaX;
-					tag.y = tag.y + tag.deltaY;
-
-					// tap
-					if (tag.deltaX == 0 && tag.deltaY == 0) {
-						bringToFront(id);
-					}
-
-					tag.deltaX = tag.deltaY = 0;
-					tag.downX = tag.x;
-					tag.downY = tag.y;
-				}
 				Log.d("StandOutHelloWorld", "Handle touch: " + event);
 
-				updateViewLayout(id);
+				switch (event.getAction()) {
+					case MotionEvent.ACTION_UP:
+						WindowTouchInfo touchInfo = ((WrappedTag) window
+								.getTag()).touchInfo;
 
+						// tap
+						if (touchInfo.deltaX == 0 && touchInfo.deltaY == 0) {
+							bringToFront(id);
+						}
+				}
 				return true;
 		}
 	}
@@ -155,16 +121,5 @@ public class StandOutDraggableWindow extends StandOutWindow {
 		this.nextId = Math.max(this.nextId, id) + 1;
 
 		return false;
-	}
-
-	private class CustomTag {
-		private int x, y;
-		private int downX, downY;
-		private int deltaX, deltaY;
-
-		public CustomTag(int id) {
-			x = 50 + (50 * id) % 300;
-			y = 50 + (50 * id) % 300;
-		}
 	}
 }
