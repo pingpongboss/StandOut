@@ -15,6 +15,7 @@ import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -1309,7 +1310,10 @@ public abstract class StandOutWindow extends Service {
 					PixelFormat.TRANSLUCENT);
 
 			width = height = 200;
-			x = y = 50 + (50 * getCacheSize()) % 300;
+
+			x = getX(width);
+			y = getY(height);
+
 			gravity = Gravity.TOP | Gravity.LEFT;
 		}
 
@@ -1317,6 +1321,9 @@ public abstract class StandOutWindow extends Service {
 			this();
 			width = w;
 			height = h;
+
+			x = getX(width);
+			y = getY(height);
 		}
 
 		public LayoutParams(int w, int h, int xpos, int ypos, int gravityFlag) {
@@ -1331,6 +1338,23 @@ public abstract class StandOutWindow extends Service {
 			x = xpos;
 			y = ypos;
 			gravity = gravityFlag;
+		}
+
+		private int getX(int width) {
+			Display display = mWindowManager.getDefaultDisplay();
+			int displayWidth = display.getWidth();
+
+			return (100 * getCacheSize()) % (displayWidth - width);
+		}
+
+		private int getY(int height) {
+			Display display = mWindowManager.getDefaultDisplay();
+			int displayWidth = display.getWidth();
+			int displayHeight = display.getHeight();
+
+			return (x + 200 * (100 * getCacheSize())
+					/ (displayWidth - width))
+					% (displayHeight - height);
 		}
 	}
 }
