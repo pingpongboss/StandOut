@@ -8,6 +8,17 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 /**
+ * This implementation provides multiple windows. You may extend this class or
+ * use it as a reference for a basic foundation for your own windows.
+ * 
+ * <p>
+ * Functionality includes system window decorators, moveable, resizeable,
+ * hideable, closeable, and bring-to-frontable.
+ * 
+ * <p>
+ * The persistent notification creates new windows. The hidden notifications
+ * restores previously hidden windows.
+ * 
  * @author Mark Wei <markwei@gmail.com>
  * 
  */
@@ -23,7 +34,6 @@ public class StandOutMultiWindow extends StandOutWindow {
 		return android.R.drawable.ic_menu_add;
 	}
 
-	// we need to create a view for the window body
 	@Override
 	protected View createAndAttachView(int id, ViewGroup root) {
 		switch (id) {
@@ -45,7 +55,9 @@ public class StandOutMultiWindow extends StandOutWindow {
 		return new LayoutParams(400, 300);
 	}
 
-	// we want the system window decorations, and we want to drag the body
+	// we want the system window decorations, we want to drag the body, we want
+	// the ability to hide windows, and we want to tap the window to bring to
+	// front
 	@Override
 	protected int getFlags(int id) {
 		return FLAG_DECORATION_SYSTEM | FLAG_BODY_MOVE_ENABLE
@@ -62,6 +74,7 @@ public class StandOutMultiWindow extends StandOutWindow {
 		return "Click to add a new " + getAppName();
 	}
 
+	// return an Intent that creates a new MultiWindow
 	@Override
 	protected Intent getPersistentNotificationIntent(int id) {
 		return StandOutWindow.getShowIntent(this, StandOutMultiWindow.class,
@@ -83,6 +96,7 @@ public class StandOutMultiWindow extends StandOutWindow {
 		return "Click to restore #" + id;
 	}
 
+	// return an Intent that restores the MultiWindow
 	@Override
 	protected Intent getHiddenNotificationIntent(int id) {
 		return StandOutWindow

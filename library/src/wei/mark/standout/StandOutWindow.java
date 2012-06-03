@@ -491,7 +491,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return The message for the persistent notification.
 	 */
 	protected String getPersistentNotificationMessage(int id) {
-		return null;
+		return "";
 	}
 
 	/**
@@ -542,7 +542,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return The message for the hidden notification.
 	 */
 	protected String getHiddenNotificationMessage(int id) {
-		return null;
+		return "";
 	}
 
 	/**

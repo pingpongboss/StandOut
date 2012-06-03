@@ -12,9 +12,13 @@ public class StandOutExampleActivity extends Activity {
 
 		StandOutWindow.closeAll(this, StandOutMultiWindow.class);
 
+		// show a MultiWindow, SimpleWindow, and MostBasicWindow
+		
 		StandOutWindow.show(this, StandOutSimpleWindow.class,
 				StandOutWindow.DEFAULT_ID);
 		StandOutWindow.show(this, StandOutMultiWindow.class,
+				StandOutWindow.DEFAULT_ID);
+		StandOutWindow.show(this, StandOutMostBasicWindow.class,
 				StandOutWindow.DEFAULT_ID);
 
 		finish();

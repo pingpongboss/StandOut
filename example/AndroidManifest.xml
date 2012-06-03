@@ -21,6 +21,7 @@
         </activity>
         <service android:name=".StandOutMultiWindow"></service>
         <service android:name="StandOutSimpleWindow"></service>
+        <service android:name="StandOutMostBasicWindow"></service>
     </application>
 
 </manifest>
