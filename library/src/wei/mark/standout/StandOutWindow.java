@@ -44,7 +44,7 @@ public abstract class StandOutWindow extends Service {
 	/**
 	 * StandOut window id: You may NOT use this id for any windows.
 	 */
-	public static final int RESERVED_ID = -1;
+	public static final int ONGOING_NOTIFICATION_ID = -1;
 
 	/**
 	 * Intent action: Show a new window corresponding to the id.
@@ -342,7 +342,7 @@ public abstract class StandOutWindow extends Service {
 			Log.d("StandOutWindow", "Intent id: " + id);
 
 			// this will interfere with getPersistentNotification()
-			if (id == RESERVED_ID) {
+			if (id == ONGOING_NOTIFICATION_ID) {
 				throw new RuntimeException(
 						"ID cannot equals StandOutWindow.RESERVED_ID");
 			}
@@ -373,6 +373,10 @@ public abstract class StandOutWindow extends Service {
 		// closes all windows
 		closeAll();
 	}
+
+	// protected abstract int getIcon(int id);
+	//
+	// protected abstract String getTitle(int id);
 
 	/**
 	 * Create a new {@link View} corresponding to the id, and add it as a child
@@ -661,9 +665,14 @@ public abstract class StandOutWindow extends Service {
 			// only show notification if not shown before
 			if (!startedForeground) {
 				// tell Android system to show notification
-				startForeground(getClass().hashCode() + RESERVED_ID,
+				startForeground(
+						getClass().hashCode() + ONGOING_NOTIFICATION_ID,
 						notification);
 				startedForeground = true;
+			} else {
+				// update notification if shown before
+				mNotificationManager.notify(getClass().hashCode()
+						+ ONGOING_NOTIFICATION_ID, notification);
 			}
 		} else {
 			// notification can only be null if it was provided before
