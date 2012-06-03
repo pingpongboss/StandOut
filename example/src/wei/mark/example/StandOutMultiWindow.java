@@ -1,9 +1,6 @@
 package wei.mark.example;
 
 import wei.mark.standout.StandOutWindow;
-import android.app.Notification;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +12,16 @@ import android.widget.TextView;
  * 
  */
 public class StandOutMultiWindow extends StandOutWindow {
+
+	@Override
+	protected String getAppName(int id) {
+		return "MultiWindow";
+	}
+
+	@Override
+	protected int getAppIcon(int id) {
+		return android.R.drawable.ic_menu_add;
+	}
 
 	// we need to create a view for the window body
 	@Override
@@ -32,69 +39,53 @@ public class StandOutMultiWindow extends StandOutWindow {
 		}
 	}
 
-	// every window is initially 200x200
+	// every window is initially same size
 	@Override
 	protected LayoutParams getParams(int id, View view) {
-		return new LayoutParams(200, 200);
+		return new LayoutParams(400, 300);
 	}
 
 	// we want the system window decorations, and we want to drag the body
 	@Override
 	protected int getFlags(int id) {
 		return FLAG_DECORATION_SYSTEM | FLAG_BODY_MOVE_ENABLE
-				| FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH;
+				| FLAG_HIDE_ENABLE | FLAG_WINDOW_BRING_TO_FRONT_ON_TAP;
 	}
 
-	// our persistent notification creates a new window on every click
 	@Override
-	protected Notification getPersistentNotification(int id) {
-		// basic notification stuff
-		// http://developer.android.com/guide/topics/ui/notifiers/notifications.html
-		int icon = android.R.drawable.ic_menu_add;
-		long when = System.currentTimeMillis();
-		Context c = getApplicationContext();
-		String contentTitle = "Multi Window Example";
-		String contentText = "Click to add a new StandOutMultiWindow.";
-		String tickerText = String.format("%s: %s", contentTitle, contentText);
-
-		// getPersistentNotification() is called for every new window
-		// so we replace the old notification with a new one that has
-		// a bigger id
-		Intent notificationIntent = StandOutWindow.getShowIntent(this,
-				StandOutMultiWindow.class, id + 1);
-
-		PendingIntent contentIntent = PendingIntent.getService(this, 0,
-				notificationIntent,
-				// flag updates existing persistent notification
-				PendingIntent.FLAG_UPDATE_CURRENT);
-
-		Notification notification = new Notification(icon, tickerText, when);
-		notification.setLatestEventInfo(c, contentTitle, contentText,
-				contentIntent);
-		return notification;
+	protected String getPersistentNotificationTitle(int id) {
+		return getAppName(id) + " Running";
 	}
 
-	// each hidden notification will restore the hidden window
 	@Override
-	protected Notification getHiddenNotification(int id) {
-		// same basics as getPersistentNotification()
-		int icon = android.R.drawable.ic_menu_info_details;
-		long when = System.currentTimeMillis();
-		Context c = getApplicationContext();
-		String contentTitle = "Hidden Multi Window Example";
-		String contentText = "Click to restore #" + id + ".";
-		String tickerText = String.format("%s: %s", contentTitle, contentText);
+	protected String getPersistentNotificationMessage(int id) {
+		return "Click to add a new " + getAppName(id);
+	}
 
-		// the difference here is we are providing the same id
-		Intent notificationIntent = StandOutWindow.getShowIntent(this,
-				StandOutMultiWindow.class, id);
+	@Override
+	protected Intent getPersistentNotificationIntent(int id) {
+		return StandOutWindow.getShowIntent(this, StandOutMultiWindow.class,
+				getUniqueId());
+	}
 
-		PendingIntent contentIntent = PendingIntent.getService(this, 0,
-				notificationIntent, 0);
+	@Override
+	protected int getHiddenIcon(int id) {
+		return android.R.drawable.ic_menu_info_details;
+	}
 
-		Notification notification = new Notification(icon, tickerText, when);
-		notification.setLatestEventInfo(c, contentTitle, contentText,
-				contentIntent);
-		return notification;
+	@Override
+	protected String getHiddenNotificationTitle(int id) {
+		return getAppName(id) + " Hidden";
+	}
+
+	@Override
+	protected String getHiddenNotificationMessage(int id) {
+		return "Click to restore #" + id;
+	}
+
+	@Override
+	protected Intent getHiddenNotificationIntent(int id) {
+		return StandOutWindow
+				.getShowIntent(this, StandOutMultiWindow.class, id);
 	}
 }

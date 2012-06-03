@@ -28,6 +28,8 @@ import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 /**
  * Extend this class to easily create and manage floating StandOut windows.
@@ -42,7 +44,7 @@ public abstract class StandOutWindow extends Service {
 	public static final int DEFAULT_ID = 0;
 
 	/**
-	 * StandOut window id: You may NOT use this id for any windows.
+	 * Special StandOut window id: You may NOT use this id for any windows.
 	 */
 	public static final int ONGOING_NOTIFICATION_ID = -1;
 
@@ -84,31 +86,25 @@ public abstract class StandOutWindow extends Service {
 	 * Setting this flag indicates that the window wants the system provided
 	 * window decorations (titlebar, hide/close buttons, resize handle, etc).
 	 */
-	public static final int FLAG_DECORATION_SYSTEM = 0x00000001;
-
-	/**
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
-	 * that the window decorator should NOT provide a hide button.
-	 */
-	public static final int FLAG_DECORATION_HIDE_DISABLE = 0x00000002;
+	public static final int FLAG_DECORATION_SYSTEM = 0x00000100;
 
 	/**
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
 	 * that the window decorator should NOT provide a close button.
 	 */
-	public static final int FLAG_DECORATION_CLOSE_DISABLE = 0x00000004;
+	public static final int FLAG_DECORATION_CLOSE_DISABLE = 0x00000200;
 
 	/**
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
 	 * that the window decorator should NOT provide a resize handle.
 	 */
-	public static final int FLAG_DECORATION_RESIZE_DISABLE = 0x00000008;
+	public static final int FLAG_DECORATION_RESIZE_DISABLE = 0x00000400;
 
 	/**
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
 	 * that the window decorator should NOT provide a resize handle.
 	 */
-	public static final int FLAG_DECORATION_MOVE_DISABLE = 0x00000010;
+	public static final int FLAG_DECORATION_MOVE_DISABLE = 0x00000800;
 
 	/**
 	 * Setting this flag indicates that the window can be moved by dragging the
@@ -118,7 +114,7 @@ public abstract class StandOutWindow extends Service {
 	 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
 	 * always be moved by dragging the titlebar.
 	 */
-	public static final int FLAG_BODY_MOVE_ENABLE = 0x00000020;
+	public static final int FLAG_BODY_MOVE_ENABLE = 0x00001000;
 
 	/**
 	 * Setting this flag indicates that the window should be brought to the
@@ -129,7 +125,27 @@ public abstract class StandOutWindow extends Service {
 	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
 	 * the system to bring the window to the front.
 	 */
-	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 0x00000040;
+	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 0x00002001;
+
+	/**
+	 * Setting this flag indicates that the window should be brought to the
+	 * front upon user tap.
+	 * 
+	 * <p>
+	 * Note that if you set this flag, there is a noticeable flashing of the
+	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
+	 * the system to bring the window to the front.
+	 */
+	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 0x00004002;
+
+	/**
+	 * Setting this flag indicates that windows are able to be hidden, that
+	 * {@link #getHiddenIcon(int)}, {@link #getHiddenTitle(int)}, and
+	 * {@link #getHiddenMessage(int)} are implemented, and that the system
+	 * window decorator should provide a hide button if
+	 * {@link #FLAG_DECORATION_SYSTEM} is set.
+	 */
+	public static final int FLAG_HIDE_ENABLE = 0x00008000;
 
 	/**
 	 * Show a new window corresponding to the id, or restore a previously hidden
@@ -220,6 +236,8 @@ public abstract class StandOutWindow extends Service {
 		boolean cached = isCached(cls, id);
 		String action = cached ? ACTION_RESTORE : ACTION_SHOW;
 		Uri uri = cached ? Uri.parse("standout://" + cls + '/' + id) : null;
+		Log.d("StandOutWindow", "getShowIntent() gets "
+				+ (cached ? "restore" : "show"));
 		return new Intent(context, cls).putExtra("id", id).setAction(action)
 				.setData(uri);
 	}
@@ -374,9 +392,9 @@ public abstract class StandOutWindow extends Service {
 		closeAll();
 	}
 
-	// protected abstract int getIcon(int id);
-	//
-	// protected abstract String getTitle(int id);
+	protected abstract String getAppName(int id);
+
+	protected abstract int getAppIcon(int id);
 
 	/**
 	 * Create a new {@link View} corresponding to the id, and add it as a child
@@ -438,6 +456,34 @@ public abstract class StandOutWindow extends Service {
 		return FLAG_DECORATION_NONE;
 	}
 
+	protected String getPersistentNotificationTitle(int id) {
+		return getAppName(id) + " Running";
+	}
+
+	protected String getPersistentNotificationMessage(int id) {
+		return null;
+	}
+
+	protected Intent getPersistentNotificationIntent(int id) {
+		return null;
+	}
+
+	protected int getHiddenIcon(int id) {
+		return getAppIcon(id);
+	}
+
+	protected String getHiddenNotificationTitle(int id) {
+		return getAppName(id) + " Hidden";
+	}
+
+	protected String getHiddenNotificationMessage(int id) {
+		return null;
+	}
+
+	protected Intent getHiddenNotificationIntent(int id) {
+		return null;
+	}
+
 	/**
 	 * Return a persistent {@link Notification} for the corresponding id. You
 	 * must return a notification for AT LEAST the first id to be requested.
@@ -462,7 +508,35 @@ public abstract class StandOutWindow extends Service {
 	 * @return The {@link Notification} corresponding to the id, or null if
 	 *         you've previously returned a notification.
 	 */
-	protected abstract Notification getPersistentNotification(int id);
+	protected Notification getPersistentNotification(int id) {
+		// basic notification stuff
+		// http://developer.android.com/guide/topics/ui/notifiers/notifications.html
+		int icon = getAppIcon(id);
+		long when = System.currentTimeMillis();
+		Context c = getApplicationContext();
+		String contentTitle = getPersistentNotificationTitle(id);
+		String contentText = getPersistentNotificationMessage(id);
+		String tickerText = String.format("%s: %s", contentTitle, contentText);
+
+		// getPersistentNotification() is called for every new window
+		// so we replace the old notification with a new one that has
+		// a bigger id
+		Intent notificationIntent = getPersistentNotificationIntent(id);
+
+		PendingIntent contentIntent = null;
+
+		if (notificationIntent != null) {
+			contentIntent = PendingIntent.getService(this, 0,
+					notificationIntent,
+					// flag updates existing persistent notification
+					PendingIntent.FLAG_UPDATE_CURRENT);
+		}
+
+		Notification notification = new Notification(icon, tickerText, when);
+		notification.setLatestEventInfo(c, contentTitle, contentText,
+				contentIntent);
+		return notification;
+	}
 
 	/**
 	 * Return a hidden {@link Notification} for the corresponding id. The system
@@ -482,7 +556,30 @@ public abstract class StandOutWindow extends Service {
 	 * @return The {@link Notification} corresponding to the id or null.
 	 */
 	protected Notification getHiddenNotification(int id) {
-		return null;
+		// same basics as getPersistentNotification()
+		int icon = getHiddenIcon(id);
+		long when = System.currentTimeMillis();
+		Context c = getApplicationContext();
+		String contentTitle = getHiddenNotificationTitle(id);
+		String contentText = getHiddenNotificationMessage(id);
+		String tickerText = String.format("%s: %s", contentTitle, contentText);
+
+		// the difference here is we are providing the same id
+		Intent notificationIntent = getHiddenNotificationIntent(id);
+
+		PendingIntent contentIntent = null;
+
+		if (notificationIntent != null) {
+			contentIntent = PendingIntent.getService(this, 0,
+					notificationIntent,
+					// flag updates existing persistent notification
+					PendingIntent.FLAG_UPDATE_CURRENT);
+		}
+
+		Notification notification = new Notification(icon, tickerText, when);
+		notification.setLatestEventInfo(c, contentTitle, contentText,
+				contentIntent);
+		return notification;
 	}
 
 	/**
@@ -497,14 +594,16 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id of the view, provided as a courtesy.
 	 * @param window
-	 *            The window corresponding to the id.
+	 *            The window corresponding to the id, provided as a courtesy.
+	 * @param touchInfo
+	 *            The touch information of the window, provided as a courtesy.
 	 * @param view
 	 *            The view where the event originated from.
 	 * @param event
 	 *            See linked method.
 	 */
-	protected boolean onTouchBody(int id, View window, View view,
-			MotionEvent event) {
+	protected boolean onTouchBody(int id, View window,
+			WindowTouchInfo touchInfo, View view, MotionEvent event) {
 		return false;
 	}
 
@@ -694,59 +793,64 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 */
 	protected final void hide(int id) {
-		// get the hidden notification for this view
-		Notification notification = getHiddenNotification(id);
+		int flags = getFlags(id);
 
-		if (notification == null) {
+		// check if hide enabled
+		if ((flags & FLAG_HIDE_ENABLE) != 0) {
+			// get the hidden notification for this view
+			Notification notification = getHiddenNotification(id);
+
+			// get the view corresponding to the id
+			final View window = getWrappedView(id);
+
+			if (window == null) {
+				Log.w("StandOutWindow", "Tried to hide(" + id + ") a null view");
+				return;
+			}
+
+			// alert callbacks and cancel if instructed
+			if (onHide(id, window))
+				return;
+
+			WrappedTag tag = (WrappedTag) window.getTag();
+			tag.shown = false;
+
+			try {
+				// animate
+				Animation animation = AnimationUtils.loadAnimation(this,
+						android.R.anim.fade_out);
+				animation.setAnimationListener(new AnimationListener() {
+
+					@Override
+					public void onAnimationStart(Animation animation) {
+					}
+
+					@Override
+					public void onAnimationRepeat(Animation animation) {
+					}
+
+					@Override
+					public void onAnimationEnd(Animation animation) {
+						// remove the view from the window manager
+						mWindowManager.removeView(window);
+					}
+				});
+				((ViewGroup) window).getChildAt(0).startAnimation(animation);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+
+			// display the notification
+			notification.flags = notification.flags
+					| Notification.FLAG_NO_CLEAR
+					| Notification.FLAG_AUTO_CANCEL;
+
+			mNotificationManager.notify(getClass().hashCode() + id,
+					notification);
+		} else {
+			// if hide not enabled, close window
 			close(id);
-			return;
 		}
-
-		// get the view corresponding to the id
-		final View window = getWrappedView(id);
-
-		if (window == null) {
-			Log.w("StandOutWindow", "Tried to hide(" + id + ") a null view");
-			return;
-		}
-
-		// alert callbacks and cancel if instructed
-		if (onHide(id, window))
-			return;
-
-		WrappedTag tag = (WrappedTag) window.getTag();
-		tag.shown = false;
-
-		try {
-			// animate
-			Animation animation = AnimationUtils.loadAnimation(this,
-					android.R.anim.fade_out);
-			animation.setAnimationListener(new AnimationListener() {
-
-				@Override
-				public void onAnimationStart(Animation animation) {
-				}
-
-				@Override
-				public void onAnimationRepeat(Animation animation) {
-				}
-
-				@Override
-				public void onAnimationEnd(Animation animation) {
-					// remove the view from the window manager
-					mWindowManager.removeView(window);
-				}
-			});
-			((ViewGroup) window).getChildAt(0).startAnimation(animation);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-
-		// display the notification
-		notification.flags = notification.flags | Notification.FLAG_NO_CLEAR
-				| Notification.FLAG_AUTO_CANCEL;
-
-		mNotificationManager.notify(getClass().hashCode() + id, notification);
 	}
 
 	/**
@@ -897,6 +1001,25 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Gets a unique id to assign to a new window.
+	 * 
+	 * @return The unique id.
+	 */
+	protected final int getUniqueId() {
+		Map<Integer, View> l2 = sViews.get(getClass());
+		if (l2 == null) {
+			l2 = new HashMap<Integer, View>();
+			sViews.put(getClass(), l2);
+		}
+
+		int unique = DEFAULT_ID;
+		for (int id : l2.keySet()) {
+			unique = Math.max(unique, id + 1);
+		}
+		return unique;
+	}
+
+	/**
 	 * Wraps the view from getView() into a frame that is easier to manage. The
 	 * frame allows us to pass touch input to implementations and set a
 	 * {@link WrappedTag} to keep track of the id, visibility, etc.
@@ -941,15 +1064,19 @@ public abstract class StandOutWindow extends Service {
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
 				// pass all touch events to the implementation
-				int id = ((WrappedTag) window.getTag()).id;
-				boolean consumed = onTouchBody(id, window, v, event);
+				WrappedTag tag = (WrappedTag) window.getTag();
+				int id = tag.id;
+				WindowTouchInfo touchInfo = tag.touchInfo;
 
-				consumed = onTouchWindow(id, window, v, event) || consumed;
+				boolean consumed = onTouchBody(id, window, touchInfo, v, event);
+
+				consumed = onTouchWindow(id, window, touchInfo, v, event)
+						|| consumed;
 
 				// if set FLAG_BODY_MOVE_ENABLE, move the window
 				if (bodyMoveEnabled) {
-					consumed = onTouchHandleMove(id, window, v, event)
-							|| consumed;
+					consumed = onTouchHandleMove(id, window, touchInfo, v,
+							event) || consumed;
 				}
 
 				return consumed;
@@ -991,6 +1118,14 @@ public abstract class StandOutWindow extends Service {
 	private View getSystemWindowContent(final int id) {
 		final View content = mLayoutInflater.inflate(R.layout.window, null);
 
+		// icon
+		ImageView icon = (ImageView) content.findViewById(R.id.icon);
+		icon.setImageResource(getAppIcon(id));
+
+		// title
+		TextView title = (TextView) content.findViewById(R.id.title);
+		title.setText(getAppName(id));
+
 		// hide
 		View hide = content.findViewById(R.id.hide);
 		hide.setOnClickListener(new OnClickListener() {
@@ -1001,6 +1136,7 @@ public abstract class StandOutWindow extends Service {
 				hide(id);
 			}
 		});
+		hide.setVisibility(View.GONE);
 
 		// close
 		View close = content.findViewById(R.id.close);
@@ -1019,11 +1155,13 @@ public abstract class StandOutWindow extends Service {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
+				View window = (View) content.getTag();
+				WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
 				// handle dragging to move
-				boolean consumed = onTouchWindow(id, (View) content.getTag(),
-						v, event);
-				consumed = onTouchHandleMove(id, (View) content.getTag(), v,
-						event) || consumed;
+				boolean consumed = onTouchWindow(id, window, touchInfo, v,
+						event);
+				consumed = onTouchHandleMove(id, window, touchInfo, v, event)
+						|| consumed;
 				return consumed;
 			}
 		});
@@ -1082,8 +1220,8 @@ public abstract class StandOutWindow extends Service {
 		// set window appearance and behavior based on flags
 		int flags = getFlags(id);
 
-		if ((flags & FLAG_DECORATION_HIDE_DISABLE) != 0) {
-			hide.setVisibility(View.GONE);
+		if ((flags & FLAG_HIDE_ENABLE) != 0) {
+			hide.setVisibility(View.VISIBLE);
 		}
 		if ((flags & FLAG_DECORATION_CLOSE_DISABLE) != 0) {
 			close.setVisibility(View.GONE);
@@ -1110,13 +1248,17 @@ public abstract class StandOutWindow extends Service {
 	 * @param event
 	 * @return
 	 */
-	private boolean onTouchWindow(int id, View window, View view,
-			MotionEvent event) {
+	private boolean onTouchWindow(int id, View window,
+			WindowTouchInfo touchInfo, View view, MotionEvent event) {
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_UP:
 				int flags = getFlags(id);
 
+				boolean tap = touchInfo.deltaX == 0 && touchInfo.deltaY == 0;
 				if ((flags & FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH) != 0) {
+					bringToFront(id);
+				} else if ((flags & FLAG_WINDOW_BRING_TO_FRONT_ON_TAP) != 0
+						&& tap) {
 					bringToFront(id);
 				}
 				break;
@@ -1136,9 +1278,8 @@ public abstract class StandOutWindow extends Service {
 	 * @param event
 	 * @return
 	 */
-	private boolean onTouchHandleMove(int id, View window, View view,
-			MotionEvent event) {
-		WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
+	private boolean onTouchHandleMove(int id, View window,
+			WindowTouchInfo touchInfo, View view, MotionEvent event) {
 		StandOutWindow.LayoutParams params = (LayoutParams) window
 				.getLayoutParams();
 
@@ -1304,8 +1445,18 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 */
 	public class WindowTouchInfo {
+		/**
+		 * The state of the window on ACTION_DOWN.
+		 */
 		public int x, y, width, height;
+		/**
+		 * The touch location on ACTION_DOWN.
+		 */
 		public int downX, downY;
+		/**
+		 * The delta between the current touch location and the touch location
+		 * on ACTION_DOWN.
+		 */
 		public int deltaX, deltaY;
 	}
 

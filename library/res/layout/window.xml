@@ -7,35 +7,35 @@
     <LinearLayout
         android:id="@+id/titlebar"
         android:layout_width="fill_parent"
-        android:layout_height="36dp"
+        android:layout_height="40dp"
         android:layout_alignParentTop="true"
         android:background="#000000"
-        android:orientation="horizontal"
-        android:paddingLeft="8dp"
-        android:paddingRight="4dp" >
+        android:orientation="horizontal" android:padding="4dp" android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"/>
 
         <TextView
             android:id="@+id/title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="4dp"
             android:layout_weight="1"
-            android:text="Title" />
+            android:text="Title"
+            android:textSize="20sp" android:maxLines="1"/>
 
         <ImageView
             android:id="@+id/hide"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginLeft="4dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@drawable/hide" />
 
         <ImageView
             android:id="@+id/close"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginLeft="4dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@drawable/close" />
     </LinearLayout>
 
