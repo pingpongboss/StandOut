@@ -9,7 +9,9 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 public class StandOutSimpleWindow extends StandOutWindow {
 
@@ -17,14 +19,26 @@ public class StandOutSimpleWindow extends StandOutWindow {
 	protected View createAndAttachView(final int id, ViewGroup root) {
 		// create a new layout from body.xml
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-		View view = inflater.inflate(R.layout.simple, root, true);
+		final View view = inflater.inflate(R.layout.simple, root, true);
+		
+		// change status when press button
+		view.findViewById(R.id.button).setOnClickListener(
+				new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						((TextView) view.findViewById(R.id.status))
+								.setText("clicked button");
+					}
+				});
+
 		return view;
 	}
 
-	// the window will be 200x200
+	// the window will be centered
 	@Override
 	protected LayoutParams getParams(int id, View view) {
-		return new LayoutParams(250, 150, 0, 0, Gravity.CENTER);
+		return new LayoutParams(250, 300, 0, 0, Gravity.CENTER);
 	}
 
 	// move the window by dragging the view
