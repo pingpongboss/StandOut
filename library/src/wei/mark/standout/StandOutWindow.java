@@ -660,6 +660,42 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Return the animation to play when the window corresponding to the id is
+	 * shown.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @return The animation to play or null.
+	 */
+	protected Animation getShowAnimation(int id) {
+		return AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
+	}
+
+	/**
+	 * Return the animation to play when the window corresponding to the id is
+	 * hidden.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @return The animation to play or null.
+	 */
+	protected Animation getHideAnimation(int id) {
+		return AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
+	}
+
+	/**
+	 * Return the animation to play when the window corresponding to the id is
+	 * closed.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @return The animation to play or null.
+	 */
+	protected Animation getCloseAnimation(int id) {
+		return AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
+	}
+
+	/**
 	 * Implement this method to be alerted to touch events in the body of the
 	 * window corresponding to the id.
 	 * 
@@ -805,6 +841,9 @@ public abstract class StandOutWindow extends Service {
 		if (onShow(id, window))
 			return;
 
+		// get animation
+		Animation animation = getShowAnimation(id);
+
 		WrappedTag tag = (WrappedTag) window.getTag();
 		tag.shown = true;
 
@@ -823,9 +862,9 @@ public abstract class StandOutWindow extends Service {
 			mWindowManager.addView(window, params);
 
 			// animate
-			Animation animation = AnimationUtils.loadAnimation(this,
-					android.R.anim.fade_in);
-			((ViewGroup) window).getChildAt(0).startAnimation(animation);
+			if (animation != null) {
+				((ViewGroup) window).getChildAt(0).startAnimation(animation);
+			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -889,30 +928,37 @@ public abstract class StandOutWindow extends Service {
 			if (onHide(id, window))
 				return;
 
+			// get animation
+			Animation animation = getHideAnimation(id);
+
 			WrappedTag tag = (WrappedTag) window.getTag();
 			tag.shown = false;
 
 			try {
 				// animate
-				Animation animation = AnimationUtils.loadAnimation(this,
-						android.R.anim.fade_out);
-				animation.setAnimationListener(new AnimationListener() {
+				if (animation != null) {
+					animation.setAnimationListener(new AnimationListener() {
 
-					@Override
-					public void onAnimationStart(Animation animation) {
-					}
+						@Override
+						public void onAnimationStart(Animation animation) {
+						}
 
-					@Override
-					public void onAnimationRepeat(Animation animation) {
-					}
+						@Override
+						public void onAnimationRepeat(Animation animation) {
+						}
 
-					@Override
-					public void onAnimationEnd(Animation animation) {
-						// remove the view from the window manager
-						mWindowManager.removeView(window);
-					}
-				});
-				((ViewGroup) window).getChildAt(0).startAnimation(animation);
+						@Override
+						public void onAnimationEnd(Animation animation) {
+							// remove the view from the window manager
+							mWindowManager.removeView(window);
+						}
+					});
+					((ViewGroup) window).getChildAt(0)
+							.startAnimation(animation);
+				} else {
+					// remove the view from the window manager
+					mWindowManager.removeView(window);
+				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -949,30 +995,37 @@ public abstract class StandOutWindow extends Service {
 		if (onClose(id, window))
 			return;
 
+		// get animation
+		Animation animation = getCloseAnimation(id);
+
 		WrappedTag tag = (WrappedTag) window.getTag();
 
 		if (tag.shown) {
 			try {
 				// animate
-				Animation animation = AnimationUtils.loadAnimation(this,
-						android.R.anim.fade_out);
-				animation.setAnimationListener(new AnimationListener() {
+				if (animation != null) {
+					animation.setAnimationListener(new AnimationListener() {
 
-					@Override
-					public void onAnimationStart(Animation animation) {
-					}
+						@Override
+						public void onAnimationStart(Animation animation) {
+						}
 
-					@Override
-					public void onAnimationRepeat(Animation animation) {
-					}
+						@Override
+						public void onAnimationRepeat(Animation animation) {
+						}
 
-					@Override
-					public void onAnimationEnd(Animation animation) {
-						// remove the view from the window manager
-						mWindowManager.removeView(window);
-					}
-				});
-				((ViewGroup) window).getChildAt(0).startAnimation(animation);
+						@Override
+						public void onAnimationEnd(Animation animation) {
+							// remove the view from the window manager
+							mWindowManager.removeView(window);
+						}
+					});
+					((ViewGroup) window).getChildAt(0)
+							.startAnimation(animation);
+				} else {
+					// remove the view from the window manager
+					mWindowManager.removeView(window);
+				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -1094,6 +1147,21 @@ public abstract class StandOutWindow extends Service {
 			unique = Math.max(unique, id + 1);
 		}
 		return unique;
+	}
+
+	/**
+	 * Return whether the window corresponding to the id exists. This is useful
+	 * for testing if the id is being restored (return true) or shown for the
+	 * first time (return false).
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @return True if the window corresponding to the id is either shown or
+	 *         hidden, or false if it has never been shown or was previously
+	 *         closed.
+	 */
+	protected final boolean isExistingId(int id) {
+		return isCached(getClass(), id);
 	}
 
 	/**

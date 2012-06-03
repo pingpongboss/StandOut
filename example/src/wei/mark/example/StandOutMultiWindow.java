@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 
 /**
@@ -101,5 +103,23 @@ public class StandOutMultiWindow extends StandOutWindow {
 	protected Intent getHiddenNotificationIntent(int id) {
 		return StandOutWindow
 				.getShowIntent(this, StandOutMultiWindow.class, id);
+	}
+
+	@Override
+	protected Animation getShowAnimation(int id) {
+		if (isExistingId(id)) {
+			// restore
+			return AnimationUtils.loadAnimation(this,
+					android.R.anim.slide_in_left);
+		} else {
+			// show
+			return super.getShowAnimation(id);
+		}
+	}
+
+	@Override
+	protected Animation getHideAnimation(int id) {
+		return AnimationUtils.loadAnimation(this,
+				android.R.anim.slide_out_right);
 	}
 }
