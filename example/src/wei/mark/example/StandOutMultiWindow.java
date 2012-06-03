@@ -38,17 +38,14 @@ public class StandOutMultiWindow extends StandOutWindow {
 
 	@Override
 	protected View createAndAttachView(int id, ViewGroup root) {
-		switch (id) {
-			default:
-				// create a new layout from body.xml
-				LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-				View view = inflater.inflate(R.layout.body, root, true);
+		// create a new layout from body.xml
+		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+		View view = inflater.inflate(R.layout.body, root, true);
 
-				TextView idText = (TextView) view.findViewById(R.id.id);
-				idText.setText(String.valueOf(id));
+		TextView idText = (TextView) view.findViewById(R.id.id);
+		idText.setText(String.valueOf(id));
 
-				return view;
-		}
+		return view;
 	}
 
 	// every window is initially same size

@@ -3,12 +3,14 @@ package wei.mark.standout;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
@@ -27,6 +29,7 @@ import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -1242,10 +1245,79 @@ public abstract class StandOutWindow extends Service {
 					"You must attach your view to the given root ViewGroup in createAndAttachView()");
 		}
 
+		// clean up view and implement StandOut specific workarounds
+		fixView(view);
+
 		// wrap the existing tag and attach it to the frame
 		window.setTag(new WrappedTag(id, false, view.getTag()));
 
 		return window;
+	}
+
+	/**
+	 * Iterate through each View in the view hiearchy and implement StandOut
+	 * specific workarounds.
+	 * 
+	 * <p>
+	 * Currently, this method does the following:
+	 * 
+	 * <p>
+	 * Fix {@link EditText} because they are not focusable. To make EditText
+	 * usable, hook up an onclick listener and start a new Activity for the sole
+	 * purpose of getting user input.
+	 * 
+	 * @param root
+	 *            The root view hiearchy to iterate through and check.
+	 */
+	private void fixView(View root) {
+		Queue<View> queue = new LinkedList<View>();
+		queue.add(root);
+
+		View view = null;
+		while ((view = queue.poll()) != null) {
+			// fix EditText
+			if (view instanceof EditText) {
+				final EditText editText = (EditText) view;
+				editText.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						// create a new FixEditTextActivity as workaround
+						EditTextActivity.cls = StandOutWindow.this.getClass();
+						EditTextActivity.edit = editText;
+						try {
+							startActivity(new Intent(StandOutWindow.this,
+									EditTextActivity.class)
+									.addFlags(
+											Intent.FLAG_ACTIVITY_NEW_TASK
+													| Intent.FLAG_ACTIVITY_SINGLE_TOP)
+									.putExtra("text",
+											editText.getText().toString())
+									.putExtra("caret",
+											editText.getSelectionStart()));
+						} catch (ActivityNotFoundException ex) {
+							ex.printStackTrace();
+							Log.e("StandOutWindow",
+									"EditText can only be used in StandOut windows after applying a workaround.\n"
+											+ "Please edit your AndroidManifest.xml to include the following Activity:\n"
+											+ "<activity "
+											+ "android:name=\"wei.mark.standout.EditTextActivity\" "
+											+ "android:excludeFromRecents=\"true\" "
+											+ "android:theme=\"@android:style/Theme.Translucent.NoTitleBar.Fullscreen\" > "
+											+ "</activity> ");
+						}
+					}
+				});
+			}
+
+			// iterate through children
+			if (view instanceof ViewGroup) {
+				ViewGroup group = (ViewGroup) view;
+				for (int i = 0; i < group.getChildCount(); i++) {
+					queue.add(group.getChildAt(i));
+				}
+			}
+		}
 	}
 
 	/**
@@ -1611,12 +1683,11 @@ public abstract class StandOutWindow extends Service {
 	 * @author Mark Wei <markwei@gmail.com>
 	 * 
 	 */
-	protected class LayoutParams extends
-			android.view.WindowManager.LayoutParams {
+	protected class LayoutParams extends WindowManager.LayoutParams {
 		public LayoutParams() {
 			super(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT,
-					TYPE_SYSTEM_ALERT, FLAG_NOT_FOCUSABLE,
-					PixelFormat.TRANSLUCENT);
+					TYPE_SYSTEM_ALERT, FLAG_NOT_FOCUSABLE
+							| FLAG_ALT_FOCUSABLE_IM, PixelFormat.TRANSLUCENT);
 
 			width = height = 200;
 
