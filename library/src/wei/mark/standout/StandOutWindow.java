@@ -392,9 +392,23 @@ public abstract class StandOutWindow extends Service {
 		closeAll();
 	}
 
-	protected abstract String getAppName(int id);
+	/**
+	 * Return the name of every window in this implementation. The name will
+	 * appear in the default implementations of the system window decoration
+	 * title and notification titles.
+	 * 
+	 * @return The name.
+	 */
+	protected abstract String getAppName();
 
-	protected abstract int getAppIcon(int id);
+	/**
+	 * Return the icon resource for every window in this implementation. The
+	 * icon will appear in the default implementations of the system window
+	 * decoration and notifications.
+	 * 
+	 * @return The icon.
+	 */
+	protected abstract int getAppIcon();
 
 	/**
 	 * Create a new {@link View} corresponding to the id, and add it as a child
@@ -456,30 +470,93 @@ public abstract class StandOutWindow extends Service {
 		return FLAG_DECORATION_NONE;
 	}
 
+	/**
+	 * Return the title for the persistent notification. This is called every
+	 * time {@link #show(int)} is called.
+	 * 
+	 * @param id
+	 *            The id of the window shown.
+	 * @return The title for the persistent notification.
+	 */
 	protected String getPersistentNotificationTitle(int id) {
-		return getAppName(id) + " Running";
+		return getAppName() + " Running";
 	}
 
+	/**
+	 * Return the message for the persistent notification. This is called every
+	 * time {@link #show(int)} is called.
+	 * 
+	 * @param id
+	 *            The id of the window shown.
+	 * @return The message for the persistent notification.
+	 */
 	protected String getPersistentNotificationMessage(int id) {
 		return null;
 	}
 
+	/**
+	 * Return the intent for the persistent notification. This is called every
+	 * time {@link #show(int)} is called.
+	 * 
+	 * <p>
+	 * The returned intent will be packaged into a {@link PendingIntent} to be
+	 * invoked when the user clicks the notification.
+	 * 
+	 * @param id
+	 *            The id of the window shown.
+	 * @return The intent for the persistent notification.
+	 */
 	protected Intent getPersistentNotificationIntent(int id) {
 		return null;
 	}
 
-	protected int getHiddenIcon(int id) {
-		return getAppIcon(id);
+	/**
+	 * Return the icon resource for every hidden window in this implementation.
+	 * The icon will appear in the default implementations of the hidden
+	 * notifications.
+	 * 
+	 * @return The icon.
+	 */
+	protected int getHiddenIcon() {
+		return getAppIcon();
 	}
 
+	/**
+	 * Return the title for the hidden notification corresponding to the window
+	 * being hidden.
+	 * 
+	 * @param id
+	 *            The id of the hidden window.
+	 * @return The title for the hidden notification.
+	 */
 	protected String getHiddenNotificationTitle(int id) {
-		return getAppName(id) + " Hidden";
+		return getAppName() + " Hidden";
 	}
 
+	/**
+	 * Return the message for the hidden notification corresponding to the
+	 * window being hidden.
+	 * 
+	 * @param id
+	 *            The id of the hidden window.
+	 * @return The message for the hidden notification.
+	 */
 	protected String getHiddenNotificationMessage(int id) {
 		return null;
 	}
 
+	/**
+	 * Return the intent for the hidden notification corresponding to the window
+	 * being hidden.
+	 * 
+	 * <p>
+	 * The returned intent will be packaged into a {@link PendingIntent} to be
+	 * invoked when the user clicks the notification.
+	 * 
+	 * @param id
+	 *            The id of the hidden window.
+	 * @return The intent for the hidden notification.
+	 */
 	protected Intent getHiddenNotificationIntent(int id) {
 		return null;
 	}
@@ -511,7 +588,7 @@ public abstract class StandOutWindow extends Service {
 	protected Notification getPersistentNotification(int id) {
 		// basic notification stuff
 		// http://developer.android.com/guide/topics/ui/notifiers/notifications.html
-		int icon = getAppIcon(id);
+		int icon = getAppIcon();
 		long when = System.currentTimeMillis();
 		Context c = getApplicationContext();
 		String contentTitle = getPersistentNotificationTitle(id);
@@ -557,7 +634,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected Notification getHiddenNotification(int id) {
 		// same basics as getPersistentNotification()
-		int icon = getHiddenIcon(id);
+		int icon = getHiddenIcon();
 		long when = System.currentTimeMillis();
 		Context c = getApplicationContext();
 		String contentTitle = getHiddenNotificationTitle(id);
@@ -1120,11 +1197,11 @@ public abstract class StandOutWindow extends Service {
 
 		// icon
 		ImageView icon = (ImageView) content.findViewById(R.id.icon);
-		icon.setImageResource(getAppIcon(id));
+		icon.setImageResource(getAppIcon());
 
 		// title
 		TextView title = (TextView) content.findViewById(R.id.title);
-		title.setText(getAppName(id));
+		title.setText(getAppName());
 
 		// hide
 		View hide = content.findViewById(R.id.hide);

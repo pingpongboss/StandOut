@@ -10,12 +10,12 @@ import android.view.ViewGroup;
 public class StandOutSimpleWindow extends StandOutWindow {
 
 	@Override
-	protected String getAppName(int id) {
+	protected String getAppName() {
 		return "SimpleWindow";
 	}
 
 	@Override
-	protected int getAppIcon(int id) {
+	protected int getAppIcon() {
 		return android.R.drawable.ic_menu_close_clear_cancel;
 	}
 

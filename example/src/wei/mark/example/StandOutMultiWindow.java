@@ -14,12 +14,12 @@ import android.widget.TextView;
 public class StandOutMultiWindow extends StandOutWindow {
 
 	@Override
-	protected String getAppName(int id) {
+	protected String getAppName() {
 		return "MultiWindow";
 	}
 
 	@Override
-	protected int getAppIcon(int id) {
+	protected int getAppIcon() {
 		return android.R.drawable.ic_menu_add;
 	}
 
@@ -54,12 +54,12 @@ public class StandOutMultiWindow extends StandOutWindow {
 
 	@Override
 	protected String getPersistentNotificationTitle(int id) {
-		return getAppName(id) + " Running";
+		return getAppName() + " Running";
 	}
 
 	@Override
 	protected String getPersistentNotificationMessage(int id) {
-		return "Click to add a new " + getAppName(id);
+		return "Click to add a new " + getAppName();
 	}
 
 	@Override
@@ -69,13 +69,13 @@ public class StandOutMultiWindow extends StandOutWindow {
 	}
 
 	@Override
-	protected int getHiddenIcon(int id) {
+	protected int getHiddenIcon() {
 		return android.R.drawable.ic_menu_info_details;
 	}
 
 	@Override
 	protected String getHiddenNotificationTitle(int id) {
-		return getAppName(id) + " Hidden";
+		return getAppName() + " Hidden";
 	}
 
 	@Override
