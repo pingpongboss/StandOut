@@ -7,7 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-public class StandOutMostBasicWindow extends StandOutWindow {
+public class MostBasicWindow extends StandOutWindow {
 
 	@Override
 	protected String getAppName() {

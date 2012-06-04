@@ -7,7 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class StandOutSimpleWindow extends StandOutWindow {
+public class SimpleWindow extends StandOutWindow {
 
 	@Override
 	protected String getAppName() {
@@ -47,7 +47,6 @@ public class StandOutSimpleWindow extends StandOutWindow {
 
 	@Override
 	protected Intent getPersistentNotificationIntent(int id) {
-		return StandOutWindow.getCloseIntent(this, StandOutSimpleWindow.class,
-				id);
+		return StandOutWindow.getCloseIntent(this, SimpleWindow.class, id);
 	}
 }

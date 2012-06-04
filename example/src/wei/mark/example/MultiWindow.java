@@ -24,7 +24,7 @@ import android.widget.TextView;
  * @author Mark Wei <markwei@gmail.com>
  * 
  */
-public class StandOutMultiWindow extends StandOutWindow {
+public class MultiWindow extends StandOutWindow {
 
 	@Override
 	protected String getAppName() {
@@ -76,7 +76,7 @@ public class StandOutMultiWindow extends StandOutWindow {
 	// return an Intent that creates a new MultiWindow
 	@Override
 	protected Intent getPersistentNotificationIntent(int id) {
-		return StandOutWindow.getShowIntent(this, StandOutMultiWindow.class,
+		return StandOutWindow.getShowIntent(this, MultiWindow.class,
 				getUniqueId());
 	}
 
@@ -99,7 +99,7 @@ public class StandOutMultiWindow extends StandOutWindow {
 	@Override
 	protected Intent getHiddenNotificationIntent(int id) {
 		return StandOutWindow
-				.getShowIntent(this, StandOutMultiWindow.class, id);
+				.getShowIntent(this, MultiWindow.class, id);
 	}
 
 	@Override

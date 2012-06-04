@@ -19,21 +19,6 @@
             android:layout_height="wrap_content"
             android:text="Move me around. Click notification to close." android:textColor="#ffffff"/>
 
-        <EditText
-            android:id="@+id/edittext"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:ems="10" >
-
-            <requestFocus />
-        </EditText>
-
-        <EditText
-            android:id="@+id/editText1"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:ems="10" />
-
     </LinearLayout>
 
 </merge>

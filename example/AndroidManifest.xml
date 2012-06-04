@@ -25,11 +25,11 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".StandOutMultiWindow" >
+        <service android:name=".MultiWindow" >
         </service>
-        <service android:name="StandOutSimpleWindow" >
+        <service android:name=".SimpleWindow" >
         </service>
-        <service android:name="StandOutMostBasicWindow" >
+        <service android:name=".MostBasicWindow" >
         </service>
 
         <activity
@@ -37,6 +37,7 @@
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" >
         </activity>
+        <service android:name="VideoWindow"></service>
     </application>
 
 </manifest>
