@@ -33,7 +33,7 @@
         </service>
 
         <activity
-            android:name="wei.mark.standout.EditTextActivity"
+            android:name="wei.mark.standout.FixEditTextActivity"
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" >
         </activity>

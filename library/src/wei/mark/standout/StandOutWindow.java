@@ -23,6 +23,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnFocusChangeListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -1278,33 +1279,50 @@ public abstract class StandOutWindow extends Service {
 			// fix EditText
 			if (view instanceof EditText) {
 				final EditText editText = (EditText) view;
+
+				// when user clicks edittext, show FixEditTextActivity helper
+				editText.setOnFocusChangeListener(new OnFocusChangeListener() {
+
+					@Override
+					public void onFocusChange(View v, boolean hasFocus) {
+						if (hasFocus) {
+							FixEditTextActivity.edit = editText;
+							try {
+								String text = editText.getText().toString();
+								int caret = editText.getSelectionStart();
+
+								Log.d("StandOutWindow", "Touch text: " + text
+										+ " caret: " + caret);
+								startActivity(new Intent(StandOutWindow.this,
+										FixEditTextActivity.class)
+										.addFlags(
+												Intent.FLAG_ACTIVITY_NEW_TASK
+														| Intent.FLAG_ACTIVITY_SINGLE_TOP)
+										.putExtra("text", text)
+										.putExtra("caret", caret));
+							} catch (ActivityNotFoundException ex) {
+								ex.printStackTrace();
+								Log.e("StandOutWindow",
+										"EditText can only be used in StandOut windows after applying a workaround.\n"
+												+ "Please edit your AndroidManifest.xml to include the following Activity:\n"
+												+ "<activity "
+												+ "android:name=\"wei.mark.standout.FixEditTextActivity\" "
+												+ "android:excludeFromRecents=\"true\" "
+												+ "android:theme=\"@android:style/Theme.Translucent.NoTitleBar.Fullscreen\" > "
+												+ "</activity> ");
+							}
+						}
+					}
+				});
+
+				// since one edittext is always already focused, use onClick to
+				// trigger the focus change listener
 				editText.setOnClickListener(new OnClickListener() {
 
 					@Override
 					public void onClick(View v) {
-						// create a new FixEditTextActivity as workaround
-						EditTextActivity.cls = StandOutWindow.this.getClass();
-						EditTextActivity.edit = editText;
-						try {
-							startActivity(new Intent(StandOutWindow.this,
-									EditTextActivity.class)
-									.addFlags(
-											Intent.FLAG_ACTIVITY_NEW_TASK
-													| Intent.FLAG_ACTIVITY_SINGLE_TOP)
-									.putExtra("text",
-											editText.getText().toString())
-									.putExtra("caret",
-											editText.getSelectionStart()));
-						} catch (ActivityNotFoundException ex) {
-							ex.printStackTrace();
-							Log.e("StandOutWindow",
-									"EditText can only be used in StandOut windows after applying a workaround.\n"
-											+ "Please edit your AndroidManifest.xml to include the following Activity:\n"
-											+ "<activity "
-											+ "android:name=\"wei.mark.standout.EditTextActivity\" "
-											+ "android:excludeFromRecents=\"true\" "
-											+ "android:theme=\"@android:style/Theme.Translucent.NoTitleBar.Fullscreen\" > "
-											+ "</activity> ");
+						if (v.isFocused() && FixEditTextActivity.edit == null) {
+							v.clearFocus();
 						}
 					}
 				});

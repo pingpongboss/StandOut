@@ -9,11 +9,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.EditText;
 
-public class EditTextActivity extends Activity {
-	public static Class<? extends StandOutWindow> cls;
+public class FixEditTextActivity extends Activity {
 	public static EditText edit;
 
 	EditText editText;
+	TextWatcher textWatcher;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -31,14 +31,14 @@ public class EditTextActivity extends Activity {
 			}
 		});
 
+		editText = (EditText) findViewById(R.id.edittext);
+
 		String text = getIntent().getStringExtra("text");
 		int caret = getIntent().getIntExtra("caret", text.length());
-
-		editText = (EditText) findViewById(R.id.edittext);
 		editText.setText(text);
 		editText.setSelection(caret);
 
-		editText.addTextChangedListener(new TextWatcher() {
+		textWatcher = new TextWatcher() {
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before,
@@ -55,7 +55,9 @@ public class EditTextActivity extends Activity {
 			@Override
 			public void afterTextChanged(Editable s) {
 			}
-		});
+		};
+
+		editText.addTextChangedListener(textWatcher);
 	}
 
 	@Override
@@ -65,6 +67,16 @@ public class EditTextActivity extends Activity {
 		String text = intent.getStringExtra("text");
 		int caret = intent.getIntExtra("caret", text.length());
 
+		editText.removeTextChangedListener(textWatcher);
+		editText.setText(text);
 		editText.setSelection(caret);
+		editText.addTextChangedListener(textWatcher);
+	}
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+
+		edit = null;
 	}
 }
