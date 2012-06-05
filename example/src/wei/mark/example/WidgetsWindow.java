@@ -16,15 +16,20 @@ public class WidgetsWindow extends MultiWindow {
 
 		final TextView status = (TextView) view.findViewById(R.id.status);
 		final EditText edit = (EditText) view.findViewById(R.id.edit);
+		final EditText edit2 = (EditText) view.findViewById(R.id.edit2);
 		Button button = (Button) view.findViewById(R.id.button);
 		button.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
 				String text = edit.getText().toString();
-				status.setText("Entered: " + text);
+				String text2 = edit2.getText().toString();
+				status.setText("Entered: "
+						+ text
+						+ (text.length() == 0 || text2.length() == 0 ? ""
+								: " and ") + text2);
 				edit.setText("");
-				edit.setHint("Write something else");
+				edit2.setText("");
 			}
 		});
 
