@@ -98,8 +98,7 @@ public class MultiWindow extends StandOutWindow {
 	// return an Intent that restores the MultiWindow
 	@Override
 	protected Intent getHiddenNotificationIntent(int id) {
-		return StandOutWindow
-				.getShowIntent(this, MultiWindow.class, id);
+		return StandOutWindow.getShowIntent(this, MultiWindow.class, id);
 	}
 
 	@Override

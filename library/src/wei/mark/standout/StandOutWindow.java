@@ -129,7 +129,7 @@ public abstract class StandOutWindow extends Service {
 	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
 	 * the system to bring the window to the front.
 	 */
-	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 0x00002001;
+	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 0x00002000;
 
 	/**
 	 * Setting this flag indicates that the window should be brought to the
@@ -140,7 +140,7 @@ public abstract class StandOutWindow extends Service {
 	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
 	 * the system to bring the window to the front.
 	 */
-	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 0x00004002;
+	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 0x00004000;
 
 	/**
 	 * Setting this flag indicates that windows are able to be hidden, that
@@ -150,6 +150,24 @@ public abstract class StandOutWindow extends Service {
 	 * {@link #FLAG_DECORATION_SYSTEM} is set.
 	 */
 	public static final int FLAG_HIDE_ENABLE = 0x00008000;
+
+	/**
+	 * Setting this flag indicates that the system should disable all
+	 * compatibility workarounds. The default behavior is to run
+	 * {@link #fixCompatibility(View)} on the view returned by the
+	 * implementation.
+	 * 
+	 * @see #fixCompatibility(View)
+	 */
+	public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 0x00010000;
+
+	/**
+	 * Setting this flag indicates that the system should disable EditText
+	 * compatibility workarounds.
+	 * 
+	 * @see #FLAG_FIX_COMPATIBILITY_ALL_DISABLE
+	 */
+	public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 0x00020000;
 
 	/**
 	 * Show a new window corresponding to the id, or restore a previously hidden
@@ -1247,7 +1265,9 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// clean up view and implement StandOut specific workarounds
-		fixView(view);
+		if ((flags & FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
+			fixCompatibility(view, id);
+		}
 
 		// wrap the existing tag and attach it to the frame
 		window.setTag(new WrappedTag(id, false, view.getTag()));
@@ -1257,7 +1277,7 @@ public abstract class StandOutWindow extends Service {
 
 	/**
 	 * Iterate through each View in the view hiearchy and implement StandOut
-	 * specific workarounds.
+	 * specific compatibility workarounds.
 	 * 
 	 * <p>
 	 * Currently, this method does the following:
@@ -1270,14 +1290,17 @@ public abstract class StandOutWindow extends Service {
 	 * @param root
 	 *            The root view hiearchy to iterate through and check.
 	 */
-	private void fixView(View root) {
+	private void fixCompatibility(View root, int id) {
 		Queue<View> queue = new LinkedList<View>();
 		queue.add(root);
+
+		int flags = getFlags(id);
 
 		View view = null;
 		while ((view = queue.poll()) != null) {
 			// fix EditText
-			if (view instanceof EditText) {
+			if (view instanceof EditText
+					&& (flags & FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE) == 0) {
 				final EditText editText = (EditText) view;
 
 				// when user clicks edittext, show FixEditTextActivity helper

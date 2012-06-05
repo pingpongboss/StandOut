@@ -27,6 +27,10 @@ public class StandOutExampleActivity extends Activity {
 		 * StandOutWindow.DEFAULT_ID);
 		 */
 
+		StandOutWindow.closeAll(this, WidgetsWindow.class);
+		StandOutWindow.show(this, WidgetsWindow.class,
+				StandOutWindow.DEFAULT_ID);
+
 		finish();
 	}
 }
