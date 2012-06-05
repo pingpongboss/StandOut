@@ -90,25 +90,25 @@ public abstract class StandOutWindow extends Service {
 	 * Setting this flag indicates that the window wants the system provided
 	 * window decorations (titlebar, hide/close buttons, resize handle, etc).
 	 */
-	public static final int FLAG_DECORATION_SYSTEM = 0x00000100;
+	public static final int FLAG_DECORATION_SYSTEM = 0x00000001;
 
 	/**
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
 	 * that the window decorator should NOT provide a close button.
 	 */
-	public static final int FLAG_DECORATION_CLOSE_DISABLE = 0x00000200;
+	public static final int FLAG_DECORATION_CLOSE_DISABLE = 0x00000002;
 
 	/**
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
 	 * that the window decorator should NOT provide a resize handle.
 	 */
-	public static final int FLAG_DECORATION_RESIZE_DISABLE = 0x00000400;
+	public static final int FLAG_DECORATION_RESIZE_DISABLE = 0x00000004;
 
 	/**
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
 	 * that the window decorator should NOT provide a resize handle.
 	 */
-	public static final int FLAG_DECORATION_MOVE_DISABLE = 0x00000800;
+	public static final int FLAG_DECORATION_MOVE_DISABLE = 0x00000008;
 
 	/**
 	 * Setting this flag indicates that the window can be moved by dragging the
@@ -118,7 +118,7 @@ public abstract class StandOutWindow extends Service {
 	 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
 	 * always be moved by dragging the titlebar.
 	 */
-	public static final int FLAG_BODY_MOVE_ENABLE = 0x00001000;
+	public static final int FLAG_BODY_MOVE_ENABLE = 0x00000010;
 
 	/**
 	 * Setting this flag indicates that the window should be brought to the
@@ -129,7 +129,7 @@ public abstract class StandOutWindow extends Service {
 	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
 	 * the system to bring the window to the front.
 	 */
-	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 0x00002000;
+	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 0x00000020;
 
 	/**
 	 * Setting this flag indicates that the window should be brought to the
@@ -140,7 +140,7 @@ public abstract class StandOutWindow extends Service {
 	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
 	 * the system to bring the window to the front.
 	 */
-	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 0x00004000;
+	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 0x00000040;
 
 	/**
 	 * Setting this flag indicates that windows are able to be hidden, that
@@ -149,7 +149,7 @@ public abstract class StandOutWindow extends Service {
 	 * window decorator should provide a hide button if
 	 * {@link #FLAG_DECORATION_SYSTEM} is set.
 	 */
-	public static final int FLAG_HIDE_ENABLE = 0x00008000;
+	public static final int FLAG_HIDE_ENABLE = 0x00000080;
 
 	/**
 	 * Setting this flag indicates that the system should disable all
@@ -159,7 +159,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @see #fixCompatibility(View)
 	 */
-	public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 0x00010000;
+	public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 0x00000100;
 
 	/**
 	 * Setting this flag indicates that the system should disable EditText
@@ -167,7 +167,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @see #FLAG_FIX_COMPATIBILITY_ALL_DISABLE
 	 */
-	public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 0x00020000;
+	public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 0x00000200;
 
 	/**
 	 * Show a new window corresponding to the id, or restore a previously hidden

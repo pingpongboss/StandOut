@@ -40,4 +40,9 @@ public class WidgetsWindow extends MultiWindow {
 	protected LayoutParams getParams(int id, View view) {
 		return new LayoutParams(300, 500);
 	}
+	
+	@Override
+	protected String getAppName() {
+		return "WidgetWindow";
+	}
 }
