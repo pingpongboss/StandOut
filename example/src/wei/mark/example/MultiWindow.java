@@ -76,8 +76,7 @@ public class MultiWindow extends StandOutWindow {
 	// return an Intent that creates a new MultiWindow
 	@Override
 	protected Intent getPersistentNotificationIntent(int id) {
-		return StandOutWindow.getShowIntent(this, MultiWindow.class,
-				getUniqueId());
+		return StandOutWindow.getShowIntent(this, getClass(), getUniqueId());
 	}
 
 	@Override
@@ -98,7 +97,7 @@ public class MultiWindow extends StandOutWindow {
 	// return an Intent that restores the MultiWindow
 	@Override
 	protected Intent getHiddenNotificationIntent(int id) {
-		return StandOutWindow.getShowIntent(this, MultiWindow.class, id);
+		return StandOutWindow.getShowIntent(this, getClass(), id);
 	}
 
 	@Override

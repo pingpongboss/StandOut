@@ -1374,7 +1374,8 @@ public abstract class StandOutWindow extends Service {
 	 * @return The frame view containing the system window decorations.
 	 */
 	private View getSystemWindowContent(final int id) {
-		final View content = mLayoutInflater.inflate(R.layout.window, null);
+		final View content = mLayoutInflater.inflate(
+				R.layout.system_window_decorators, null);
 
 		// icon
 		ImageView icon = (ImageView) content.findViewById(R.id.icon);
@@ -1726,11 +1727,8 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
 		public LayoutParams() {
-			super(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT,
-					TYPE_SYSTEM_ALERT, FLAG_NOT_FOCUSABLE
-							| FLAG_ALT_FOCUSABLE_IM, PixelFormat.TRANSLUCENT);
-
-			width = height = 200;
+			super(200, 200, TYPE_SYSTEM_ALERT, FLAG_NOT_FOCUSABLE
+					| FLAG_ALT_FOCUSABLE_IM, PixelFormat.TRANSLUCENT);
 
 			x = getX(width);
 			y = getY(height);
