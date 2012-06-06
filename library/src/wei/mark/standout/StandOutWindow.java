@@ -1329,6 +1329,16 @@ public abstract class StandOutWindow extends Service {
 		return isCached(getClass(), id);
 	}
 
+	/**
+	 * Return the window corresponding to the id, if it exists in cache. The
+	 * window will not be created with
+	 * {@link #createAndAttachView(int, ViewGroup)}. This means the returned
+	 * value will be null if the window is not shown/hidden.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @return The window if it is shown/hidden, or null if it is closed.
+	 */
 	protected final View getWindow(int id) {
 		return getCache(id);
 	}
