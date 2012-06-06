@@ -961,23 +961,25 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Show or restore a window corresponding to the id.
+	 * Show or restore a window corresponding to the id. Return the window that
+	 * was shown/restored.
 	 * 
 	 * @param id
 	 *            The id of the window.
+	 * @return The window shown.
 	 */
-	protected final void show(int id) {
+	protected final View show(int id) {
 		// get the view corresponding to the id
 		View window = getWrappedView(id);
 
 		if (window == null) {
 			Log.w("StandOutWindow", "Tried to show(" + id + ") a null view");
-			return;
+			return null;
 		}
 
 		// alert callbacks and cancel if instructed
 		if (onShow(id, window))
-			return;
+			return null;
 
 		// get animation
 		Animation animation = getShowAnimation(id);
@@ -1037,6 +1039,8 @@ public abstract class StandOutWindow extends Service {
 						+ "memory situations.");
 			}
 		}
+
+		return window;
 	}
 
 	/**
@@ -1826,22 +1830,27 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public class WrappedTag {
 		/**
-		 * Id of the window
+		 * Id of the window.
 		 */
 		public int id;
 
 		/**
-		 * Whether the window is shown or hidden/closed
+		 * Whether the window is shown or hidden/closed.
 		 */
 		public boolean shown;
 
 		/**
-		 * Touch information of the window
+		 * Touch information of the window.
 		 */
 		public WindowTouchInfo touchInfo;
 
 		/**
-		 * Original tag of the wrapped view
+		 * Data attached to the window.
+		 */
+		public Bundle data;
+
+		/**
+		 * Original tag of the wrapped view.
 		 */
 		public Object tag;
 
@@ -1850,6 +1859,7 @@ public abstract class StandOutWindow extends Service {
 			this.id = id;
 			this.shown = shown;
 			this.touchInfo = new WindowTouchInfo();
+			this.data = new Bundle();
 			this.tag = tag;
 		}
 	}
