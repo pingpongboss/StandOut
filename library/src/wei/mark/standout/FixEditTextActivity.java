@@ -5,8 +5,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
 import android.widget.EditText;
 
 public class FixEditTextActivity extends Activity {
@@ -23,11 +24,12 @@ public class FixEditTextActivity extends Activity {
 		setContentView(R.layout.edittext);
 
 		View window = findViewById(R.id.window);
-		window.setOnClickListener(new OnClickListener() {
+		window.setOnTouchListener(new OnTouchListener() {
 
 			@Override
-			public void onClick(View v) {
+			public boolean onTouch(View v, MotionEvent event) {
 				finish();
+				return false;
 			}
 		});
 
@@ -72,7 +74,7 @@ public class FixEditTextActivity extends Activity {
 		editText.setSelection(caret);
 		editText.addTextChangedListener(textWatcher);
 	}
-	
+
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();

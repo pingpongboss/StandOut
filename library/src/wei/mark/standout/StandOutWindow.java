@@ -1433,6 +1433,15 @@ public abstract class StandOutWindow extends Service {
 		// wrap the existing tag and attach it to the frame
 		window.setTag(new WrappedTag(id, false, view.getTag()));
 
+		window.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				Log.d("StandOutWindow", "Event: " + event);
+				return false;
+			}
+		});
+
 		return window;
 	}
 
@@ -1451,7 +1460,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param root
 	 *            The root view hiearchy to iterate through and check.
 	 */
-	private void fixCompatibility(View root, int id) {
+	private void fixCompatibility(View root, final int id) {
 		Queue<View> queue = new LinkedList<View>();
 		queue.add(root);
 
