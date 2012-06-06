@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Display;
@@ -72,6 +73,11 @@ public abstract class StandOutWindow extends Service {
 	 * Intent action: Close all existing windows.
 	 */
 	public static final String ACTION_CLOSE_ALL = "CLOSE_ALL";
+
+	/**
+	 * Intent action: Send data to a new or existing window.
+	 */
+	public static final String ACTION_SEND_DATA = "SEND_DATA";
 
 	/**
 	 * Intent action: Hide an existing window with an existing id. To enable the
@@ -182,6 +188,8 @@ public abstract class StandOutWindow extends Service {
 	 *            The id representing this window. If the id exists, and the
 	 *            corresponding window was previously hidden, then that window
 	 *            will be restored.
+	 * 
+	 * @see #show(int)
 	 */
 	public static void show(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
@@ -201,6 +209,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id representing this window. The window must previously be
 	 *            shown.
+	 * @see #hide(int)
 	 */
 	public static void hide(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
@@ -218,6 +227,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id representing this window. The window must previously be
 	 *            shown.
+	 * @see #close(int)
 	 */
 	public static void close(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
@@ -232,10 +242,46 @@ public abstract class StandOutWindow extends Service {
 	 * @param cls
 	 *            The Service extending {@link StandOutWindow} that is managing
 	 *            the window.
+	 * @see #closeAll()
 	 */
 	public static void closeAll(Context context,
 			Class<? extends StandOutWindow> cls) {
 		context.startService(getCloseAllIntent(context, cls));
+	}
+
+	/**
+	 * Send {@link Parceleable} data in a {@link Bundle} to a new or existing
+	 * windows. The implementation of the recipient window can handle what to do
+	 * with the data. To receive a result, provide the class and id of the
+	 * sender.
+	 * 
+	 * @param context
+	 *            A Context of the application package implementing the class of
+	 *            the sending window.
+	 * @param toCls
+	 *            The Service's class extending {@link StandOutWindow} that is
+	 *            managing the receiving window.
+	 * @param toId
+	 *            The id of the receiving window.
+	 * @param requestCode
+	 *            Provide a request code to declare what kind of data is being
+	 *            sent.
+	 * @param data
+	 *            A bundle of parceleable data to be sent to the receiving
+	 *            window.
+	 * @param fromCls
+	 *            If the sending window wants a result, provide the class of the
+	 *            sending window.
+	 * @param fromId
+	 *            If the sending window wants a result, provide the id of the
+	 *            sending window.
+	 * @see #sendData(int, Class, int, int, Bundle)
+	 */
+	public static void sendData(Context context,
+			Class<? extends StandOutWindow> toCls, int toId, int requestCode,
+			Bundle data, Class<? extends StandOutWindow> fromCls, int fromId) {
+		context.startService(getSendDataIntent(context, toCls, toId,
+				requestCode, data, fromCls, fromId));
 	}
 
 	/**
@@ -322,6 +368,42 @@ public abstract class StandOutWindow extends Service {
 		return new Intent(context, cls).setAction(ACTION_CLOSE_ALL);
 	}
 
+	/**
+	 * See {@link #sendData(Context, Class, int, int, Bundle, Class, int)}.
+	 * 
+	 * @param context
+	 *            A Context of the application package implementing the class of
+	 *            the sending window.
+	 * @param toCls
+	 *            The Service's class extending {@link StandOutWindow} that is
+	 *            managing the receiving window.
+	 * @param toId
+	 *            The id of the receiving window.
+	 * @param requestCode
+	 *            Provide a request code to declare what kind of data is being
+	 *            sent.
+	 * @param data
+	 *            A bundle of parceleable data to be sent to the receiving
+	 *            window.
+	 * @param fromCls
+	 *            If the sending window wants a result, provide the class of the
+	 *            sending window.
+	 * @param fromId
+	 *            If the sending window wants a result, provide the id of the
+	 *            sending window.
+	 * @return An {@link Intnet} to use with
+	 *         {@link Context#startService(Intent)}.
+	 */
+	public static Intent getSendDataIntent(Context context,
+			Class<? extends StandOutWindow> toCls, int toId, int requestCode,
+			Bundle data, Class<? extends StandOutWindow> fromCls, int fromId) {
+		return new Intent(context, toCls).putExtra("id", toId)
+				.putExtra("requestCode", requestCode)
+				.putExtra("wei.mark.standout.data", data)
+				.putExtra("wei.mark.standout.fromCls", fromCls)
+				.putExtra("fromId", fromId).setAction(ACTION_SEND_DATA);
+	}
+
 	// internal map of ids to shown/hidden views
 	private static Map<Class<? extends StandOutWindow>, Map<Integer, View>> sViews;
 
@@ -384,7 +466,7 @@ public abstract class StandOutWindow extends Service {
 			// this will interfere with getPersistentNotification()
 			if (id == ONGOING_NOTIFICATION_ID) {
 				throw new RuntimeException(
-						"ID cannot equals StandOutWindow.RESERVED_ID");
+						"ID cannot equals StandOutWindow.ONGOING_NOTIFICATION_ID");
 			}
 
 			if (ACTION_SHOW.equals(action) || ACTION_RESTORE.equals(action)) {
@@ -395,6 +477,15 @@ public abstract class StandOutWindow extends Service {
 				close(id);
 			} else if (ACTION_CLOSE_ALL.equals(action)) {
 				closeAll();
+			} else if (ACTION_SEND_DATA.equals(action)) {
+				Bundle data = intent.getBundleExtra("wei.mark.standout.data");
+				int requestCode = intent.getIntExtra("requestCode", 0);
+				@SuppressWarnings("unchecked")
+				Class<? extends StandOutWindow> fromCls = (Class<? extends StandOutWindow>) intent
+						.getSerializableExtra("wei.mark.standout.fromCls");
+				int fromId = intent.getIntExtra("fromId", DEFAULT_ID);
+
+				onReceiveData(id, requestCode, data, fromCls, fromId);
 			}
 		} else {
 			Log.w("StandOutWindow",
@@ -795,7 +886,7 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Implement this callback to be alerted when all windowsare about to be
+	 * Implement this callback to be alerted when all windows are about to be
 	 * closed. This callback will occur before any views are removed from the
 	 * window manager.
 	 * 
@@ -805,6 +896,31 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected boolean onCloseAll() {
 		return false;
+	}
+
+	/**
+	 * Implement this callback to be alerted when a window corresponding to the
+	 * id has received some data. The sender is described by fromCls and fromId
+	 * if the sender wants a result. To send a result, use
+	 * {@link #sendData(int, Class, int, int, Bundle)}.
+	 * 
+	 * @param id
+	 *            The id of your receiving window.
+	 * @param requestCode
+	 *            The sending window provided this request code to declare what
+	 *            kind of data is being sent.
+	 * @param data
+	 *            A bundle of parceleable data that was sent to your receiving
+	 *            window.
+	 * @param fromCls
+	 *            The sending window's class. Provided if the sender wants a
+	 *            result.
+	 * @param fromId
+	 *            The sending window's id. Provided if the sender wants a
+	 *            result.
+	 */
+	protected void onReceiveData(int id, int requestCode, Bundle data,
+			Class<? extends StandOutWindow> fromCls, int fromId) {
 	}
 
 	/**
@@ -1090,6 +1206,33 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Send {@link Parceleable} data in a {@link Bundle} to a new or existing
+	 * windows. The implementation of the recipient window can handle what to do
+	 * with the data. To receive a result, provide the id of the sender.
+	 * 
+	 * @param fromId
+	 *            If your window wants a result, provide the id of the sending
+	 *            window.
+	 * @param toCls
+	 *            The Service's class extending {@link StandOutWindow} that is
+	 *            managing the receiving window.
+	 * @param toId
+	 *            The id of the receiving window.
+	 * @param requestCode
+	 *            Provide a request code to declare what kind of data is being
+	 *            sent.
+	 * @param data
+	 *            A bundle of parceleable data to be sent to the receiving
+	 *            window.
+	 */
+	protected final void sendData(int fromId,
+			Class<? extends StandOutWindow> toCls, int toId, int requestCode,
+			Bundle data) {
+		StandOutWindow.sendData(this, toCls, toId, requestCode, data,
+				getClass(), fromId);
+	}
+
+	/**
 	 * Update the window corresponding to this view with the given params.
 	 * 
 	 * @param window
@@ -1184,6 +1327,10 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected final boolean isExistingId(int id) {
 		return isCached(getClass(), id);
+	}
+
+	protected final View getWindow(int id) {
+		return getCache(id);
 	}
 
 	/**

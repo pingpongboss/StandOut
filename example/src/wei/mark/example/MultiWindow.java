@@ -2,6 +2,8 @@ package wei.mark.example;
 
 import wei.mark.standout.StandOutWindow;
 import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -116,5 +118,25 @@ public class MultiWindow extends StandOutWindow {
 	protected Animation getHideAnimation(int id) {
 		return AnimationUtils.loadAnimation(this,
 				android.R.anim.slide_out_right);
+	}
+
+	@Override
+	protected void onReceiveData(int id, int requestCode, Bundle data,
+			Class<? extends StandOutWindow> fromCls, int fromId) {
+		// receive data from WidgetsWindow's button press
+		// to show off the data sending framework
+		switch (requestCode) {
+			case WidgetsWindow.DATA_CHANGED_TEXT:
+				String changedText = data.getString("changedText");
+				TextView status = (TextView) getWindow(id)
+						.findViewById(R.id.id);
+				status.setTextSize(20);
+				status.setText("Received data from WidgetsWindow: "
+						+ changedText);
+				break;
+			default:
+				Log.d("MultiWindow", "Unexpected data received.");
+				break;
+		}
 	}
 }

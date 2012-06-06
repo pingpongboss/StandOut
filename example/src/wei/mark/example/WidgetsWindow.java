@@ -1,5 +1,6 @@
 package wei.mark.example;
 
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -9,8 +10,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 public class WidgetsWindow extends MultiWindow {
+	public static final int DATA_CHANGED_TEXT = 0;
+
 	@Override
-	protected View createAndAttachView(int id, ViewGroup root) {
+	protected View createAndAttachView(final int id, ViewGroup root) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		View view = inflater.inflate(R.layout.widgets, root, true);
 
@@ -24,12 +27,22 @@ public class WidgetsWindow extends MultiWindow {
 			public void onClick(View v) {
 				String text = edit.getText().toString();
 				String text2 = edit2.getText().toString();
-				status.setText("Entered: "
+
+				String changedText = "Entered: "
 						+ text
 						+ (text.length() == 0 || text2.length() == 0 ? ""
-								: " and ") + text2);
+								: " and ") + text2;
+
+				status.setText(changedText);
 				edit.setText("");
 				edit2.setText("");
+
+				// update MultiWindow:0 when button is pressed
+				// to show off the data sending framework
+				Bundle data = new Bundle();
+				data.putString("changedText", changedText);
+				sendData(id, MultiWindow.class, DEFAULT_ID, DATA_CHANGED_TEXT,
+						data);
 			}
 		});
 
@@ -40,7 +53,7 @@ public class WidgetsWindow extends MultiWindow {
 	protected LayoutParams getParams(int id, View view) {
 		return new LayoutParams(300, 500);
 	}
-	
+
 	@Override
 	protected String getAppName() {
 		return "WidgetWindow";
