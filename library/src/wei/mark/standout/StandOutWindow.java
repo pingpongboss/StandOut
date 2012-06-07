@@ -34,6 +34,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 
 /**
@@ -171,9 +172,18 @@ public abstract class StandOutWindow extends Service {
 	 * Setting this flag indicates that the system should disable EditText
 	 * compatibility workarounds.
 	 * 
-	 * @see #FLAG_FIX_COMPATIBILITY_ALL_DISABLE
+	 * @see #fixCompatibility(View)
+	 * 
 	 */
 	public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 0x00000200;
+
+	/**
+	 * Setting this flag indicates that the system should disable ListView
+	 * compatibility workarounds.
+	 * 
+	 * @see #fixCompatibility(View)
+	 */
+	public static final int FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE = 0x00000400;
 
 	/**
 	 * Show a new window corresponding to the id, or restore a previously hidden
@@ -1453,9 +1463,14 @@ public abstract class StandOutWindow extends Service {
 	 * Currently, this method does the following:
 	 * 
 	 * <p>
-	 * Fix {@link EditText} because they are not focusable. To make EditText
-	 * usable, hook up an onclick listener and start a new Activity for the sole
-	 * purpose of getting user input.
+	 * Fix {@link EditText} because they are not focusable and don't open the
+	 * IME. To make EditText usable, hook up an onclick listener and start a new
+	 * Activity for the sole purpose of getting user input.
+	 * 
+	 * <p>
+	 * Fix {@link ListView} because they are not focusable and don't dispatch
+	 * onItemClick events. To make ListView usable, write our own click
+	 * detection code using an {@link OnTouchListener}.
 	 * 
 	 * @param root
 	 *            The root view hiearchy to iterate through and check.
@@ -1471,18 +1486,18 @@ public abstract class StandOutWindow extends Service {
 			// fix EditText
 			if (view instanceof EditText
 					&& (flags & FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE) == 0) {
-				final EditText editText = (EditText) view;
+				final EditText edit = (EditText) view;
 
 				// when user clicks edittext, show FixEditTextActivity helper
-				editText.setOnFocusChangeListener(new OnFocusChangeListener() {
+				edit.setOnFocusChangeListener(new OnFocusChangeListener() {
 
 					@Override
 					public void onFocusChange(View v, boolean hasFocus) {
 						if (hasFocus) {
-							FixEditTextActivity.edit = editText;
+							FixEditTextActivity.edit = edit;
 							try {
-								String text = editText.getText().toString();
-								int caret = editText.getSelectionStart();
+								String text = edit.getText().toString();
+								int caret = edit.getSelectionStart();
 
 								Log.d("StandOutWindow", "Touch text: " + text
 										+ " caret: " + caret);
@@ -1510,13 +1525,95 @@ public abstract class StandOutWindow extends Service {
 
 				// since one edittext is always already focused, use onClick to
 				// trigger the focus change listener
-				editText.setOnClickListener(new OnClickListener() {
+				edit.setOnClickListener(new OnClickListener() {
 
 					@Override
 					public void onClick(View v) {
 						if (v.isFocused() && FixEditTextActivity.edit == null) {
 							v.clearFocus();
 						}
+					}
+				});
+			} else if (view instanceof ListView
+					&& (flags & FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE) == 0) {
+				final ListView list = (ListView) view;
+
+				list.setOnTouchListener(new OnTouchListener() {
+					float downX = 0, downY = 0;
+					float threshold = 5;
+					int STATE_DEFAULT = 0, STATE_PRESSED = 1;
+					int state = STATE_DEFAULT;
+
+					@Override
+					public boolean onTouch(View v, MotionEvent event) {
+						Log.d("StandOutWindow", "Event: " + event);
+
+						switch (event.getAction()) {
+							case MotionEvent.ACTION_DOWN:
+								if (state == STATE_DEFAULT) {
+									downX = event.getX();
+									downY = event.getY();
+
+									state = STATE_PRESSED;
+								}
+								break;
+							case MotionEvent.ACTION_MOVE:
+								if (state == STATE_PRESSED) {
+									float deltaX = event.getX() - downX;
+									float deltaY = event.getY() - downY;
+									if (Math.abs(deltaX) > threshold
+											|| Math.abs(deltaY) > threshold) {
+										state = STATE_DEFAULT;
+									}
+								}
+								break;
+							case MotionEvent.ACTION_UP:
+								if (state == STATE_PRESSED) {
+									state = STATE_DEFAULT;
+									float x = event.getX();
+									float y = event.getY();
+
+									float deltaX = x - downX;
+									float deltaY = y - downY;
+									if (deltaX > threshold
+											|| deltaY > threshold) {
+										return false;
+									}
+									if (list.getChildCount() == 0) {
+										return false;
+									}
+
+									// clicked. find out which item
+									int yThreshold = list.getChildAt(0)
+											.getTop();
+									int first = list.getFirstVisiblePosition();
+									int headers = list.getHeaderViewsCount();
+									int last = list.getLastVisiblePosition();
+
+									for (int position = first - headers; position <= last; position++) {
+										int relative = position - first;
+										View child = list.getChildAt(relative);
+										int height = child.getHeight();
+										int dividerHeight = list
+												.getDividerHeight();
+										yThreshold += height + dividerHeight;
+										if (y < yThreshold) {
+											// clicked view at this position
+
+											Log.d("StandOutWindow",
+													"Clicked item (relative): "
+															+ relative);
+											list.getOnItemClickListener()
+													.onItemClick(list, child,
+															position, position);
+											return true;
+										}
+									}
+								}
+								break;
+						}
+
+						return false;
 					}
 				});
 			}
