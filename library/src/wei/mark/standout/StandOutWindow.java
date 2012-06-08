@@ -55,6 +55,13 @@ public abstract class StandOutWindow extends Service {
 	public static final int ONGOING_NOTIFICATION_ID = -1;
 
 	/**
+	 * StandOut window id: You may use this id when you want it to be
+	 * disregarded. The system makes no distinction for this id; it is only used
+	 * to improve code readability.
+	 */
+	public static final int DISREGARD_ID = -2;
+
+	/**
 	 * Intent action: Show a new window corresponding to the id.
 	 */
 	public static final String ACTION_SHOW = "SHOW";
@@ -1366,7 +1373,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id representing the wrapped view.
 	 * @return The wrapped view from cache, or created from the implementation.
 	 */
-	private View getWrappedView(int id) {
+	private View getWrappedView(final int id) {
 		// try get the wrapped view from the internal map
 		View cachedView = getCache(id);
 
@@ -1403,7 +1410,6 @@ public abstract class StandOutWindow extends Service {
 			public boolean onTouch(View v, MotionEvent event) {
 				// pass all touch events to the implementation
 				WrappedTag tag = (WrappedTag) window.getTag();
-				int id = tag.id;
 				WindowTouchInfo touchInfo = tag.touchInfo;
 
 				boolean consumed = onTouchBody(id, window, touchInfo, v, event);
@@ -1447,7 +1453,13 @@ public abstract class StandOutWindow extends Service {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				Log.d("StandOutWindow", "Event: " + event);
+				switch (event.getAction()) {
+					case MotionEvent.ACTION_OUTSIDE:
+						WrappedTag tag = (WrappedTag) window.getTag();
+						WindowTouchInfo touchInfo = tag.touchInfo;
+						onTouchBody(id, window, touchInfo, v, event);
+						return true;
+				}
 				return false;
 			}
 		});
@@ -1499,8 +1511,6 @@ public abstract class StandOutWindow extends Service {
 								String text = edit.getText().toString();
 								int caret = edit.getSelectionStart();
 
-								Log.d("StandOutWindow", "Touch text: " + text
-										+ " caret: " + caret);
 								startActivity(new Intent(StandOutWindow.this,
 										FixEditTextActivity.class)
 										.addFlags(
@@ -1534,7 +1544,9 @@ public abstract class StandOutWindow extends Service {
 						}
 					}
 				});
-			} else if (view instanceof ListView
+			}
+
+			if (view instanceof ListView
 					&& (flags & FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE) == 0) {
 				final ListView list = (ListView) view;
 
@@ -1546,8 +1558,6 @@ public abstract class StandOutWindow extends Service {
 
 					@Override
 					public boolean onTouch(View v, MotionEvent event) {
-						Log.d("StandOutWindow", "Event: " + event);
-
 						switch (event.getAction()) {
 							case MotionEvent.ACTION_DOWN:
 								if (state == STATE_DEFAULT) {
@@ -1776,10 +1786,10 @@ public abstract class StandOutWindow extends Service {
 	 */
 	private boolean onTouchWindow(int id, View window,
 			WindowTouchInfo touchInfo, View view, MotionEvent event) {
+		int flags = getFlags(id);
+
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_UP:
-				int flags = getFlags(id);
-
 				boolean tap = touchInfo.deltaX == 0 && touchInfo.deltaY == 0;
 				if ((flags & FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH) != 0) {
 					bringToFront(id);
@@ -2001,7 +2011,8 @@ public abstract class StandOutWindow extends Service {
 	protected class LayoutParams extends WindowManager.LayoutParams {
 		public LayoutParams() {
 			super(200, 200, TYPE_SYSTEM_ALERT, FLAG_NOT_FOCUSABLE
-					| FLAG_ALT_FOCUSABLE_IM, PixelFormat.TRANSLUCENT);
+					| FLAG_ALT_FOCUSABLE_IM | FLAG_WATCH_OUTSIDE_TOUCH,
+					PixelFormat.TRANSLUCENT);
 
 			x = getX(width);
 			y = getY(height);
