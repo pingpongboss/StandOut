@@ -1843,6 +1843,15 @@ public abstract class StandOutWindow extends Service {
 		// update the position of the window
 		params.x = touchInfo.x + touchInfo.deltaX;
 		params.y = touchInfo.y + touchInfo.deltaY;
+
+		Display display = mWindowManager.getDefaultDisplay();
+		int displayWidth = display.getWidth();
+		int displayHeight = display.getHeight();
+
+		params.x = Math.min(Math.max(params.x, 0), displayWidth - params.width);
+		params.y = Math.min(Math.max(params.y, 0), displayHeight
+				- params.height);
+
 		updateViewLayout(id, window, params);
 
 		return true;
