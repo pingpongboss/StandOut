@@ -1741,33 +1741,32 @@ public abstract class StandOutWindow extends Service {
 
 						switch (event.getAction()) {
 							case MotionEvent.ACTION_DOWN:
-								touchInfo.width = params.width;
-								touchInfo.height = params.height;
-								touchInfo.downX = (int) event.getRawX();
-								touchInfo.downY = (int) event.getRawY();
-								touchInfo.deltaX = touchInfo.deltaY = 0;
+								touchInfo.lastX = (int) event.getRawX();
+								touchInfo.lastY = (int) event.getRawY();
+
+								touchInfo.firstX = touchInfo.lastX;
+								touchInfo.firstY = touchInfo.lastY;
 								break;
 							case MotionEvent.ACTION_MOVE:
-								touchInfo.deltaX = (int) event.getRawX()
-										- touchInfo.downX;
-								touchInfo.deltaY = (int) event.getRawY()
-										- touchInfo.downY;
+								int deltaX = (int) event.getRawX()
+										- touchInfo.lastX;
+								int deltaY = (int) event.getRawY()
+										- touchInfo.lastY;
+
+								touchInfo.lastX = (int) event.getRawX();
+								touchInfo.lastY = (int) event.getRawY();
 
 								// update the size of the window
-								params.width = Math.max(0, touchInfo.width
-										+ touchInfo.deltaX);
-								params.height = Math.max(0, touchInfo.height
-										+ touchInfo.deltaY);
+								params.width += deltaX;
+								params.height += deltaY;
+
+								// keep window larger than 0 px
+								params.width = Math.max(params.width, 0);
+								params.height = Math.max(params.height, 0);
+
 								updateViewLayout(id, window, params);
 								break;
 							case MotionEvent.ACTION_UP:
-								touchInfo.width = touchInfo.width
-										+ touchInfo.deltaX;
-								touchInfo.height = touchInfo.height
-										+ touchInfo.deltaY;
-
-								touchInfo.deltaX = touchInfo.deltaY = 0;
-								touchInfo.downX = touchInfo.downY = 0;
 								break;
 						}
 
@@ -1813,7 +1812,9 @@ public abstract class StandOutWindow extends Service {
 
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_UP:
-				boolean tap = touchInfo.deltaX == 0 && touchInfo.deltaY == 0;
+				int deltaX = touchInfo.lastX - touchInfo.firstX;
+				int deltaY = touchInfo.lastY - touchInfo.firstY;
+				boolean tap = deltaX == 0 && deltaY == 0;
 				if ((flags & FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH) != 0) {
 					bringToFront(id);
 				} else if ((flags & FLAG_WINDOW_BRING_TO_FRONT_ON_TAP) != 0
@@ -1844,20 +1845,24 @@ public abstract class StandOutWindow extends Service {
 
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
-				touchInfo.x = params.x;
-				touchInfo.y = params.y;
-				touchInfo.downX = (int) event.getRawX();
-				touchInfo.downY = (int) event.getRawY();
-				touchInfo.deltaX = touchInfo.deltaY = 0;
+				touchInfo.lastX = (int) event.getRawX();
+				touchInfo.lastY = (int) event.getRawY();
+
+				touchInfo.firstX = touchInfo.lastX;
+				touchInfo.firstY = touchInfo.lastY;
 				break;
 			case MotionEvent.ACTION_MOVE:
-				touchInfo.deltaX = (int) event.getRawX() - touchInfo.downX;
-				touchInfo.deltaY = (int) event.getRawY() - touchInfo.downY;
+				int deltaX = (int) event.getRawX() - touchInfo.lastX;
+				int deltaY = (int) event.getRawY() - touchInfo.lastY;
+
+				touchInfo.lastX = (int) event.getRawX();
+				touchInfo.lastY = (int) event.getRawY();
 
 				// update the position of the window
-				params.x = touchInfo.x + touchInfo.deltaX;
-				params.y = touchInfo.y + touchInfo.deltaY;
+				params.x += deltaX;
+				params.y += deltaY;
 
+				// keep window inside of edges
 				Display display = mWindowManager.getDefaultDisplay();
 				int displayWidth = display.getWidth();
 				int displayHeight = display.getHeight();
@@ -1872,11 +1877,6 @@ public abstract class StandOutWindow extends Service {
 				onMove(id, window, touchInfo, view, event);
 				break;
 			case MotionEvent.ACTION_UP:
-				touchInfo.x = touchInfo.x + touchInfo.deltaX;
-				touchInfo.y = touchInfo.y + touchInfo.deltaY;
-
-				touchInfo.deltaX = touchInfo.deltaY = 0;
-				touchInfo.downX = touchInfo.downY = 0;
 				break;
 		}
 
@@ -2023,24 +2023,15 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public class WindowTouchInfo {
 		/**
-		 * The state of the window on ACTION_DOWN.
+		 * The state of the window.
 		 */
-		public int x, y, width, height;
-		/**
-		 * The touch location on ACTION_DOWN.
-		 */
-		public int downX, downY;
-		/**
-		 * The delta between the current touch location and the touch location
-		 * on ACTION_DOWN.
-		 */
-		public int deltaX, deltaY;
+		public int firstX, firstY, lastX, lastY, lastWidth, lastHeight;
 
 		@Override
 		public String toString() {
-			return String.format(
-					"WindowTouchInfo { x=%d, y=%d, width=%d, height=%d }", x,
-					y, width, height);
+			return String
+					.format("WindowTouchInfo { firstX=%d, firstY=%d,lastX=%d, lastY=%d, lastWidth=%d, lastHeight=%d }",
+							firstX, firstY, lastX, lastY, lastWidth, lastHeight);
 		}
 	}
 

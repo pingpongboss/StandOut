@@ -80,7 +80,7 @@ public final class FloatingFolder extends StandOutWindow {
 
 	@Override
 	protected int getAppIcon() {
-		return R.drawable.ic_launcher;
+		return R.drawable.ff_ic_launcher;
 	}
 
 	@Override
@@ -395,6 +395,8 @@ public final class FloatingFolder extends StandOutWindow {
 						if (screenshot.getDrawable() == null) {
 							folder.setVisibility(View.GONE);
 
+							// post so that the folder is invisible before
+							// anything else happens
 							screenshot.post(new Runnable() {
 
 								@Override
@@ -406,9 +408,8 @@ public final class FloatingFolder extends StandOutWindow {
 									screenshot.setImageDrawable(drawable);
 
 									// preview should be centered vertically
-									params.y += params.height / 2
+									params.y = params.y + params.height / 2
 											- drawable.getIntrinsicHeight() / 2;
-									touchInfo.downY -= params.height / 2;
 
 									params.width = drawable.getIntrinsicWidth();
 									params.height = drawable
@@ -427,6 +428,8 @@ public final class FloatingFolder extends StandOutWindow {
 						if (drawable != null) {
 							screenshot.setVisibility(View.GONE);
 
+							// post so that screenshot is invisible before
+							// anything else happens
 							screenshot.post(new Runnable() {
 
 								@Override
@@ -436,9 +439,8 @@ public final class FloatingFolder extends StandOutWindow {
 									LayoutParams originalParams = getParams(id,
 											view);
 
-									params.y -= originalParams.height / 2
-											+ drawable.getIntrinsicHeight();
-									touchInfo.downY += originalParams.height / 2;
+									params.y = params.y - originalParams.height
+											/ 2 + drawable.getIntrinsicHeight();
 
 									params.width = originalParams.width;
 									params.height = originalParams.height;
