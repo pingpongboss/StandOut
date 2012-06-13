@@ -19,7 +19,6 @@
             android:label="@string/app_name"
             android:theme="@android:style/Theme.NoDisplay" >
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
@@ -37,7 +36,25 @@
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" >
         </activity>
-        <service android:name="WidgetsWindow"></service>
+
+        <service android:name="WidgetsWindow" >
+        </service>
+
+        <activity
+            android:name=".floatingfolders.FloatingFoldersLauncher"
+            android:excludeFromRecents="true"
+            android:icon="@drawable/ff_ic_launcher"
+            android:label="@string/ff_app_name"
+            android:theme="@android:style/Theme.NoDisplay" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service android:name=".floatingfolders.FloatingFolder" >
+        </service>
     </application>
 
 </manifest>

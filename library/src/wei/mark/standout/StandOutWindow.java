@@ -851,6 +851,26 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Implement this method to be alerted to when the window corresponding to
+	 * the id is moved.
+	 * 
+	 * @see {@link View.OnTouchListener#onTouch(View, MotionEvent)}
+	 * @param id
+	 *            The id of the view, provided as a courtesy.
+	 * @param window
+	 *            The window corresponding to the id, provided as a courtesy.
+	 * @param touchInfo
+	 *            The touch information of the window, provided as a courtesy.
+	 * @param view
+	 *            The view where the event originated from.
+	 * @param event
+	 *            See linked method.
+	 */
+	protected void onMove(int id, View window, WindowTouchInfo touchInfo,
+			View view, MotionEvent event) {
+	}
+
+	/**
 	 * Implement this callback to be alerted when a window corresponding to the
 	 * id is about to be shown. This callback will occur before the view is
 	 * added to the window manager.
@@ -1412,7 +1432,7 @@ public abstract class StandOutWindow extends Service {
 				WrappedTag tag = (WrappedTag) window.getTag();
 				WindowTouchInfo touchInfo = tag.touchInfo;
 
-				boolean consumed = onTouchBody(id, window, touchInfo, v, event);
+				boolean consumed = false;
 
 				consumed = onTouchWindow(id, window, touchInfo, v, event)
 						|| consumed;
@@ -1422,6 +1442,9 @@ public abstract class StandOutWindow extends Service {
 					consumed = onTouchHandleMove(id, window, touchInfo, v,
 							event) || consumed;
 				}
+
+				consumed = onTouchBody(id, window, touchInfo, v, event)
+						|| consumed;
 
 				return consumed;
 			}
@@ -1729,6 +1752,13 @@ public abstract class StandOutWindow extends Service {
 										- touchInfo.downX;
 								touchInfo.deltaY = (int) event.getRawY()
 										- touchInfo.downY;
+
+								// update the size of the window
+								params.width = Math.max(0, touchInfo.width
+										+ touchInfo.deltaX);
+								params.height = Math.max(0, touchInfo.height
+										+ touchInfo.deltaY);
+								updateViewLayout(id, window, params);
 								break;
 							case MotionEvent.ACTION_UP:
 								touchInfo.width = touchInfo.width
@@ -1740,13 +1770,6 @@ public abstract class StandOutWindow extends Service {
 								touchInfo.downX = touchInfo.downY = 0;
 								break;
 						}
-
-						// update the position of the window
-						params.width = Math.max(0, touchInfo.width
-								+ touchInfo.deltaX);
-						params.height = Math.max(0, touchInfo.height
-								+ touchInfo.deltaY);
-						updateViewLayout(id, window, params);
 
 						return true;
 				}
@@ -1830,6 +1853,23 @@ public abstract class StandOutWindow extends Service {
 			case MotionEvent.ACTION_MOVE:
 				touchInfo.deltaX = (int) event.getRawX() - touchInfo.downX;
 				touchInfo.deltaY = (int) event.getRawY() - touchInfo.downY;
+
+				// update the position of the window
+				params.x = touchInfo.x + touchInfo.deltaX;
+				params.y = touchInfo.y + touchInfo.deltaY;
+
+				Display display = mWindowManager.getDefaultDisplay();
+				int displayWidth = display.getWidth();
+				int displayHeight = display.getHeight();
+
+				params.x = Math.min(Math.max(params.x, 0), displayWidth
+						- params.width);
+				params.y = Math.min(Math.max(params.y, 0), displayHeight
+						- params.height);
+
+				updateViewLayout(id, window, params);
+
+				onMove(id, window, touchInfo, view, event);
 				break;
 			case MotionEvent.ACTION_UP:
 				touchInfo.x = touchInfo.x + touchInfo.deltaX;
@@ -1839,20 +1879,6 @@ public abstract class StandOutWindow extends Service {
 				touchInfo.downX = touchInfo.downY = 0;
 				break;
 		}
-
-		// update the position of the window
-		params.x = touchInfo.x + touchInfo.deltaX;
-		params.y = touchInfo.y + touchInfo.deltaY;
-
-		Display display = mWindowManager.getDefaultDisplay();
-		int displayWidth = display.getWidth();
-		int displayHeight = display.getHeight();
-
-		params.x = Math.min(Math.max(params.x, 0), displayWidth - params.width);
-		params.y = Math.min(Math.max(params.y, 0), displayHeight
-				- params.height);
-
-		updateViewLayout(id, window, params);
 
 		return true;
 	}
@@ -2009,6 +2035,13 @@ public abstract class StandOutWindow extends Service {
 		 * on ACTION_DOWN.
 		 */
 		public int deltaX, deltaY;
+
+		@Override
+		public String toString() {
+			return String.format(
+					"WindowTouchInfo { x=%d, y=%d, width=%d, height=%d }", x,
+					y, width, height);
+		}
 	}
 
 	/**

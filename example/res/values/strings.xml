@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="hello">Hello World, StandOutExampleActivity!</string>
-    <string name="app_name">StandOutExample</string>
+    <string name="app_name">StandOut Example</string>
+    <string name="ff_app_name">Floating Folders</string>
 
 </resources>
