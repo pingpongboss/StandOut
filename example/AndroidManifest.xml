@@ -9,7 +9,6 @@
         android:targetSdkVersion="15" />
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:icon="@drawable/ic_launcher"
@@ -40,22 +39,6 @@
         </activity>
 
         <service android:name="WidgetsWindow" >
-        </service>
-
-        <activity
-            android:name=".floatingfolders.FloatingFoldersLauncher"
-            android:excludeFromRecents="true"
-            android:icon="@drawable/ff_ic_launcher"
-            android:label="@string/ff_app_name"
-            android:theme="@android:style/Theme.NoDisplay" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <service android:name=".floatingfolders.FloatingFolder" >
         </service>
     </application>
 
