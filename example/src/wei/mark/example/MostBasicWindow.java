@@ -32,6 +32,7 @@ public class MostBasicWindow extends StandOutWindow {
 
 	@Override
 	protected LayoutParams getParams(int id, View view) {
-		return new LayoutParams(200, 150, 100, 100, Gravity.LEFT | Gravity.TOP);
+		return new LayoutParams(id, 200, 150, 100, 100, Gravity.LEFT
+				| Gravity.TOP);
 	}
 }

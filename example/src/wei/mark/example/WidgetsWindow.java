@@ -51,7 +51,7 @@ public class WidgetsWindow extends MultiWindow {
 
 	@Override
 	protected LayoutParams getParams(int id, View view) {
-		return new LayoutParams(300, 500);
+		return new LayoutParams(id, 300, 500);
 	}
 
 	@Override

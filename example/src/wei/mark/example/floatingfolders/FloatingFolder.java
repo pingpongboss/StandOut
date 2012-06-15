@@ -21,13 +21,10 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ResolveInfo;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
@@ -184,9 +181,9 @@ public final class FloatingFolder extends StandOutWindow {
 	@Override
 	protected LayoutParams getParams(int id, View view) {
 		if (APP_SELECTOR_ID == id) {
-			return new LayoutParams(400, LayoutParams.WRAP_CONTENT);
+			return new LayoutParams(id, 400, LayoutParams.WRAP_CONTENT);
 		} else {
-			return new LayoutParams(400, 400);
+			return new LayoutParams(id, 400, 400);
 		}
 	}
 
@@ -195,7 +192,7 @@ public final class FloatingFolder extends StandOutWindow {
 		if (APP_SELECTOR_ID == id) {
 			return super.getFlags(id);
 		} else {
-			return super.getFlags(id) | FLAG_BODY_MOVE_ENABLE;
+			return super.getFlags(id) | StandOutFlags.FLAG_BODY_MOVE_ENABLE;
 		}
 	}
 
@@ -365,100 +362,100 @@ public final class FloatingFolder extends StandOutWindow {
 		}
 	};
 
-	@Override
-	protected boolean onTouchBody(final int id, final View window,
-			final WindowTouchInfo touchInfo, final View view,
-			android.view.MotionEvent event) {
-		switch (event.getAction()) {
-			case MotionEvent.ACTION_OUTSIDE:
-				close(APP_SELECTOR_ID);
-				break;
-			case MotionEvent.ACTION_MOVE:
-				if (id != APP_SELECTOR_ID) {
-					final LayoutParams params = (LayoutParams) window
-							.getLayoutParams();
-
-					Display display = mWindowManager.getDefaultDisplay();
-					int displayWidth = display.getWidth();
-					int displayHeight = display.getHeight();
-
-					final View folder = window.findViewById(R.id.folder);
-					final ImageView screenshot = (ImageView) window
-							.findViewById(R.id.preview);
-
-					// if touch edge
-					if (params.x == 0
-							|| params.x + params.width == displayWidth
-							|| params.y == 0
-							|| params.y + params.height == displayHeight) {
-						// first time touch edge
-						if (screenshot.getDrawable() == null) {
-							folder.setVisibility(View.GONE);
-
-							// post so that the folder is invisible before
-							// anything else happens
-							screenshot.post(new Runnable() {
-
-								@Override
-								public void run() {
-									Drawable drawable = getResources()
-											.getDrawable(
-													R.drawable.ff_ic_menu_archive);
-
-									screenshot.setImageDrawable(drawable);
-
-									// preview should be centered vertically
-									params.y = params.y + params.height / 2
-											- drawable.getIntrinsicHeight() / 2;
-
-									params.width = drawable.getIntrinsicWidth();
-									params.height = drawable
-											.getIntrinsicHeight();
-
-									updateViewLayout(id, window, params);
-
-									screenshot.setVisibility(View.VISIBLE);
-								}
-							});
-						}
-					} else { // not touch edge
-						final Drawable drawable = screenshot.getDrawable();
-
-						// first time not touch edge
-						if (drawable != null) {
-							screenshot.setVisibility(View.GONE);
-
-							// post so that screenshot is invisible before
-							// anything else happens
-							screenshot.post(new Runnable() {
-
-								@Override
-								public void run() {
-									screenshot.setImageDrawable(null);
-
-									LayoutParams originalParams = getParams(id,
-											view);
-
-									params.y = params.y - originalParams.height
-											/ 2 + drawable.getIntrinsicHeight();
-
-									params.width = originalParams.width;
-									params.height = originalParams.height;
-
-									updateViewLayout(id, window, params);
-
-									folder.setVisibility(View.VISIBLE);
-								}
-							});
-						}
-					}
-				}
-
-				break;
-		}
-
-		return false;
-	}
+	// @Override
+	// protected boolean onTouchBody(final int id, final View window,
+	// final WindowTouchInfo touchInfo, final View view,
+	// android.view.MotionEvent event) {
+	// switch (event.getAction()) {
+	// case MotionEvent.ACTION_OUTSIDE:
+	// close(APP_SELECTOR_ID);
+	// break;
+	// case MotionEvent.ACTION_MOVE:
+	// if (id != APP_SELECTOR_ID) {
+	// final LayoutParams params = (LayoutParams) window
+	// .getLayoutParams();
+	//
+	// Display display = mWindowManager.getDefaultDisplay();
+	// int displayWidth = display.getWidth();
+	// int displayHeight = display.getHeight();
+	//
+	// final View folder = window.findViewById(R.id.folder);
+	// final ImageView screenshot = (ImageView) window
+	// .findViewById(R.id.preview);
+	//
+	// // if touch edge
+	// if (params.x == 0
+	// || params.x + params.width == displayWidth
+	// || params.y == 0
+	// || params.y + params.height == displayHeight) {
+	// // first time touch edge
+	// if (screenshot.getDrawable() == null) {
+	// folder.setVisibility(View.GONE);
+	//
+	// // post so that the folder is invisible before
+	// // anything else happens
+	// screenshot.post(new Runnable() {
+	//
+	// @Override
+	// public void run() {
+	// Drawable drawable = getResources()
+	// .getDrawable(
+	// R.drawable.ff_ic_menu_archive);
+	//
+	// screenshot.setImageDrawable(drawable);
+	//
+	// // preview should be centered vertically
+	// params.y = params.y + params.height / 2
+	// - drawable.getIntrinsicHeight() / 2;
+	//
+	// params.width = drawable.getIntrinsicWidth();
+	// params.height = drawable
+	// .getIntrinsicHeight();
+	//
+	// updateViewLayout(id, window, params);
+	//
+	// screenshot.setVisibility(View.VISIBLE);
+	// }
+	// });
+	// }
+	// } else { // not touch edge
+	// final Drawable drawable = screenshot.getDrawable();
+	//
+	// // first time not touch edge
+	// if (drawable != null) {
+	// screenshot.setVisibility(View.GONE);
+	//
+	// // post so that screenshot is invisible before
+	// // anything else happens
+	// screenshot.post(new Runnable() {
+	//
+	// @Override
+	// public void run() {
+	// screenshot.setImageDrawable(null);
+	//
+	// LayoutParams originalParams = getParams(id,
+	// view);
+	//
+	// params.y = params.y - originalParams.height
+	// / 2 + drawable.getIntrinsicHeight();
+	//
+	// params.width = originalParams.width;
+	// params.height = originalParams.height;
+	//
+	// updateViewLayout(id, window, params);
+	//
+	// folder.setVisibility(View.VISIBLE);
+	// }
+	// });
+	// }
+	// }
+	// }
+	//
+	// break;
+	// }
+	//
+	// return false;
+	// }
 
 	protected String getPersistentNotificationMessage(int id) {
 		return "Click to close all windows.";

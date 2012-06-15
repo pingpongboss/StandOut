@@ -1,6 +1,7 @@
 package wei.mark.standout;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -44,6 +45,8 @@ import android.widget.TextView;
  * 
  */
 public abstract class StandOutWindow extends Service {
+	private static final String TAG = "StandOutWindow";
+
 	/**
 	 * StandOut window id: You may use this sample id for your first window.
 	 */
@@ -95,102 +98,133 @@ public abstract class StandOutWindow extends Service {
 	public static final String ACTION_HIDE = "HIDE";
 
 	/**
-	 * This default flag indicates that the window requires no window
-	 * decorations (titlebar, hide/close buttons, resize handle, etc).
-	 */
-	public static final int FLAG_DECORATION_NONE = 0x00000000;
-
-	/**
-	 * Setting this flag indicates that the window wants the system provided
-	 * window decorations (titlebar, hide/close buttons, resize handle, etc).
-	 */
-	public static final int FLAG_DECORATION_SYSTEM = 0x00000001;
-
-	/**
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
-	 * that the window decorator should NOT provide a close button.
-	 */
-	public static final int FLAG_DECORATION_CLOSE_DISABLE = 0x00000002;
-
-	/**
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
-	 * that the window decorator should NOT provide a resize handle.
-	 */
-	public static final int FLAG_DECORATION_RESIZE_DISABLE = 0x00000004;
-
-	/**
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag indicates
-	 * that the window decorator should NOT provide a resize handle.
-	 */
-	public static final int FLAG_DECORATION_MOVE_DISABLE = 0x00000008;
-
-	/**
-	 * Setting this flag indicates that the window can be moved by dragging the
-	 * body.
+	 * Flags to be returned from {@link StandOutWindow#getFlags(int)}. This
+	 * class was created to avoid polluting the flags namespace.
 	 * 
-	 * <p>
-	 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
-	 * always be moved by dragging the titlebar.
-	 */
-	public static final int FLAG_BODY_MOVE_ENABLE = 0x00000010;
-
-	/**
-	 * Setting this flag indicates that the window should be brought to the
-	 * front upon user interaction.
-	 * 
-	 * <p>
-	 * Note that if you set this flag, there is a noticeable flashing of the
-	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
-	 * the system to bring the window to the front.
-	 */
-	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 0x00000020;
-
-	/**
-	 * Setting this flag indicates that the window should be brought to the
-	 * front upon user tap.
-	 * 
-	 * <p>
-	 * Note that if you set this flag, there is a noticeable flashing of the
-	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
-	 * the system to bring the window to the front.
-	 */
-	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 0x00000040;
-
-	/**
-	 * Setting this flag indicates that windows are able to be hidden, that
-	 * {@link #getHiddenIcon(int)}, {@link #getHiddenTitle(int)}, and
-	 * {@link #getHiddenMessage(int)} are implemented, and that the system
-	 * window decorator should provide a hide button if
-	 * {@link #FLAG_DECORATION_SYSTEM} is set.
-	 */
-	public static final int FLAG_HIDE_ENABLE = 0x00000080;
-
-	/**
-	 * Setting this flag indicates that the system should disable all
-	 * compatibility workarounds. The default behavior is to run
-	 * {@link #fixCompatibility(View)} on the view returned by the
-	 * implementation.
-	 * 
-	 * @see #fixCompatibility(View)
-	 */
-	public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 0x00000100;
-
-	/**
-	 * Setting this flag indicates that the system should disable EditText
-	 * compatibility workarounds.
-	 * 
-	 * @see #fixCompatibility(View)
+	 * @author Mark Wei <markwei@gmail.com>
 	 * 
 	 */
-	public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 0x00000200;
+	public static class StandOutFlags {
 
-	/**
-	 * Setting this flag indicates that the system should disable ListView
-	 * compatibility workarounds.
-	 * 
-	 * @see #fixCompatibility(View)
-	 */
-	public static final int FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE = 0x00000400;
+		private static int flag_counter = 0;
+
+		/**
+		 * This default flag indicates that the window requires no window
+		 * decorations (titlebar, hide/close buttons, resize handle, etc).
+		 */
+		public static final int FLAG_DECORATION_NONE = 0x00000000;
+
+		/**
+		 * Setting this flag indicates that the window wants the system provided
+		 * window decorations (titlebar, hide/close buttons, resize handle,
+		 * etc).
+		 */
+		public static final int FLAG_DECORATION_SYSTEM = 1 << flag_counter++;
+
+		/**
+		 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
+		 * indicates that the window decorator should NOT provide a close
+		 * button.
+		 */
+		public static final int FLAG_DECORATION_CLOSE_DISABLE = 1 << flag_counter++;
+
+		/**
+		 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
+		 * indicates that the window decorator should NOT provide a resize
+		 * handle.
+		 */
+		public static final int FLAG_DECORATION_RESIZE_DISABLE = 1 << flag_counter++;
+
+		/**
+		 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
+		 * indicates that the window decorator should NOT provide a resize
+		 * handle.
+		 */
+		public static final int FLAG_DECORATION_MOVE_DISABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the window can be moved by dragging
+		 * the body.
+		 * 
+		 * <p>
+		 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
+		 * always be moved by dragging the titlebar.
+		 */
+		public static final int FLAG_BODY_MOVE_ENABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the window should be brought to the
+		 * front upon user interaction.
+		 * 
+		 * <p>
+		 * Note that if you set this flag, there is a noticeable flashing of the
+		 * window during {@link MotionEvent#ACTION_UP}. This the hack that
+		 * allows the system to bring the window to the front.
+		 */
+		public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the window should be brought to the
+		 * front upon user tap.
+		 * 
+		 * <p>
+		 * Note that if you set this flag, there is a noticeable flashing of the
+		 * window during {@link MotionEvent#ACTION_UP}. This the hack that
+		 * allows the system to bring the window to the front.
+		 */
+		public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the system should keep the window's
+		 * position within the edges of the screen. If this flag is not set, the
+		 * window will be able to be dragged off of the screen.
+		 * 
+		 * <p>
+		 * If this flag is set, the window's {@link Gravity} is recommended to
+		 * be {@link Gravity#TOP} | {@link Gravity#LEFT}. If the gravity is
+		 * anything other than TOP|LEFT, then even though the window will be
+		 * displayed within the edges, it will behave as if the user can drag it
+		 * off the screen.
+		 * 
+		 */
+		public static final int FLAG_WINDOW_EDGE_LIMITS_ENABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that windows are able to be hidden, that
+		 * {@link #getHiddenIcon(int)}, {@link #getHiddenTitle(int)}, and
+		 * {@link #getHiddenMessage(int)} are implemented, and that the system
+		 * window decorator should provide a hide button if
+		 * {@link #FLAG_DECORATION_SYSTEM} is set.
+		 */
+		public static final int FLAG_HIDE_ENABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the system should disable all
+		 * compatibility workarounds. The default behavior is to run
+		 * {@link #fixCompatibility(View)} on the view returned by the
+		 * implementation.
+		 * 
+		 * @see #fixCompatibility(View)
+		 */
+		public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the system should disable EditText
+		 * compatibility workarounds.
+		 * 
+		 * @see #fixCompatibility(View)
+		 * 
+		 */
+		public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the system should disable ListView
+		 * compatibility workarounds.
+		 * 
+		 * @see #fixCompatibility(View)
+		 */
+		public static final int FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE = 1 << flag_counter++;
+	}
 
 	/**
 	 * Show a new window corresponding to the id, or restore a previously hidden
@@ -321,8 +355,6 @@ public abstract class StandOutWindow extends Service {
 		boolean cached = isCached(cls, id);
 		String action = cached ? ACTION_RESTORE : ACTION_SHOW;
 		Uri uri = cached ? Uri.parse("standout://" + cls + '/' + id) : null;
-		Log.d("StandOutWindow", "getShowIntent() gets "
-				+ (cached ? "restore" : "show"));
 		return new Intent(context, cls).putExtra("id", id).setAction(action)
 				.setData(uri);
 	}
@@ -478,7 +510,6 @@ public abstract class StandOutWindow extends Service {
 		if (intent != null) {
 			String action = intent.getAction();
 			int id = intent.getIntExtra("id", DEFAULT_ID);
-			Log.d("StandOutWindow", "Intent id: " + id);
 
 			// this will interfere with getPersistentNotification()
 			if (id == ONGOING_NOTIFICATION_ID) {
@@ -505,8 +536,7 @@ public abstract class StandOutWindow extends Service {
 				onReceiveData(id, requestCode, data, fromCls, fromId);
 			}
 		} else {
-			Log.w("StandOutWindow",
-					"Tried to onStartCommand() with a null intent");
+			Log.w(TAG, "Tried to onStartCommand() with a null intent");
 		}
 
 		// the service is started in foreground in show()
@@ -597,7 +627,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return Bitwise OR'd flags
 	 */
 	protected int getFlags(int id) {
-		return FLAG_DECORATION_NONE;
+		return StandOutFlags.FLAG_DECORATION_NONE;
 	}
 
 	/**
@@ -1005,12 +1035,12 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The window shown.
 	 */
-	protected final View show(int id) {
+	protected final synchronized View show(int id) {
 		// get the view corresponding to the id
 		View window = getWrappedView(id);
 
 		if (window == null) {
-			Log.w("StandOutWindow", "Tried to show(" + id + ") a null view");
+			Log.w(TAG, "Tried to show(" + id + ") a null view");
 			return null;
 		}
 
@@ -1023,9 +1053,6 @@ public abstract class StandOutWindow extends Service {
 
 		WrappedTag tag = (WrappedTag) window.getTag();
 		tag.shown = true;
-
-		// add view to internal map
-		putCache(id, window);
 
 		// get the params corresponding to the id
 		StandOutWindow.LayoutParams params = (LayoutParams) window
@@ -1045,6 +1072,9 @@ public abstract class StandOutWindow extends Service {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+
+		// add view to internal map
+		putCache(id, window);
 
 		// get the persistent notification
 		Notification notification = getPersistentNotification(id);
@@ -1087,11 +1117,11 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id of the window.
 	 */
-	protected final void hide(int id) {
+	protected final synchronized void hide(int id) {
 		int flags = getFlags(id);
 
 		// check if hide enabled
-		if ((flags & FLAG_HIDE_ENABLE) != 0) {
+		if ((flags & StandOutFlags.FLAG_HIDE_ENABLE) != 0) {
 			// get the hidden notification for this view
 			Notification notification = getHiddenNotification(id);
 
@@ -1099,7 +1129,7 @@ public abstract class StandOutWindow extends Service {
 			final View window = getWrappedView(id);
 
 			if (window == null) {
-				Log.w("StandOutWindow", "Tried to hide(" + id + ") a null view");
+				Log.w(TAG, "Tried to hide(" + id + ") a null view");
 				return;
 			}
 
@@ -1161,18 +1191,21 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id of the window.
 	 */
-	protected final void close(int id) {
+	protected final synchronized void close(int id) {
 		// get the view corresponding to the id
 		final View window = getWrappedView(id);
 
 		if (window == null) {
-			Log.w("StandOutWindow", "Tried to close(" + id + ") a null view");
+			Log.w(TAG, "Tried to close(" + id + ") a null view");
 			return;
 		}
 
 		// alert callbacks and cancel if instructed
 		if (onClose(id, window))
 			return;
+
+		// remove view from internal map
+		removeCache(id);
 
 		// get animation
 		Animation animation = getCloseAnimation(id);
@@ -1214,9 +1247,6 @@ public abstract class StandOutWindow extends Service {
 			mNotificationManager.cancel(id);
 		}
 
-		// remove view from internal map
-		removeCache(id);
-
 		// if we just released the last view, quit
 		if (getCacheSize() == 0) {
 			// tell Android to remove the persistent notification
@@ -1229,7 +1259,7 @@ public abstract class StandOutWindow extends Service {
 	/**
 	 * Close all existing windows.
 	 */
-	protected final void closeAll() {
+	protected final synchronized void closeAll() {
 		// alert callbacks and cancel if instructed
 		if (onCloseAll())
 			return;
@@ -1288,7 +1318,7 @@ public abstract class StandOutWindow extends Service {
 			return;
 
 		if (window == null) {
-			Log.w("StandOutWindow", "Tried to updateViewLayout() a null window");
+			Log.w(TAG, "Tried to updateViewLayout() a null window");
 			return;
 		}
 
@@ -1306,10 +1336,10 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id of the window to bring to the front.
 	 */
-	protected final void bringToFront(int id) {
+	protected final synchronized void bringToFront(int id) {
 		View window = getWrappedView(id);
 		if (window == null) {
-			Log.w("StandOutWindow", "Tried to bringToFront() a null view");
+			Log.w(TAG, "Tried to bringToFront() a null view");
 			return;
 		}
 
@@ -1409,7 +1439,7 @@ public abstract class StandOutWindow extends Service {
 
 		int flags = getFlags(id);
 
-		if ((flags & FLAG_DECORATION_SYSTEM) != 0) {
+		if ((flags & StandOutFlags.FLAG_DECORATION_SYSTEM) != 0) {
 			// requested system window decorations
 			content = getSystemWindowContent(id);
 			body = (FrameLayout) content.findViewById(R.id.body);
@@ -1423,7 +1453,7 @@ public abstract class StandOutWindow extends Service {
 		content.setTag(window);
 
 		// body should always send touch events to onTouchBody()
-		final boolean bodyMoveEnabled = (flags & FLAG_BODY_MOVE_ENABLE) != 0;
+		final boolean bodyMoveEnabled = (flags & StandOutFlags.FLAG_BODY_MOVE_ENABLE) != 0;
 		body.setOnTouchListener(new OnTouchListener() {
 
 			@Override
@@ -1465,7 +1495,7 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// clean up view and implement StandOut specific workarounds
-		if ((flags & FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
+		if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
 			fixCompatibility(view, id);
 		}
 
@@ -1520,7 +1550,7 @@ public abstract class StandOutWindow extends Service {
 		while ((view = queue.poll()) != null) {
 			// fix EditText
 			if (view instanceof EditText
-					&& (flags & FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE) == 0) {
+					&& (flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE) == 0) {
 				final EditText edit = (EditText) view;
 
 				// when user clicks edittext, show FixEditTextActivity helper
@@ -1543,7 +1573,7 @@ public abstract class StandOutWindow extends Service {
 										.putExtra("caret", caret));
 							} catch (ActivityNotFoundException ex) {
 								ex.printStackTrace();
-								Log.e("StandOutWindow",
+								Log.e(TAG,
 										"EditText can only be used in StandOut windows after applying a workaround.\n"
 												+ "Please edit your AndroidManifest.xml to include the following Activity:\n"
 												+ "<activity "
@@ -1570,7 +1600,7 @@ public abstract class StandOutWindow extends Service {
 			}
 
 			if (view instanceof ListView
-					&& (flags & FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE) == 0) {
+					&& (flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE) == 0) {
 				final ListView list = (ListView) view;
 
 				list.setOnTouchListener(new OnTouchListener() {
@@ -1633,7 +1663,7 @@ public abstract class StandOutWindow extends Service {
 										if (y < yThreshold) {
 											// clicked view at this position
 
-											Log.d("StandOutWindow",
+											Log.d(TAG,
 													"Clicked item (relative): "
 															+ relative);
 											list.getOnItemClickListener()
@@ -1778,16 +1808,16 @@ public abstract class StandOutWindow extends Service {
 		// set window appearance and behavior based on flags
 		int flags = getFlags(id);
 
-		if ((flags & FLAG_HIDE_ENABLE) != 0) {
+		if ((flags & StandOutFlags.FLAG_HIDE_ENABLE) != 0) {
 			hide.setVisibility(View.VISIBLE);
 		}
-		if ((flags & FLAG_DECORATION_CLOSE_DISABLE) != 0) {
+		if ((flags & StandOutFlags.FLAG_DECORATION_CLOSE_DISABLE) != 0) {
 			close.setVisibility(View.GONE);
 		}
-		if ((flags & FLAG_DECORATION_MOVE_DISABLE) != 0) {
+		if ((flags & StandOutFlags.FLAG_DECORATION_MOVE_DISABLE) != 0) {
 			titlebar.setOnTouchListener(null);
 		}
-		if ((flags & FLAG_DECORATION_RESIZE_DISABLE) != 0) {
+		if ((flags & StandOutFlags.FLAG_DECORATION_RESIZE_DISABLE) != 0) {
 			corner.setVisibility(View.GONE);
 		}
 
@@ -1815,9 +1845,9 @@ public abstract class StandOutWindow extends Service {
 				int deltaX = touchInfo.lastX - touchInfo.firstX;
 				int deltaY = touchInfo.lastY - touchInfo.firstY;
 				boolean tap = deltaX == 0 && deltaY == 0;
-				if ((flags & FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH) != 0) {
+				if ((flags & StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH) != 0) {
 					bringToFront(id);
-				} else if ((flags & FLAG_WINDOW_BRING_TO_FRONT_ON_TAP) != 0
+				} else if ((flags & StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP) != 0
 						&& tap) {
 					bringToFront(id);
 				}
@@ -1842,6 +1872,7 @@ public abstract class StandOutWindow extends Service {
 			WindowTouchInfo touchInfo, View view, MotionEvent event) {
 		StandOutWindow.LayoutParams params = (LayoutParams) window
 				.getLayoutParams();
+		int flags = getFlags(id);
 
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
@@ -1862,21 +1893,30 @@ public abstract class StandOutWindow extends Service {
 				params.x += deltaX;
 				params.y += deltaY;
 
-				// keep window inside of edges
-				Display display = mWindowManager.getDefaultDisplay();
-				int displayWidth = display.getWidth();
-				int displayHeight = display.getHeight();
-
-				params.x = Math.min(Math.max(params.x, 0), displayWidth
-						- params.width);
-				params.y = Math.min(Math.max(params.y, 0), displayHeight
-						- params.height);
-
 				updateViewLayout(id, window, params);
 
 				onMove(id, window, touchInfo, view, event);
 				break;
 			case MotionEvent.ACTION_UP:
+				if ((flags & StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE) != 0) {
+					if (params.gravity == (Gravity.TOP | Gravity.LEFT)) {
+						// keep window inside of edges and gravity is TOP|LEFT
+						Display display = mWindowManager.getDefaultDisplay();
+						int displayWidth = display.getWidth();
+						int displayHeight = display.getHeight();
+
+						int[] location = new int[2];
+						window.getLocationOnScreen(location);
+
+						Log.d(TAG, "X: " + location[0] + " Y: " + location[1]
+								+ "Params: " + params);
+
+						params.x = Math.min(Math.max(params.x, 0), displayWidth
+								- params.width);
+						params.y = Math.min(Math.max(params.y, 0),
+								displayHeight - params.height);
+					}
+				}
 				break;
 		}
 
@@ -1911,16 +1951,16 @@ public abstract class StandOutWindow extends Service {
 	private void removeCache(int id) {
 		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
 				.get(getClass());
-		if (l2 == null) {
-			l2 = new HashMap<Integer, View>();
-			sViews.put(getClass(), l2);
+		if (l2 != null) {
+			l2.remove(id);
+			if (l2.isEmpty()) {
+				sViews.remove(getClass());
+			}
 		}
-
-		l2.remove(id);
 	}
 
 	/**
-	 * Returns whether the {@link #sViews} cache is empty.
+	 * Returns the size of the {@link #sViews} cache.
 	 * 
 	 * @return True if the cache corresponding to this class is empty, false if
 	 *         it is not empty.
@@ -1929,8 +1969,7 @@ public abstract class StandOutWindow extends Service {
 		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
 				.get(getClass());
 		if (l2 == null) {
-			l2 = new HashMap<Integer, View>();
-			sViews.put(getClass(), l2);
+			return 0;
 		}
 
 		return l2.size();
@@ -1945,8 +1984,7 @@ public abstract class StandOutWindow extends Service {
 		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
 				.get(getClass());
 		if (l2 == null) {
-			l2 = new HashMap<Integer, View>();
-			sViews.put(getClass(), l2);
+			return new HashSet<Integer>();
 		}
 
 		return l2.keySet();
@@ -1965,8 +2003,7 @@ public abstract class StandOutWindow extends Service {
 		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
 				.get(getClass());
 		if (l2 == null) {
-			l2 = new HashMap<Integer, View>();
-			sViews.put(getClass(), l2);
+			return null;
 		}
 
 		return l2.get(id);
@@ -2027,6 +2064,11 @@ public abstract class StandOutWindow extends Service {
 		 */
 		public int firstX, firstY, lastX, lastY, lastWidth, lastHeight;
 
+		/**
+		 * The absolute last position of the window on screen.
+		 */
+		public int lastAbsoluteX, lastAbsoluteY;
+
 		@Override
 		public String toString() {
 			return String
@@ -2042,54 +2084,81 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
-		public LayoutParams() {
+		public LayoutParams(int id) {
 			super(200, 200, TYPE_SYSTEM_ALERT, FLAG_NOT_FOCUSABLE
 					| FLAG_ALT_FOCUSABLE_IM | FLAG_WATCH_OUTSIDE_TOUCH,
 					PixelFormat.TRANSLUCENT);
 
-			x = getX(width);
-			y = getY(height);
+			int windowFlags = getFlags(id);
+
+			if ((windowFlags & StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE) != 0) {
+				// windows stay within edges
+			} else {
+				// windows may be moved beyond edges
+				flags |= FLAG_LAYOUT_NO_LIMITS;
+			}
+
+			x = getX(id, width);
+			y = getY(id, height);
 
 			gravity = Gravity.TOP | Gravity.LEFT;
 		}
 
-		public LayoutParams(int w, int h) {
-			this();
+		public LayoutParams(int id, int w, int h) {
+			this(id);
 			width = w;
 			height = h;
-
-			x = getX(width);
-			y = getY(height);
 		}
 
-		public LayoutParams(int w, int h, int xpos, int ypos, int gravityFlag) {
-			this(w, h);
+		public LayoutParams(int id, int w, int h, int xpos, int ypos) {
+			this(id, w, h);
+
 			x = xpos;
 			y = ypos;
-			gravity = gravityFlag;
 		}
 
-		public LayoutParams(int xpos, int ypos, int gravityFlag) {
-			this();
-			x = xpos;
-			y = ypos;
+		public LayoutParams(int id, int w, int h, int xpos, int ypos,
+				int gravityFlag) {
+			this(id, w, h, xpos, ypos);
 			gravity = gravityFlag;
+
+			if ((flags & FLAG_LAYOUT_NO_LIMITS) == 0) {
+				if (gravity != (Gravity.TOP | Gravity.LEFT)) {
+					// windows stay within edges AND gravity is not normal
+					Log.w(TAG,
+							String.format(
+									"Window #%d set flag FLAG_WINDOW_EDGE_LIMITS_ENABLE. Gravity TOP|LEFT is recommended for best behavior.",
+									id));
+				}
+			}
 		}
 
-		private int getX(int width) {
+		private int getX(int id, int width) {
 			Display display = mWindowManager.getDefaultDisplay();
 			int displayWidth = display.getWidth();
 
-			return (100 * getCacheSize()) % (displayWidth - width);
+			int types = sViews.size();
+
+			int initialX = 100 * types;
+			int variableX = 100 * id;
+			int rawX = initialX + variableX;
+
+			return rawX % (displayWidth - width);
 		}
 
-		private int getY(int height) {
+		private int getY(int id, int height) {
 			Display display = mWindowManager.getDefaultDisplay();
 			int displayWidth = display.getWidth();
 			int displayHeight = display.getHeight();
 
-			return (x + 200 * (100 * getCacheSize()) / (displayWidth - width))
-					% (displayHeight - height);
+			int types = sViews.size();
+
+			int initialY = 100 * types;
+			int variableY = x + 200 * (100 * id) / (displayWidth - width);
+
+			int rawY = initialY + variableY;
+
+			return rawY % (displayHeight - height);
 		}
 	}
 }

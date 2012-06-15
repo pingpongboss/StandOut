@@ -2,7 +2,6 @@ package wei.mark.example;
 
 import wei.mark.standout.StandOutWindow;
 import android.content.Intent;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,13 +30,13 @@ public class SimpleWindow extends StandOutWindow {
 	// the window will be centered
 	@Override
 	protected LayoutParams getParams(int id, View view) {
-		return new LayoutParams(250, 300, 0, 0, Gravity.CENTER);
+		return new LayoutParams(id, 250, 300);
 	}
 
 	// move the window by dragging the view
 	@Override
 	protected int getFlags(int id) {
-		return super.getFlags(id) | FLAG_BODY_MOVE_ENABLE;
+		return super.getFlags(id) | StandOutFlags.FLAG_BODY_MOVE_ENABLE;
 	}
 
 	@Override
