@@ -23,7 +23,6 @@ import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -32,6 +31,9 @@ import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.FrameLayout;
@@ -56,6 +58,8 @@ public final class FloatingFolder extends StandOutWindow {
 
 	Map<Integer, FolderModel> mFolders;
 
+	Animation mFadeOut, mFadeIn;
+
 	public static void showFolders(Context context) {
 		sendData(context, FloatingFolder.class, DISREGARD_ID, STARTUP_CODE,
 				null, null, DISREGARD_ID);
@@ -71,6 +75,13 @@ public final class FloatingFolder extends StandOutWindow {
 		iconSize = (int) getResources().getDimension(
 				android.R.dimen.app_icon_size);
 		squareWidth = iconSize + 8 * 8;
+
+		mFadeOut = AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
+		mFadeIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
+
+		int duration = 100;
+		mFadeOut.setDuration(duration);
+		mFadeIn.setDuration(duration);
 	}
 
 	@Override
@@ -406,76 +417,129 @@ public final class FloatingFolder extends StandOutWindow {
 					final LayoutParams params = (LayoutParams) window
 							.getLayoutParams();
 
-					Display display = mWindowManager.getDefaultDisplay();
-					int displayWidth = display.getWidth();
-					int displayHeight = display.getHeight();
-
 					final View folder = window.findViewById(R.id.folder);
 					final ImageView screenshot = (ImageView) window
 							.findViewById(R.id.preview);
 
-					Log.d("FloatingFolder", "Params: " + params);
+					WrappedTag tag = (WrappedTag) window.getTag();
 
 					// if touch edge
 					if (params.x <= 0) {
 						// first time touch edge
-						if (screenshot.getDrawable() == null) {
-							folder.setVisibility(View.GONE);
+						if (tag.shown) {
+							tag.shown = false;
+
 							final Drawable drawable = getResources()
 									.getDrawable(R.drawable.ic_menu_archive);
 
 							screenshot.setImageDrawable(drawable);
 
-							// post so that the folder is invisible before
-							// anything else happens
-							screenshot.post(new Runnable() {
+							mFadeOut.setAnimationListener(new AnimationListener() {
 
 								@Override
-								public void run() {
-									// preview should be centered vertically
-									params.y = params.y + params.height / 2
-											- drawable.getIntrinsicHeight() / 2;
+								public void onAnimationStart(Animation animation) {
+								}
 
-									params.width = drawable.getIntrinsicWidth();
-									params.height = drawable
-											.getIntrinsicHeight();
+								@Override
+								public void onAnimationRepeat(
+										Animation animation) {
+								}
 
-									updateViewLayout(id, window, params);
+								@Override
+								public void onAnimationEnd(Animation animation) {
+									folder.setVisibility(View.GONE);
 
-									screenshot.setVisibility(View.VISIBLE);
+									// post so that the folder is invisible
+									// before
+									// anything else happens
+									screenshot.post(new Runnable() {
+
+										@Override
+										public void run() {
+											// preview should be centered
+											// vertically
+											params.y = params.y
+													+ params.height
+													/ 2
+													- drawable
+															.getIntrinsicHeight()
+													/ 2;
+
+											params.width = drawable
+													.getIntrinsicWidth();
+											params.height = drawable
+													.getIntrinsicHeight();
+
+											updateViewLayout(id, window, params);
+
+											screenshot
+													.setVisibility(View.VISIBLE);
+											screenshot.startAnimation(mFadeIn);
+										}
+									});
 								}
 							});
+
+							folder.startAnimation(mFadeOut);
 						}
 					} else { // not touch edge
-						final Drawable drawable = screenshot.getDrawable();
 
 						// first time not touch edge
-						if (drawable != null) {
-							screenshot.setVisibility(View.GONE);
-							screenshot.setImageDrawable(null);
+						if (!tag.shown) {
+							tag.shown = true;
 
-							// post so that screenshot is invisible before
-							// anything else happens
-							screenshot.post(new Runnable() {
+							mFadeOut.setAnimationListener(new AnimationListener() {
 
 								@Override
-								public void run() {
+								public void onAnimationStart(Animation animation) {
+									Log.d("FloatingFolder", "Animation started");
+								}
 
-									LayoutParams originalParams = getParams(id,
-											view);
+								@Override
+								public void onAnimationRepeat(
+										Animation animation) {
+								}
 
-									params.y = params.y - originalParams.height
-											/ 2 + drawable.getIntrinsicHeight()
-											/ 2;
+								@Override
+								public void onAnimationEnd(Animation animation) {
+									Log.d("FloatingFolder", "Animation ended");
+									screenshot.setVisibility(View.GONE);
 
-									params.width = originalParams.width;
-									params.height = originalParams.height;
+									// post so that screenshot is invisible
+									// before
+									// anything else happens
+									screenshot.post(new Runnable() {
 
-									updateViewLayout(id, window, params);
+										@Override
+										public void run() {
+											LayoutParams originalParams = getParams(
+													id, view);
 
-									folder.setVisibility(View.VISIBLE);
+											Drawable drawable = screenshot
+													.getDrawable();
+											screenshot.setImageDrawable(null);
+
+											params.y = params.y
+													- originalParams.height
+													/ 2
+													+ drawable
+															.getIntrinsicHeight()
+													/ 2;
+
+											params.width = originalParams.width;
+											params.height = originalParams.height;
+
+											updateViewLayout(id, window, params);
+
+											folder.setVisibility(View.VISIBLE);
+
+											folder.startAnimation(mFadeIn);
+										}
+									});
 								}
 							});
+
+							screenshot.startAnimation(mFadeOut);
 						}
 					}
 				}

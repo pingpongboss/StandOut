@@ -1497,6 +1497,7 @@ public abstract class StandOutWindow extends Service {
 		// clean up view and implement StandOut specific workarounds
 		if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
 			fixCompatibility(view, id);
+			addFunctionality(view, id);
 		}
 
 		// wrap the existing tag and attach it to the frame
@@ -1521,6 +1522,40 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Implement StandOut specific additional functionalities.
+	 * 
+	 * <p>
+	 * Currently, this method does the following:
+	 * 
+	 * <p>
+	 * Attach resize handles: For every View found to have id R.id.corner,
+	 * attach an OnTouchListener that implements resizing the window.
+	 * 
+	 * @param view
+	 *            The view hierarchy to implement additional functionality.
+	 * @param id
+	 *            The id of the window.
+	 */
+	private void addFunctionality(View view, final int id) {
+		View corner = view.findViewById(R.id.corner);
+		if (corner != null) {
+			corner.setOnTouchListener(new OnTouchListener() {
+
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					View window = getWindow(id);
+					WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
+					// handle dragging to move
+					boolean consumed = onTouchHandleResize(id, window,
+							touchInfo, v, event);
+
+					return consumed;
+				}
+			});
+		}
+	}
+
+	/**
 	 * Iterate through each View in the view hiearchy and implement StandOut
 	 * specific compatibility workarounds.
 	 * 
@@ -1538,7 +1573,9 @@ public abstract class StandOutWindow extends Service {
 	 * detection code using an {@link OnTouchListener}.
 	 * 
 	 * @param root
-	 *            The root view hiearchy to iterate through and check.
+	 *            The root view hierarchy to iterate through and check.
+	 * @param id
+	 *            The id of the window.
 	 */
 	private void fixCompatibility(View root, final int id) {
 		Queue<View> queue = new LinkedList<View>();
@@ -1761,47 +1798,13 @@ public abstract class StandOutWindow extends Service {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				switch (id) {
-					default:
-						View window = (View) content.getTag();
-						WindowTouchInfo touchInfo = ((WrappedTag) window
-								.getTag()).touchInfo;
-						StandOutWindow.LayoutParams params = (LayoutParams) window
-								.getLayoutParams();
+				View window = (View) content.getTag();
+				WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
+				// handle dragging to move
+				boolean consumed = onTouchHandleResize(id, window, touchInfo,
+						v, event);
 
-						switch (event.getAction()) {
-							case MotionEvent.ACTION_DOWN:
-								touchInfo.lastX = (int) event.getRawX();
-								touchInfo.lastY = (int) event.getRawY();
-
-								touchInfo.firstX = touchInfo.lastX;
-								touchInfo.firstY = touchInfo.lastY;
-								break;
-							case MotionEvent.ACTION_MOVE:
-								int deltaX = (int) event.getRawX()
-										- touchInfo.lastX;
-								int deltaY = (int) event.getRawY()
-										- touchInfo.lastY;
-
-								touchInfo.lastX = (int) event.getRawX();
-								touchInfo.lastY = (int) event.getRawY();
-
-								// update the size of the window
-								params.width += deltaX;
-								params.height += deltaY;
-
-								// keep window larger than 0 px
-								params.width = Math.max(params.width, 0);
-								params.height = Math.max(params.height, 0);
-
-								updateViewLayout(id, window, params);
-								break;
-							case MotionEvent.ACTION_UP:
-								break;
-						}
-
-						return true;
-				}
+				return consumed;
 			}
 		});
 
@@ -1917,6 +1920,54 @@ public abstract class StandOutWindow extends Service {
 								displayHeight - params.height);
 					}
 				}
+				break;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Internal touch handler for handling resizing the window.
+	 * 
+	 * @see {@link View#onTouchEvent(MotionEvent)}
+	 * 
+	 * @param id
+	 * @param window
+	 * @param view
+	 * @param event
+	 * @return
+	 */
+	private boolean onTouchHandleResize(int id, View window,
+			WindowTouchInfo touchInfo, View view, MotionEvent event) {
+		StandOutWindow.LayoutParams params = (LayoutParams) window
+				.getLayoutParams();
+
+		switch (event.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+				touchInfo.lastX = (int) event.getRawX();
+				touchInfo.lastY = (int) event.getRawY();
+
+				touchInfo.firstX = touchInfo.lastX;
+				touchInfo.firstY = touchInfo.lastY;
+				break;
+			case MotionEvent.ACTION_MOVE:
+				int deltaX = (int) event.getRawX() - touchInfo.lastX;
+				int deltaY = (int) event.getRawY() - touchInfo.lastY;
+
+				touchInfo.lastX = (int) event.getRawX();
+				touchInfo.lastY = (int) event.getRawY();
+
+				// update the size of the window
+				params.width += deltaX;
+				params.height += deltaY;
+
+				// keep window larger than 0 px
+				params.width = Math.max(params.width, 0);
+				params.height = Math.max(params.height, 0);
+
+				updateViewLayout(id, window, params);
+				break;
+			case MotionEvent.ACTION_UP:
 				break;
 		}
 
