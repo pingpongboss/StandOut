@@ -35,6 +35,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 public final class FloatingFolder extends StandOutWindow {
@@ -85,31 +86,15 @@ public final class FloatingFolder extends StandOutWindow {
 
 		// choose which type of window to show
 		if (APP_SELECTOR_ID == id) {
-			View view = inflater.inflate(R.layout.app_selector, root, true);
-			ListView listView = (ListView) view.findViewById(R.id.list);
-
-			final Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
-			mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-			List<ResolveInfo> resolveApps = getPackageManager()
-					.queryIntentActivities(mainIntent, 0);
-			List<ActivityInfo> apps = new ArrayList<ActivityInfo>();
-			for (ResolveInfo resolveApp : resolveApps) {
-				apps.add(resolveApp.activityInfo);
-			}
-
-			Collections.sort(apps, new Comparator<ActivityInfo>() {
-
-				@Override
-				public int compare(ActivityInfo app1, ActivityInfo app2) {
-					String label1 = app1.loadLabel(mPackageManager).toString();
-					String label2 = app2.loadLabel(mPackageManager).toString();
-					return label1.compareTo(label2);
-				}
-			});
+			final View view = inflater.inflate(R.layout.app_selector, root, true);
+			final ListView listView = (ListView) view.findViewById(R.id.list);
+			final List<ActivityInfo> apps = new ArrayList<ActivityInfo>();
 
 			listView.setClickable(true);
 
-			listView.setAdapter(new AppAdapter(this, R.layout.app_row, apps));
+			final AppAdapter adapter = new AppAdapter(this, R.layout.app_row,
+					apps);
+			listView.setAdapter(adapter);
 
 			listView.setOnItemClickListener(new OnItemClickListener() {
 
@@ -135,6 +120,47 @@ public final class FloatingFolder extends StandOutWindow {
 					}
 				}
 			});
+
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					final Intent mainIntent = new Intent(Intent.ACTION_MAIN,
+							null);
+					mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+					final List<ResolveInfo> resolveApps = getPackageManager()
+							.queryIntentActivities(mainIntent, 0);
+
+					Collections.sort(resolveApps,
+							new Comparator<ResolveInfo>() {
+
+								@Override
+								public int compare(ResolveInfo app1,
+										ResolveInfo app2) {
+									String label1 = app1.loadLabel(
+											mPackageManager).toString();
+									String label2 = app2.loadLabel(
+											mPackageManager).toString();
+									return label1.compareTo(label2);
+								}
+							});
+
+					for (ResolveInfo resolveApp : resolveApps) {
+						apps.add(resolveApp.activityInfo);
+					}
+
+					listView.post(new Runnable() {
+
+						@Override
+						public void run() {
+							ProgressBar progress = (ProgressBar) view
+									.findViewById(R.id.progress);
+							progress.setVisibility(View.GONE);
+							adapter.notifyDataSetChanged();
+						}
+					});
+				}
+			}).start();
 
 			View cancel = view.findViewById(R.id.cancel);
 			cancel.setOnClickListener(new OnClickListener() {
