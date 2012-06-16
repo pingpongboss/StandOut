@@ -201,10 +201,10 @@ public abstract class StandOutWindow extends Service {
 		/**
 		 * Setting this flag indicates that the system should disable all
 		 * compatibility workarounds. The default behavior is to run
-		 * {@link #fixCompatibility(View)} on the view returned by the
-		 * implementation.
+		 * {@link StandOutWindow#fixCompatibility(View, int)} on the view
+		 * returned by the implementation.
 		 * 
-		 * @see #fixCompatibility(View)
+		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
 		 */
 		public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_counter++;
 
@@ -212,7 +212,7 @@ public abstract class StandOutWindow extends Service {
 		 * Setting this flag indicates that the system should disable EditText
 		 * compatibility workarounds.
 		 * 
-		 * @see #fixCompatibility(View)
+		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
 		 * 
 		 */
 		public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 1 << flag_counter++;
@@ -221,9 +221,27 @@ public abstract class StandOutWindow extends Service {
 		 * Setting this flag indicates that the system should disable ListView
 		 * compatibility workarounds.
 		 * 
-		 * @see #fixCompatibility(View)
+		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
 		 */
 		public static final int FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the system should disable all
+		 * additional functionality. The default behavior is to run
+		 * {@link StandOutWindow#addFunctionality(View, int)} on the view
+		 * returned by the implementation.
+		 * 
+		 * @see {@link StandOutWindow#addFunctionality(View, int)}
+		 */
+		public static final int FLAG_ADD_FUNCTIONALITY_ALL_DISABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the system should disable adding the
+		 * resize handle additional functionality.
+		 * 
+		 * @see {@link StandOutWindow#addFunctionality(View, int)}
+		 */
+		public static final int FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE = 1 << flag_counter++;
 	}
 
 	/**
@@ -1494,9 +1512,12 @@ public abstract class StandOutWindow extends Service {
 					"You must attach your view to the given root ViewGroup in createAndAttachView()");
 		}
 
-		// clean up view and implement StandOut specific workarounds
+		// implement StandOut specific workarounds
 		if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
 			fixCompatibility(view, id);
+		}
+		// implement StandOut specific additional functionality
+		if ((flags & StandOutFlags.FLAG_ADD_FUNCTIONALITY_ALL_DISABLE) == 0) {
 			addFunctionality(view, id);
 		}
 
@@ -1537,21 +1558,26 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 */
 	private void addFunctionality(View view, final int id) {
-		View corner = view.findViewById(R.id.corner);
-		if (corner != null) {
-			corner.setOnTouchListener(new OnTouchListener() {
+		int flags = getFlags(id);
 
-				@Override
-				public boolean onTouch(View v, MotionEvent event) {
-					View window = getWindow(id);
-					WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
-					// handle dragging to move
-					boolean consumed = onTouchHandleResize(id, window,
-							touchInfo, v, event);
+		if ((flags & StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE) == 0) {
+			View corner = view.findViewById(R.id.corner);
+			if (corner != null) {
+				corner.setOnTouchListener(new OnTouchListener() {
 
-					return consumed;
-				}
-			});
+					@Override
+					public boolean onTouch(View v, MotionEvent event) {
+						View window = getWindow(id);
+						WindowTouchInfo touchInfo = ((WrappedTag) window
+								.getTag()).touchInfo;
+						// handle dragging to move
+						boolean consumed = onTouchHandleResize(id, window,
+								touchInfo, v, event);
+
+						return consumed;
+					}
+				});
+			}
 		}
 	}
 
