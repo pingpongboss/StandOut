@@ -277,18 +277,53 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	private void addAppToFolder(int id, ActivityInfo app, ViewGroup flow) {
-		View frame = getAppView(app);
+		View frame = getAppView(id, app);
 
 		flow.addView(frame);
 	}
 
+	private void removeAppFromFolder(int id, View frame, ViewGroup flow) {
+		flow.removeView(frame);
+	}
+
 	private void onUserAddApp(int id, ActivityInfo app) {
+		mFolders.get(id).apps.add(app);
+
 		FileOutputStream out = null;
 		try {
 			out = openFileOutput(String.format("folder%d", id), MODE_APPEND);
 			ComponentName name = new ComponentName(app.packageName, app.name);
 
 			out.write((name.flattenToString() + "\n").getBytes());
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (out != null) {
+				try {
+					out.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	private void onUserRemoveApp(int id, ActivityInfo app) {
+		List<ActivityInfo> apps = mFolders.get(id).apps;
+		apps.remove(app);
+
+		FileOutputStream out = null;
+		try {
+			out = openFileOutput(String.format("folder%d", id), MODE_PRIVATE);
+
+			for (ActivityInfo appInFolder : apps) {
+				ComponentName name = new ComponentName(appInFolder.packageName,
+						appInFolder.name);
+
+				out.write((name.flattenToString() + "\n").getBytes());
+			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -360,12 +395,12 @@ public final class FloatingFolder extends StandOutWindow {
 		}
 	}
 
-	private View getAppView(final ActivityInfo app) {
+	private View getAppView(final int id, final ActivityInfo app) {
 		LayoutInflater inflater = LayoutInflater.from(this);
-		View frame = inflater.inflate(R.layout.app_square, null);
+		final View frame = inflater.inflate(R.layout.app_square, null);
 
 		frame.setTag(app);
-		frame.setOnLongClickListener(appLongClickListener);
+
 		frame.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -373,6 +408,23 @@ public final class FloatingFolder extends StandOutWindow {
 				Intent intent = mPackageManager
 						.getLaunchIntentForPackage(app.packageName);
 				startActivity(intent);
+			}
+		});
+
+		frame.setOnLongClickListener(new OnLongClickListener() {
+
+			@Override
+			public boolean onLongClick(View v) {
+				ActivityInfo app = (ActivityInfo) v.getTag();
+				Log.d("FloatingFolder",
+						"Long clicked: " + app.loadLabel(mPackageManager));
+
+				View window = getWindow(id);
+				ViewGroup flow = (ViewGroup) window.findViewById(R.id.flow);
+
+				removeAppFromFolder(id, frame, flow);
+				onUserRemoveApp(id, app);
+				return true;
 			}
 		});
 
@@ -392,17 +444,6 @@ public final class FloatingFolder extends StandOutWindow {
 
 		return frame;
 	}
-
-	OnLongClickListener appLongClickListener = new OnLongClickListener() {
-
-		@Override
-		public boolean onLongClick(View v) {
-			ActivityInfo app = (ActivityInfo) v.getTag();
-			Log.d("FloatingFolder",
-					"Long clicked: " + app.loadLabel(mPackageManager));
-			return true;
-		}
-	};
 
 	@Override
 	protected boolean onTouchBody(final int id, final View window,
