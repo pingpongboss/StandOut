@@ -919,6 +919,26 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Implement this method to be alerted to when the window corresponding to
+	 * the id is resized.
+	 * 
+	 * @see {@link View.OnTouchListener#onTouch(View, MotionEvent)}
+	 * @param id
+	 *            The id of the view, provided as a courtesy.
+	 * @param window
+	 *            The window corresponding to the id, provided as a courtesy.
+	 * @param touchInfo
+	 *            The touch information of the window, provided as a courtesy.
+	 * @param view
+	 *            The view where the event originated from.
+	 * @param event
+	 *            See linked method.
+	 */
+	protected void onResize(int id, View window, WindowTouchInfo touchInfo,
+			View view, MotionEvent event) {
+	}
+
+	/**
 	 * Implement this callback to be alerted when a window corresponding to the
 	 * id is about to be shown. This callback will occur before the view is
 	 * added to the window manager.
@@ -1923,8 +1943,6 @@ public abstract class StandOutWindow extends Service {
 				params.y += deltaY;
 
 				updateViewLayout(id, window, params);
-
-				onMove(id, window, touchInfo, view, event);
 				break;
 			case MotionEvent.ACTION_UP:
 				if ((flags & StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE) != 0) {
@@ -1948,6 +1966,8 @@ public abstract class StandOutWindow extends Service {
 				}
 				break;
 		}
+
+		onMove(id, window, touchInfo, view, event);
 
 		return true;
 	}
@@ -1996,6 +2016,8 @@ public abstract class StandOutWindow extends Service {
 			case MotionEvent.ACTION_UP:
 				break;
 		}
+
+		onResize(id, window, touchInfo, view, event);
 
 		return true;
 	}
