@@ -287,7 +287,13 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	private void onUserAddApp(int id, ActivityInfo app) {
-		mFolders.get(id).apps.add(app);
+		FolderModel folder = mFolders.get(id);
+		if (folder == null) {
+			folder = new FolderModel();
+			mFolders.put(id, folder);
+		}
+
+		folder.apps.add(app);
 
 		FileOutputStream out = null;
 		try {
@@ -350,9 +356,6 @@ public final class FloatingFolder extends StandOutWindow {
 					FolderModel folder = new FolderModel();
 					folder.id = Integer.parseInt(folderFileName
 							.substring("folder".length()));
-					folder.apps = new ArrayList<ActivityInfo>();
-					folder.shown = true;
-					folder.name = "";
 
 					in = openFileInput(folderFileName);
 					ByteArrayOutputStream bos = new ByteArrayOutputStream();
