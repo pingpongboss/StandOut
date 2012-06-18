@@ -164,12 +164,12 @@ public final class FloatingFolder extends StandOutWindow {
 						apps.add(resolveApp.activityInfo);
 					}
 
-					listView.post(new Runnable() {
+					final ProgressBar progress = (ProgressBar) view
+							.findViewById(R.id.progress);
+					progress.post(new Runnable() {
 
 						@Override
 						public void run() {
-							ProgressBar progress = (ProgressBar) view
-									.findViewById(R.id.progress);
 							progress.setVisibility(View.GONE);
 							adapter.notifyDataSetChanged();
 						}
