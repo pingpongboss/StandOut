@@ -7,8 +7,7 @@
     <uses-sdk
         android:minSdkVersion="7"
         android:targetSdkVersion="15" />
-
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
     <application
         android:icon="@drawable/ic_launcher"
@@ -31,13 +30,6 @@
         </service>
         <service android:name=".MostBasicWindow" >
         </service>
-
-        <activity
-            android:name="wei.mark.standout.FixEditTextActivity"
-            android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" >
-        </activity>
-
         <service android:name="WidgetsWindow" >
         </service>
     </application>
