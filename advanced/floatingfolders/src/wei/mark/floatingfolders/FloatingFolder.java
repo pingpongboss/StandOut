@@ -40,7 +40,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 public final class FloatingFolder extends StandOutWindow {
@@ -164,13 +163,12 @@ public final class FloatingFolder extends StandOutWindow {
 						apps.add(resolveApp.activityInfo);
 					}
 
-					final ProgressBar progress = (ProgressBar) view
-							.findViewById(R.id.progress);
-					progress.post(new Runnable() {
+					Log.d("FloatingFolder", "before");
+					view.post(new Runnable() {
 
 						@Override
 						public void run() {
-							progress.setVisibility(View.GONE);
+							Log.d("FloatingFolder", "after");
 							adapter.notifyDataSetChanged();
 						}
 					});
