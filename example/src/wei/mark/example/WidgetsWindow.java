@@ -1,5 +1,6 @@
 package wei.mark.example;
 
+import wei.mark.standout.StandOutWindow.StandOutFlags;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -57,5 +58,11 @@ public class WidgetsWindow extends MultiWindow {
 	@Override
 	protected String getAppName() {
 		return "WidgetWindow";
+	}
+	
+	@Override
+	protected int getFlags(int id) {
+		// TODO Auto-generated method stub
+		return super.getFlags(id)|StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE;
 	}
 }

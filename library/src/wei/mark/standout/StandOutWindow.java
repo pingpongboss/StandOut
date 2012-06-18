@@ -1544,7 +1544,7 @@ public abstract class StandOutWindow extends Service {
 
 		// implement StandOut specific workarounds
 		if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
-			fixCompatibility(view, id);
+//			fixCompatibility(view, id);
 		}
 		// implement StandOut specific additional functionality
 		if ((flags & StandOutFlags.FLAG_ADD_FUNCTIONALITY_ALL_DISABLE) == 0) {
@@ -1565,14 +1565,18 @@ public abstract class StandOutWindow extends Service {
 						WindowTouchInfo touchInfo = tag.touchInfo;
 						onTouchBody(id, window, touchInfo, v, event);
 
-						// remove focus from window
-						try {
-							final LayoutParams params = (LayoutParams) window
-									.getLayoutParams();
-							params.setFlags(false);
-							updateViewLayout(id, window, params);
-						} catch (Exception ex) {
-							ex.printStackTrace();
+						int flags = getFlags(id);
+
+						if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
+							// remove focus from window
+							try {
+								final LayoutParams params = (LayoutParams) window
+										.getLayoutParams();
+								params.setFlags(id, false);
+								updateViewLayout(id, window, params);
+							} catch (Exception ex) {
+								ex.printStackTrace();
+							}
 						}
 
 						return true;
@@ -1679,11 +1683,11 @@ public abstract class StandOutWindow extends Service {
 								.getLayoutParams();
 						switch (event.getAction()) {
 							case MotionEvent.ACTION_DOWN:
-								params.setFlags(true);
+								params.setFlags(id, true);
 								updateViewLayout(id, window, params);
 								break;
 							case MotionEvent.ACTION_UP:
-								params.setFlags(false);
+								params.setFlags(id, false);
 								updateViewLayout(id, window, params);
 								break;
 						}
@@ -2168,17 +2172,11 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
 		public LayoutParams(int id) {
-			super(200, 200, TYPE_SYSTEM_ALERT, 0, PixelFormat.TRANSLUCENT);
-			setFlags(false);
-
-			int windowFlags = getFlags(id);
-
-			if ((windowFlags & StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE) != 0) {
-				// windows stay within edges
-			} else {
-				// windows may be moved beyond edges
-				flags |= FLAG_LAYOUT_NO_LIMITS;
-			}
+			super(200, 200, TYPE_PHONE,
+			// TYPE_SYSTEM_ALERT,
+					0, PixelFormat.TRANSLUCENT);
+			setFlags(id, true);
+			// setFlags(false);
 
 			x = getX(id, width);
 			y = getY(id, height);
@@ -2243,12 +2241,21 @@ public abstract class StandOutWindow extends Service {
 			return rawY % (displayHeight - height);
 		}
 
-		public void setFlags(boolean focusable) {
+		public void setFlags(int id, boolean focusable) {
 			if (focusable) {
 				flags = FLAG_NOT_TOUCH_MODAL | FLAG_WATCH_OUTSIDE_TOUCH;
 			} else {
 				flags = FLAG_NOT_FOCUSABLE | FLAG_ALT_FOCUSABLE_IM
 						| FLAG_WATCH_OUTSIDE_TOUCH;
+			}
+
+			int windowFlags = getFlags(id);
+
+			if ((windowFlags & StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE) != 0) {
+				// windows stay within edges
+			} else {
+				// windows may be moved beyond edges
+				flags |= FLAG_LAYOUT_NO_LIMITS;
 			}
 		}
 	}

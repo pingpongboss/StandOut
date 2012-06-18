@@ -1,6 +1,7 @@
 package wei.mark.example;
 
 import wei.mark.standout.StandOutWindow;
+import wei.mark.standout.StandOutWindow.StandOutFlags;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -65,7 +66,7 @@ public class MultiWindow extends StandOutWindow {
 				| StandOutFlags.FLAG_BODY_MOVE_ENABLE
 				| StandOutFlags.FLAG_HIDE_ENABLE
 				| StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP
-				| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE;
+				| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE|StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE;
 	}
 
 	@Override
