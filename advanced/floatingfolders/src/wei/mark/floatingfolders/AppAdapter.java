@@ -50,28 +50,21 @@ public class AppAdapter extends ArrayAdapter<ActivityInfo> {
 			holder = (ViewHolder) convertView.getTag();
 		}
 
+		final View view = convertView;
+
 		holder.position = position;
 
 		// don't block the UI thread
 		new Thread(new Runnable() {
 			public void run() {
 				final CharSequence label = app.loadLabel(mPackageManager);
-				holder.name.post(new Runnable() {
+				final Drawable drawable = app.loadIcon(mPackageManager);
+				view.post(new Runnable() {
 
 					@Override
 					public void run() {
 						if (holder.position == position) {
 							holder.name.setText(label);
-						}
-					}
-				});
-
-				final Drawable drawable = app.loadIcon(mPackageManager);
-				holder.icon.post(new Runnable() {
-
-					@Override
-					public void run() {
-						if (holder.position == position) {
 							holder.icon.setImageDrawable(drawable);
 						}
 					}

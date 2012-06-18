@@ -11,7 +11,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
@@ -25,13 +24,15 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnFocusChangeListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
+import android.widget.AbsListView;
+import android.widget.AbsListView.OnScrollListener;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -209,13 +210,13 @@ public abstract class StandOutWindow extends Service {
 		public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_counter++;
 
 		/**
-		 * Setting this flag indicates that the system should disable EditText
+		 * Setting this flag indicates that the system should disable Button
 		 * compatibility workarounds.
 		 * 
 		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
 		 * 
 		 */
-		public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_FIX_COMPATIBILITY_BUTTON_DISABLE = 1 << flag_counter++;
 
 		/**
 		 * Setting this flag indicates that the system should disable ListView
@@ -224,6 +225,15 @@ public abstract class StandOutWindow extends Service {
 		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
 		 */
 		public static final int FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the system should disable EditText
+		 * compatibility workarounds.
+		 * 
+		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
+		 * 
+		 */
+		public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 1 << flag_counter++;
 
 		/**
 		 * Setting this flag indicates that the system should disable all
@@ -1075,7 +1085,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected final synchronized View show(int id) {
 		// get the view corresponding to the id
-		View window = getWrappedView(id);
+		final View window = getWrappedView(id);
 
 		if (window == null) {
 			Log.w(TAG, "Tried to show(" + id + ") a null view");
@@ -1550,9 +1560,21 @@ public abstract class StandOutWindow extends Service {
 			public boolean onTouch(View v, MotionEvent event) {
 				switch (event.getAction()) {
 					case MotionEvent.ACTION_OUTSIDE:
+						// notify implementation that ACTION_OUTSIDE occurred
 						WrappedTag tag = (WrappedTag) window.getTag();
 						WindowTouchInfo touchInfo = tag.touchInfo;
 						onTouchBody(id, window, touchInfo, v, event);
+
+						// remove focus from window
+						try {
+							final LayoutParams params = (LayoutParams) window
+									.getLayoutParams();
+							params.setFlags(false);
+							updateViewLayout(id, window, params);
+						} catch (Exception ex) {
+							ex.printStackTrace();
+						}
+
 						return true;
 				}
 				return false;
@@ -1631,135 +1653,88 @@ public abstract class StandOutWindow extends Service {
 
 		View view = null;
 		while ((view = queue.poll()) != null) {
-			// fix EditText
-			if (view instanceof EditText
-					&& (flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE) == 0) {
-				final EditText edit = (EditText) view;
 
-				// when user clicks edittext, show FixEditTextActivity helper
-				edit.setOnFocusChangeListener(new OnFocusChangeListener() {
+			// listener for ACTION_DOWN and ACTION_UP to change the window focus
+			final OnTouchListener changeFocusListener = new OnTouchListener() {
 
-					@Override
-					public void onFocusChange(View v, boolean hasFocus) {
-						if (hasFocus) {
-							FixEditTextActivity.edit = edit;
-							try {
-								String text = edit.getText().toString();
-								int caret = edit.getSelectionStart();
-
-								startActivity(new Intent(StandOutWindow.this,
-										FixEditTextActivity.class)
-										.addFlags(
-												Intent.FLAG_ACTIVITY_NEW_TASK
-														| Intent.FLAG_ACTIVITY_SINGLE_TOP)
-										.putExtra("text", text)
-										.putExtra("caret", caret));
-							} catch (ActivityNotFoundException ex) {
-								ex.printStackTrace();
-								Log.e(TAG,
-										"EditText can only be used in StandOut windows after applying a workaround.\n"
-												+ "Please edit your AndroidManifest.xml to include the following Activity:\n"
-												+ "<activity "
-												+ "android:name=\"wei.mark.standout.FixEditTextActivity\" "
-												+ "android:excludeFromRecents=\"true\" "
-												+ "android:theme=\"@android:style/Theme.Translucent.NoTitleBar.Fullscreen\" > "
-												+ "</activity> ");
-							}
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					try {
+						final View window = getWindow(id);
+						final LayoutParams params = (LayoutParams) window
+								.getLayoutParams();
+						switch (event.getAction()) {
+							case MotionEvent.ACTION_DOWN:
+								params.setFlags(true);
+								updateViewLayout(id, window, params);
+								break;
+							case MotionEvent.ACTION_UP:
+								params.setFlags(false);
+								updateViewLayout(id, window, params);
+								break;
 						}
+					} catch (Exception ex) {
+						ex.printStackTrace();
 					}
-				});
 
-				// since one edittext is always already focused, use onClick to
-				// trigger the focus change listener
-				edit.setOnClickListener(new OnClickListener() {
+					return false;
+				}
+			};
+
+			if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_BUTTON_DISABLE) == 0
+					&& view instanceof Button) {
+				view.setOnTouchListener(changeFocusListener);
+			}
+
+			if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE) == 0
+					&& view instanceof ListView) {
+				view.setOnTouchListener(new OnTouchListener() {
 
 					@Override
-					public void onClick(View v) {
-						if (v.isFocused() && FixEditTextActivity.edit == null) {
-							v.clearFocus();
+					public boolean onTouch(final View v, final MotionEvent event) {
+						if (event.getAction() == MotionEvent.ACTION_UP) {
+							// don't remove focus right away
+							// if you do, it'll stop scrolling
+							ListView list = (ListView) v;
+							list.setOnScrollListener(new OnScrollListener() {
+
+								@Override
+								public void onScrollStateChanged(
+										AbsListView view, int scrollState) {
+									// check for scroll stop
+									if (SCROLL_STATE_IDLE == scrollState) {
+										changeFocusListener.onTouch(v, event);
+									}
+								}
+
+								@Override
+								public void onScroll(AbsListView view,
+										int firstVisibleItem,
+										int visibleItemCount, int totalItemCount) {
+								}
+							});
+							return false;
+						} else {
+							return changeFocusListener.onTouch(v, event);
 						}
 					}
 				});
 			}
 
-			if (view instanceof ListView
-					&& (flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE) == 0) {
-				final ListView list = (ListView) view;
-
-				list.setOnTouchListener(new OnTouchListener() {
-					float downX = 0, downY = 0;
-					float threshold = 5;
-					int STATE_DEFAULT = 0, STATE_PRESSED = 1;
-					int state = STATE_DEFAULT;
+			if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE) == 0
+					&& view instanceof EditText) {
+				view.setOnTouchListener(new OnTouchListener() {
 
 					@Override
-					public boolean onTouch(View v, MotionEvent event) {
-						switch (event.getAction()) {
-							case MotionEvent.ACTION_DOWN:
-								if (state == STATE_DEFAULT) {
-									downX = event.getX();
-									downY = event.getY();
-
-									state = STATE_PRESSED;
-								}
-								break;
-							case MotionEvent.ACTION_MOVE:
-								if (state == STATE_PRESSED) {
-									float deltaX = event.getX() - downX;
-									float deltaY = event.getY() - downY;
-									if (Math.abs(deltaX) > threshold
-											|| Math.abs(deltaY) > threshold) {
-										state = STATE_DEFAULT;
-									}
-								}
-								break;
-							case MotionEvent.ACTION_UP:
-								if (state == STATE_PRESSED) {
-									state = STATE_DEFAULT;
-									float x = event.getX();
-									float y = event.getY();
-
-									float deltaX = x - downX;
-									float deltaY = y - downY;
-									if (deltaX > threshold
-											|| deltaY > threshold) {
-										return false;
-									}
-									if (list.getChildCount() == 0) {
-										return false;
-									}
-
-									// clicked. find out which item
-									int yThreshold = list.getChildAt(0)
-											.getTop();
-									int first = list.getFirstVisiblePosition();
-									int headers = list.getHeaderViewsCount();
-									int last = list.getLastVisiblePosition();
-
-									for (int position = first - headers; position <= last; position++) {
-										int relative = position - first;
-										View child = list.getChildAt(relative);
-										int height = child.getHeight();
-										int dividerHeight = list
-												.getDividerHeight();
-										yThreshold += height + dividerHeight;
-										if (y < yThreshold) {
-											// clicked view at this position
-
-											Log.d(TAG,
-													"Clicked item (relative): "
-															+ relative);
-											list.getOnItemClickListener()
-													.onItemClick(list, child,
-															position, position);
-											return true;
-										}
-									}
-								}
-								break;
+					public boolean onTouch(final View v, final MotionEvent event) {
+						if (event.getAction() == MotionEvent.ACTION_UP) {
+							// don't remove focus right away
+							// if you do, the keyboard will disappear
+							// wait for Button press or ACTION_OUTSIDE
+							return false;
+						} else {
+							return changeFocusListener.onTouch(v, event);
 						}
-
-						return false;
 					}
 				});
 			}
@@ -1804,7 +1779,6 @@ public abstract class StandOutWindow extends Service {
 
 			@Override
 			public void onClick(View v) {
-				Log.d("StandOutHelloWorld", "Minimize button clicked: " + id);
 				hide(id);
 			}
 		});
@@ -1816,7 +1790,6 @@ public abstract class StandOutWindow extends Service {
 
 			@Override
 			public void onClick(View v) {
-				Log.d("StandOutHelloWorld", "Close button clicked: " + id);
 				close(id);
 			}
 		});
@@ -1954,9 +1927,6 @@ public abstract class StandOutWindow extends Service {
 
 						int[] location = new int[2];
 						window.getLocationOnScreen(location);
-
-						Log.d(TAG, "X: " + location[0] + " Y: " + location[1]
-								+ "Params: " + params);
 
 						params.x = Math.min(Math.max(params.x, 0), displayWidth
 								- params.width);
@@ -2184,9 +2154,8 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
 		public LayoutParams(int id) {
-			super(200, 200, TYPE_SYSTEM_ALERT, FLAG_NOT_FOCUSABLE
-					| FLAG_ALT_FOCUSABLE_IM | FLAG_WATCH_OUTSIDE_TOUCH,
-					PixelFormat.TRANSLUCENT);
+			super(200, 200, TYPE_SYSTEM_ALERT, 0, PixelFormat.TRANSLUCENT);
+			setFlags(false);
 
 			int windowFlags = getFlags(id);
 
@@ -2258,6 +2227,15 @@ public abstract class StandOutWindow extends Service {
 			int rawY = initialY + variableY;
 
 			return rawY % (displayHeight - height);
+		}
+
+		public void setFlags(boolean focusable) {
+			if (focusable) {
+				flags = FLAG_NOT_TOUCH_MODAL | FLAG_WATCH_OUTSIDE_TOUCH;
+			} else {
+				flags = FLAG_NOT_FOCUSABLE | FLAG_ALT_FOCUSABLE_IM
+						| FLAG_WATCH_OUTSIDE_TOUCH;
+			}
 		}
 	}
 }
