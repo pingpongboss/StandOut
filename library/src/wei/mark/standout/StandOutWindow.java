@@ -1631,14 +1631,28 @@ public abstract class StandOutWindow extends Service {
 	 * Currently, this method does the following:
 	 * 
 	 * <p>
-	 * Fix {@link EditText} because they are not focusable and don't open the
-	 * IME. To make EditText usable, hook up an onclick listener and start a new
-	 * Activity for the sole purpose of getting user input.
+	 * Fix {@link Button}: visual state does not change on click. The fix
+	 * enables the window focus on ACTION_DOWN then disables the focus on
+	 * ACTION_UP.
 	 * 
 	 * <p>
-	 * Fix {@link ListView} because they are not focusable and don't dispatch
-	 * onItemClick events. To make ListView usable, write our own click
-	 * detection code using an {@link OnTouchListener}.
+	 * Fix {@link ListView}: visual state does not change on item click and
+	 * onItemClick events are not dispatched. The fix enables the window focus
+	 * on ACTION_DOWN then disables the focus when the ListView stops scrolling.
+	 * 
+	 * <p>
+	 * Fix {@link EditText}: is not focusable and does not open the keyboard.
+	 * The fix enables the window focus on ACTION_DOWN but does not disable the
+	 * focus at any time. We assume there is a Button that the user will click
+	 * after entering text or the user will click outside the window, which will
+	 * disable the window focus.
+	 * 
+	 * <p>
+	 * Why we need compatibility fixes: Focused StandOut windows prevent the
+	 * Back and Home buttons from working. This is a limitation in the Android
+	 * system. This is the reason why all windows start with disabled focus, but
+	 * that messes up the previously mentioned views. So we must switch focus on
+	 * and off for the views to behave the way we want.
 	 * 
 	 * @param root
 	 *            The root view hierarchy to iterate through and check.
