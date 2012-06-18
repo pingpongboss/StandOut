@@ -1141,7 +1141,7 @@ public abstract class StandOutWindow extends Service {
 		int flags = getFlags(id);
 
 		// check if hide enabled
-		if ((flags & StandOutFlags.FLAG_HIDE_ENABLE) != 0) {
+		if (Utils.isSet(flags, StandOutFlags.FLAG_HIDE_ENABLE)) {
 			// get the hidden notification for this view
 			Notification notification = getHiddenNotification(id);
 
@@ -1457,9 +1457,9 @@ public abstract class StandOutWindow extends Service {
 		View content;
 		FrameLayout body;
 
-		int flags = getFlags(id);
+		final int flags = getFlags(id);
 
-		if ((flags & StandOutFlags.FLAG_DECORATION_SYSTEM) != 0) {
+		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_SYSTEM)) {
 			// requested system window decorations
 			content = getSystemWindowContent(id);
 			body = (FrameLayout) content.findViewById(R.id.body);
@@ -1473,7 +1473,6 @@ public abstract class StandOutWindow extends Service {
 		content.setTag(window);
 
 		// body should always send touch events to onTouchBody()
-		final boolean bodyMoveEnabled = (flags & StandOutFlags.FLAG_BODY_MOVE_ENABLE) != 0;
 		body.setOnTouchListener(new OnTouchListener() {
 
 			@Override
@@ -1488,7 +1487,7 @@ public abstract class StandOutWindow extends Service {
 						|| consumed;
 
 				// if set FLAG_BODY_MOVE_ENABLE, move the window
-				if (bodyMoveEnabled) {
+				if (Utils.isSet(flags, StandOutFlags.FLAG_BODY_MOVE_ENABLE)) {
 					consumed = onTouchHandleMove(id, window, touchInfo, v,
 							event) || consumed;
 				}
@@ -1515,11 +1514,13 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// implement StandOut specific workarounds
-		if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
+		if (!Utils.isSet(flags,
+				StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE)) {
 			fixCompatibility(view, id);
 		}
 		// implement StandOut specific additional functionality
-		if ((flags & StandOutFlags.FLAG_ADD_FUNCTIONALITY_ALL_DISABLE) == 0) {
+		if (!Utils.isSet(flags,
+				StandOutFlags.FLAG_ADD_FUNCTIONALITY_ALL_DISABLE)) {
 			addFunctionality(view, id);
 		}
 
@@ -1564,7 +1565,8 @@ public abstract class StandOutWindow extends Service {
 	private void addFunctionality(View view, final int id) {
 		int flags = getFlags(id);
 
-		if ((flags & StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE) == 0) {
+		if (!Utils.isSet(flags,
+				StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE)) {
 			View corner = view.findViewById(R.id.corner);
 			if (corner != null) {
 				corner.setOnTouchListener(new OnTouchListener() {
@@ -1720,16 +1722,16 @@ public abstract class StandOutWindow extends Service {
 		// set window appearance and behavior based on flags
 		int flags = getFlags(id);
 
-		if ((flags & StandOutFlags.FLAG_HIDE_ENABLE) != 0) {
+		if (Utils.isSet(flags, StandOutFlags.FLAG_HIDE_ENABLE)) {
 			hide.setVisibility(View.VISIBLE);
 		}
-		if ((flags & StandOutFlags.FLAG_DECORATION_CLOSE_DISABLE) != 0) {
+		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_CLOSE_DISABLE)) {
 			close.setVisibility(View.GONE);
 		}
-		if ((flags & StandOutFlags.FLAG_DECORATION_MOVE_DISABLE) != 0) {
+		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_MOVE_DISABLE)) {
 			titlebar.setOnTouchListener(null);
 		}
-		if ((flags & StandOutFlags.FLAG_DECORATION_RESIZE_DISABLE) != 0) {
+		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_RESIZE_DISABLE)) {
 			corner.setVisibility(View.GONE);
 		}
 
@@ -1757,10 +1759,11 @@ public abstract class StandOutWindow extends Service {
 				int deltaX = touchInfo.lastX - touchInfo.firstX;
 				int deltaY = touchInfo.lastY - touchInfo.firstY;
 				boolean tap = deltaX == 0 && deltaY == 0;
-				if ((flags & StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH) != 0) {
+				if (Utils.isSet(flags,
+						StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH)) {
 					bringToFront(id);
-				} else if ((flags & StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP) != 0
-						&& tap) {
+				} else if (Utils.isSet(flags,
+						StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP) && tap) {
 					bringToFront(id);
 				}
 				break;
@@ -1808,7 +1811,8 @@ public abstract class StandOutWindow extends Service {
 				updateViewLayout(id, window, params);
 				break;
 			case MotionEvent.ACTION_UP:
-				if ((flags & StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE) != 0) {
+				if (Utils.isSet(flags,
+						StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
 					if (params.gravity == (Gravity.TOP | Gravity.LEFT)) {
 						// keep window inside of edges and gravity is TOP|LEFT
 						Display display = mWindowManager.getDefaultDisplay();
@@ -2049,7 +2053,8 @@ public abstract class StandOutWindow extends Service {
 
 			int windowFlags = getFlags(id);
 
-			if ((windowFlags & StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE) != 0) {
+			if (Utils.isSet(windowFlags,
+					StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
 				// windows stay within edges
 			} else {
 				// windows may be moved beyond edges
@@ -2080,7 +2085,7 @@ public abstract class StandOutWindow extends Service {
 			this(id, w, h, xpos, ypos);
 			gravity = gravityFlag;
 
-			if ((flags & FLAG_LAYOUT_NO_LIMITS) == 0) {
+			if (!Utils.isSet(flags, FLAG_LAYOUT_NO_LIMITS)) {
 				if (gravity != (Gravity.TOP | Gravity.LEFT)) {
 					// windows stay within edges AND gravity is not normal
 					Log.w(TAG,
