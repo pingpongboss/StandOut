@@ -10,8 +10,9 @@ public class FolderModel {
 	public String name;
 	public List<ActivityInfo> apps;
 	public boolean shown;
-	
+
 	public FolderModel() {
 		apps = new ArrayList<ActivityInfo>();
+		shown = true;
 	}
 }

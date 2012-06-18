@@ -264,6 +264,7 @@ public final class FloatingFolder extends StandOutWindow {
 			case STARTUP_CODE:
 				loadAllFolders();
 				if (mFolders.isEmpty()) {
+					mFolders.put(DEFAULT_ID, new FolderModel());
 					show(DEFAULT_ID);
 				} else {
 					for (FolderModel folder : mFolders.values()) {
@@ -288,11 +289,6 @@ public final class FloatingFolder extends StandOutWindow {
 
 	private void onUserAddApp(int id, ActivityInfo app) {
 		FolderModel folder = mFolders.get(id);
-		if (folder == null) {
-			folder = new FolderModel();
-			mFolders.put(id, folder);
-		}
-
 		folder.apps.add(app);
 
 		FileOutputStream out = null;
