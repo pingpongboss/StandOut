@@ -30,8 +30,6 @@ import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
-import android.widget.AbsListView;
-import android.widget.AbsListView.OnScrollListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -208,32 +206,6 @@ public abstract class StandOutWindow extends Service {
 		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
 		 */
 		public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_counter++;
-
-		/**
-		 * Setting this flag indicates that the system should disable Button
-		 * compatibility workarounds.
-		 * 
-		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
-		 * 
-		 */
-		public static final int FLAG_FIX_COMPATIBILITY_BUTTON_DISABLE = 1 << flag_counter++;
-
-		/**
-		 * Setting this flag indicates that the system should disable ListView
-		 * compatibility workarounds.
-		 * 
-		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
-		 */
-		public static final int FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE = 1 << flag_counter++;
-
-		/**
-		 * Setting this flag indicates that the system should disable EditText
-		 * compatibility workarounds.
-		 * 
-		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
-		 * 
-		 */
-		public static final int FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE = 1 << flag_counter++;
 
 		/**
 		 * Setting this flag indicates that the system should disable all
@@ -1544,7 +1516,7 @@ public abstract class StandOutWindow extends Service {
 
 		// implement StandOut specific workarounds
 		if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
-//			fixCompatibility(view, id);
+			fixCompatibility(view, id);
 		}
 		// implement StandOut specific additional functionality
 		if ((flags & StandOutFlags.FLAG_ADD_FUNCTIONALITY_ALL_DISABLE) == 0) {
@@ -1564,20 +1536,6 @@ public abstract class StandOutWindow extends Service {
 						WrappedTag tag = (WrappedTag) window.getTag();
 						WindowTouchInfo touchInfo = tag.touchInfo;
 						onTouchBody(id, window, touchInfo, v, event);
-
-						int flags = getFlags(id);
-
-						if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE) == 0) {
-							// remove focus from window
-							try {
-								final LayoutParams params = (LayoutParams) window
-										.getLayoutParams();
-								params.setFlags(id, false);
-								updateViewLayout(id, window, params);
-							} catch (Exception ex) {
-								ex.printStackTrace();
-							}
-						}
 
 						return true;
 				}
@@ -1667,95 +1625,9 @@ public abstract class StandOutWindow extends Service {
 		Queue<View> queue = new LinkedList<View>();
 		queue.add(root);
 
-		int flags = getFlags(id);
-
 		View view = null;
 		while ((view = queue.poll()) != null) {
-
-			// listener for ACTION_DOWN and ACTION_UP to change the window focus
-			final OnTouchListener changeFocusListener = new OnTouchListener() {
-
-				@Override
-				public boolean onTouch(View v, MotionEvent event) {
-					try {
-						final View window = getWindow(id);
-						final LayoutParams params = (LayoutParams) window
-								.getLayoutParams();
-						switch (event.getAction()) {
-							case MotionEvent.ACTION_DOWN:
-								params.setFlags(id, true);
-								updateViewLayout(id, window, params);
-								break;
-							case MotionEvent.ACTION_UP:
-								params.setFlags(id, false);
-								updateViewLayout(id, window, params);
-								break;
-						}
-					} catch (Exception ex) {
-						ex.printStackTrace();
-					}
-
-					return false;
-				}
-			};
-
-			if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_BUTTON_DISABLE) == 0
-					&& view instanceof Button) {
-				view.setOnTouchListener(changeFocusListener);
-			}
-
-			if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_LISTVIEW_DISABLE) == 0
-					&& view instanceof ListView) {
-				view.setOnTouchListener(new OnTouchListener() {
-
-					@Override
-					public boolean onTouch(final View v, final MotionEvent event) {
-						if (event.getAction() == MotionEvent.ACTION_UP) {
-							// don't remove focus right away
-							// if you do, it'll stop scrolling
-							ListView list = (ListView) v;
-							list.setOnScrollListener(new OnScrollListener() {
-
-								@Override
-								public void onScrollStateChanged(
-										AbsListView view, int scrollState) {
-									// check for scroll stop
-									if (SCROLL_STATE_IDLE == scrollState) {
-										changeFocusListener.onTouch(v, event);
-									}
-								}
-
-								@Override
-								public void onScroll(AbsListView view,
-										int firstVisibleItem,
-										int visibleItemCount, int totalItemCount) {
-								}
-							});
-							return false;
-						} else {
-							return changeFocusListener.onTouch(v, event);
-						}
-					}
-				});
-			}
-
-			if ((flags & StandOutFlags.FLAG_FIX_COMPATIBILITY_EDITTEXT_DISABLE) == 0
-					&& view instanceof EditText) {
-				view.setOnTouchListener(new OnTouchListener() {
-
-					@Override
-					public boolean onTouch(final View v, final MotionEvent event) {
-						if (event.getAction() == MotionEvent.ACTION_UP) {
-							// don't remove focus right away
-							// if you do, the keyboard will disappear
-							// wait for Button press or ACTION_OUTSIDE
-							return false;
-						} else {
-							return changeFocusListener.onTouch(v, event);
-						}
-					}
-				});
-			}
+			// do nothing yet
 
 			// iterate through children
 			if (view instanceof ViewGroup) {
@@ -2172,11 +2044,17 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
 		public LayoutParams(int id) {
-			super(200, 200, TYPE_PHONE,
-			// TYPE_SYSTEM_ALERT,
-					0, PixelFormat.TRANSLUCENT);
-			setFlags(id, true);
-			// setFlags(false);
+			super(200, 200, TYPE_PHONE, FLAG_NOT_TOUCH_MODAL
+					| FLAG_WATCH_OUTSIDE_TOUCH, PixelFormat.TRANSLUCENT);
+
+			int windowFlags = getFlags(id);
+
+			if ((windowFlags & StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE) != 0) {
+				// windows stay within edges
+			} else {
+				// windows may be moved beyond edges
+				flags |= FLAG_LAYOUT_NO_LIMITS;
+			}
 
 			x = getX(id, width);
 			y = getY(id, height);
@@ -2239,24 +2117,6 @@ public abstract class StandOutWindow extends Service {
 			int rawY = initialY + variableY;
 
 			return rawY % (displayHeight - height);
-		}
-
-		public void setFlags(int id, boolean focusable) {
-			if (focusable) {
-				flags = FLAG_NOT_TOUCH_MODAL | FLAG_WATCH_OUTSIDE_TOUCH;
-			} else {
-				flags = FLAG_NOT_FOCUSABLE | FLAG_ALT_FOCUSABLE_IM
-						| FLAG_WATCH_OUTSIDE_TOUCH;
-			}
-
-			int windowFlags = getFlags(id);
-
-			if ((windowFlags & StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE) != 0) {
-				// windows stay within edges
-			} else {
-				// windows may be moved beyond edges
-				flags |= FLAG_LAYOUT_NO_LIMITS;
-			}
 		}
 	}
 }

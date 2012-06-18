@@ -1,7 +1,6 @@
 package wei.mark.example;
 
 import wei.mark.standout.StandOutWindow;
-import wei.mark.standout.StandOutWindow.StandOutFlags;
 import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,7 +36,7 @@ public class SimpleWindow extends StandOutWindow {
 	// move the window by dragging the view
 	@Override
 	protected int getFlags(int id) {
-		return super.getFlags(id) | StandOutFlags.FLAG_BODY_MOVE_ENABLE|StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE;
+		return super.getFlags(id) | StandOutFlags.FLAG_BODY_MOVE_ENABLE;
 	}
 
 	@Override

@@ -231,10 +231,10 @@ public final class FloatingFolder extends StandOutWindow {
 	@Override
 	protected int getFlags(int id) {
 		if (APP_SELECTOR_ID == id) {
-			return super.getFlags(id)|StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE;
+			return super.getFlags(id);
 		} else {
 			return super.getFlags(id) | StandOutFlags.FLAG_BODY_MOVE_ENABLE
-					| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE|StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE;
+					| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE;
 		}
 	}
 
