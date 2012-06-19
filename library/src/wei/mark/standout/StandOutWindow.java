@@ -1691,8 +1691,6 @@ public abstract class StandOutWindow extends Service {
 		int totalDeltaX = window.touchInfo.lastX - window.touchInfo.firstX;
 		int totalDeltaY = window.touchInfo.lastY - window.touchInfo.firstY;
 
-		Log.d(TAG, "x,y: " + totalDeltaX + "," + totalDeltaY);
-
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
 				window.touchInfo.lastX = (int) event.getRawX();
@@ -2164,11 +2162,9 @@ public abstract class StandOutWindow extends Service {
 
 		private void setFocus(boolean focused) {
 			if (focused) {
-				flags = flags ^ LayoutParams.FLAG_NOT_FOCUSABLE
-						^ LayoutParams.FLAG_ALT_FOCUSABLE_IM;
+				flags = flags ^ LayoutParams.FLAG_NOT_FOCUSABLE;
 			} else {
-				flags = flags | LayoutParams.FLAG_NOT_FOCUSABLE
-						| LayoutParams.FLAG_ALT_FOCUSABLE_IM;
+				flags = flags | LayoutParams.FLAG_NOT_FOCUSABLE;
 			}
 		}
 	}
