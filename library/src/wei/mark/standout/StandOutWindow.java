@@ -301,6 +301,10 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * This allows windows of different applications to communicate with each
+	 * other.
+	 * 
+	 * <p>
 	 * Send {@link Parceleable} data in a {@link Bundle} to a new or existing
 	 * windows. The implementation of the recipient window can handle what to do
 	 * with the data. To receive a result, provide the class and id of the
@@ -455,6 +459,7 @@ public abstract class StandOutWindow extends Service {
 
 	// internal map of ids to shown/hidden views
 	private static Map<Class<? extends StandOutWindow>, Map<Integer, View>> sViews;
+	private static View sFocusedWindow;
 
 	// static constructors
 	static {
@@ -1127,6 +1132,8 @@ public abstract class StandOutWindow extends Service {
 			}
 		}
 
+		focus(id);
+
 		return window;
 	}
 
@@ -1324,8 +1331,10 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Update the window corresponding to this view with the given params.
+	 * Update the window corresponding to this id with the given params.
 	 * 
+	 * @param id
+	 *            The id of the window.
 	 * @param window
 	 *            The window to update.
 	 * @param params
@@ -1343,6 +1352,7 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		try {
+			window.setLayoutParams(params);
 			mWindowManager.updateViewLayout(window, params);
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -1383,6 +1393,67 @@ public abstract class StandOutWindow extends Service {
 			mWindowManager.addView(window, params);
 		} catch (Exception ex) {
 			ex.printStackTrace();
+		}
+	}
+
+	/**
+	 * Request focus for the window corresponding to this id. A maximum of one
+	 * window can have focus, and that window will receive all key events,
+	 * including Back and Menu.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 */
+	protected final synchronized void focus(int id) {
+		// remove focus from previously focused window
+		unfocus(sFocusedWindow);
+		sFocusedWindow = null;
+
+		View window = getWindow(id);
+		if (window != null) {
+			LayoutParams params = (LayoutParams) window.getLayoutParams();
+			params.setFocus();
+
+			updateViewLayout(id, window, params);
+		}
+	}
+
+	/**
+	 * Remove focus for the window corresponding to this id. Once a window is
+	 * unfocused, it will stop receiving key events.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 */
+	protected final synchronized void unfocus(int id) {
+		View window = getWindow(id);
+		unfocus(window);
+	}
+
+	/**
+	 * Remove focus for the window, which could belong to another application.
+	 * Since we don't allow windows from different applications to directly
+	 * interact with each other, except for
+	 * {@link #sendData(Context, Class, int, int, Bundle, Class, int)}, this
+	 * method is private.
+	 * 
+	 * @param window
+	 *            The window to unfocus.
+	 */
+	private synchronized void unfocus(View window) {
+		if (window != null) {
+			LayoutParams params = (LayoutParams) window.getLayoutParams();
+			params.setUnfocus();
+
+			// don't pass along the window id if it is from a different
+			// application
+			WrappedTag tag = (WrappedTag) window.getTag();
+			int id = DISREGARD_ID;
+			if (tag.cls.equals(getClass())) {
+				id = tag.id;
+			}
+
+			updateViewLayout(id, window, params);
 		}
 	}
 
@@ -1525,21 +1596,23 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// wrap the existing tag and attach it to the frame
-		window.setTag(new WrappedTag(id, false, view.getTag()));
+		window.setTag(new WrappedTag(getClass(), id, false, view.getTag()));
 
 		window.setOnTouchListener(new OnTouchListener() {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				switch (event.getAction()) {
-					case MotionEvent.ACTION_OUTSIDE:
-						// notify implementation that ACTION_OUTSIDE occurred
-						WrappedTag tag = (WrappedTag) window.getTag();
-						WindowTouchInfo touchInfo = tag.touchInfo;
-						onTouchBody(id, window, touchInfo, v, event);
+				Log.d(TAG, "Event: " + event);
+				if (MotionEvent.ACTION_OUTSIDE == event.getAction()) {
+					// notify implementation that ACTION_OUTSIDE occurred
+					WrappedTag tag = (WrappedTag) window.getTag();
+					WindowTouchInfo touchInfo = tag.touchInfo;
+					onTouchBody(id, window, touchInfo, v, event);
 
-						return true;
+					unfocus(window);
+					return true;
 				}
+
 				return false;
 			}
 		});
@@ -1574,13 +1647,17 @@ public abstract class StandOutWindow extends Service {
 					@Override
 					public boolean onTouch(View v, MotionEvent event) {
 						View window = getWindow(id);
-						WindowTouchInfo touchInfo = ((WrappedTag) window
-								.getTag()).touchInfo;
-						// handle dragging to move
-						boolean consumed = onTouchHandleResize(id, window,
-								touchInfo, v, event);
+						if (window != null) {
+							WindowTouchInfo touchInfo = ((WrappedTag) window
+									.getTag()).touchInfo;
+							// handle dragging to move
+							boolean consumed = onTouchHandleResize(id, window,
+									touchInfo, v, event);
 
-						return consumed;
+							return consumed;
+						}
+
+						return false;
 					}
 				});
 			}
@@ -1754,8 +1831,8 @@ public abstract class StandOutWindow extends Service {
 			WindowTouchInfo touchInfo, View view, MotionEvent event) {
 		int flags = getFlags(id);
 
-		switch (event.getAction()) {
-			case MotionEvent.ACTION_UP:
+		if (MotionEvent.ACTION_OUTSIDE != event.getAction()) {
+			if (MotionEvent.ACTION_UP == event.getAction()) {
 				int deltaX = touchInfo.lastX - touchInfo.firstX;
 				int deltaY = touchInfo.lastY - touchInfo.firstY;
 				boolean tap = deltaX == 0 && deltaY == 0;
@@ -1766,7 +1843,10 @@ public abstract class StandOutWindow extends Service {
 						StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP) && tap) {
 					bringToFront(id);
 				}
-				break;
+			}
+
+			focus(id);
+			return true;
 		}
 
 		return false;
@@ -1981,6 +2061,11 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public class WrappedTag {
 		/**
+		 * Class of the window, indicating which application the window belongs
+		 * to.
+		 */
+		public Class<? extends StandOutWindow> cls;
+		/**
 		 * Id of the window.
 		 */
 		public int id;
@@ -2005,8 +2090,10 @@ public abstract class StandOutWindow extends Service {
 		 */
 		public Object tag;
 
-		public WrappedTag(int id, boolean shown, Object tag) {
+		public WrappedTag(Class<? extends StandOutWindow> cls, int id,
+				boolean shown, Object tag) {
 			super();
+			this.cls = cls;
 			this.id = id;
 			this.shown = shown;
 			this.touchInfo = new WindowTouchInfo();
@@ -2048,8 +2135,9 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
 		public LayoutParams(int id) {
-			super(200, 200, TYPE_PHONE, FLAG_NOT_TOUCH_MODAL
-					| FLAG_WATCH_OUTSIDE_TOUCH, PixelFormat.TRANSLUCENT);
+			super(200, 200, TYPE_PHONE, 0, PixelFormat.TRANSLUCENT);
+
+			setUnfocus();
 
 			int windowFlags = getFlags(id);
 
@@ -2122,6 +2210,17 @@ public abstract class StandOutWindow extends Service {
 			int rawY = initialY + variableY;
 
 			return rawY % (displayHeight - height);
+		}
+
+		private void setFocus() {
+			flags = LayoutParams.FLAG_NOT_TOUCH_MODAL
+					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+		}
+
+		private void setUnfocus() {
+			flags = LayoutParams.FLAG_NOT_FOCUSABLE
+					| LayoutParams.FLAG_NOT_TOUCH_MODAL
+					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
 		}
 	}
 }
