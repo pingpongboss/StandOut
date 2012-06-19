@@ -227,7 +227,8 @@ public final class FloatingFolder extends StandOutWindow {
 			return super.getFlags(id);
 		} else {
 			return super.getFlags(id) | StandOutFlags.FLAG_BODY_MOVE_ENABLE
-					| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE;
+					| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE
+					| StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE;
 		}
 	}
 

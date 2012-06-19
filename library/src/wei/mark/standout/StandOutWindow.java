@@ -186,10 +186,31 @@ public abstract class StandOutWindow extends Service {
 		public static final int FLAG_WINDOW_EDGE_LIMITS_ENABLE = 1 << flag_counter++;
 
 		/**
+		 * Setting this flag indicates that the window does not need focus. If
+		 * this flag is set, the system will not take care of setting and
+		 * unsetting the focus of windows based on user touch and key events.
+		 * 
+		 * <p>
+		 * You will most likely need focus if your window contains any of the
+		 * following: Button, ListView, EditText.
+		 * 
+		 * <p>
+		 * The benefit of disabling focus is that your window will not consume
+		 * any key events. Normally, focused windows will consume the Back and
+		 * Menu keys.
+		 * 
+		 * @see {@link StandOutWindow#focus(int)}
+		 * @see {@link StandOutWindow#unfocus(int)}
+		 * 
+		 */
+		public static final int FLAG_WINDOW_FOCUSABLE_DISABLE = 1 << flag_counter++;
+
+		/**
 		 * Setting this flag indicates that windows are able to be hidden, that
-		 * {@link #getHiddenIcon(int)}, {@link #getHiddenTitle(int)}, and
-		 * {@link #getHiddenMessage(int)} are implemented, and that the system
-		 * window decorator should provide a hide button if
+		 * {@link StandOutWindow#getHiddenIcon(int)},
+		 * {@link StandOutWindow#getHiddenTitle(int)}, and
+		 * {@link StandOutWindow#getHiddenMessage(int)} are implemented, and
+		 * that the system window decorator should provide a hide button if
 		 * {@link #FLAG_DECORATION_SYSTEM} is set.
 		 */
 		public static final int FLAG_HIDE_ENABLE = 1 << flag_counter++;
@@ -1396,17 +1417,21 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 */
 	protected final synchronized void focus(int id) {
-		// remove focus from previously focused window
-		unfocus(sFocusedWindow);
+		int flags = getFlags(id);
 
-		Window window = getWindow(id);
-		if (window != null) {
-			LayoutParams params = window.getLayoutParams();
-			params.setFocus(true);
+		if (!Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
+			// remove focus from previously focused window
+			unfocus(sFocusedWindow);
 
-			updateViewLayout(id, window, params);
+			Window window = getWindow(id);
+			if (window != null) {
+				LayoutParams params = window.getLayoutParams();
+				params.setFocus(true);
 
-			sFocusedWindow = window;
+				updateViewLayout(id, window, params);
+
+				sFocusedWindow = window;
+			}
 		}
 	}
 
@@ -1434,15 +1459,22 @@ public abstract class StandOutWindow extends Service {
 	 */
 	private synchronized void unfocus(Window window) {
 		if (window != null) {
-			LayoutParams params = (LayoutParams) window.getLayoutParams();
-			params.setFocus(false);
-
 			// don't pass along the window id if it is from a different
 			// application
 			int id = DISREGARD_ID;
 			if (window.cls == getClass()) {
 				id = window.id;
+
+				// don't do anything if focus disabled
+				int flags = getFlags(id);
+				if (Utils.isSet(flags,
+						StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
+					return;
+				}
 			}
+
+			LayoutParams params = (LayoutParams) window.getLayoutParams();
+			params.setFocus(false);
 
 			updateViewLayout(id, window, params);
 
