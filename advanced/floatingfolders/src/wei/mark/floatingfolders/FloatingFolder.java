@@ -94,12 +94,12 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
-	protected View createAndAttachView(final int id, ViewGroup root) {
+	protected void createAndAttachView(final int id, FrameLayout frame) {
 		LayoutInflater inflater = LayoutInflater.from(this);
 
 		// choose which type of window to show
 		if (APP_SELECTOR_ID == id) {
-			final View view = inflater.inflate(R.layout.app_selector, root,
+			final View view = inflater.inflate(R.layout.app_selector, frame,
 					true);
 			final ListView listView = (ListView) view.findViewById(R.id.list);
 			final List<ActivityInfo> apps = new ArrayList<ActivityInfo>();
@@ -115,7 +115,7 @@ public final class FloatingFolder extends StandOutWindow {
 				@Override
 				public void onItemClick(AdapterView<?> parent, View view,
 						int position, long rowId) {
-					View window = getWindow(id);
+					Window window = getWindow(id);
 
 					// close self
 					close(id);
@@ -124,12 +124,11 @@ public final class FloatingFolder extends StandOutWindow {
 							.getItemAtPosition(position);
 
 					// send data back
-					Bundle windowData = ((WrappedTag) window.getTag()).data;
-					if (windowData.containsKey("fromId")) {
+					if (window.data.containsKey("fromId")) {
 						Bundle data = new Bundle();
 						data.putParcelable("app", app);
 						sendData(id, FloatingFolder.class,
-								windowData.getInt("fromId"),
+								window.data.getInt("fromId"),
 								APP_SELECTOR_FINISHED_CODE, data);
 					}
 				}
@@ -184,10 +183,8 @@ public final class FloatingFolder extends StandOutWindow {
 					close(id);
 				}
 			});
-
-			return view;
 		} else {
-			View view = inflater.inflate(R.layout.folder, root, true);
+			View view = inflater.inflate(R.layout.folder, frame, true);
 
 			View add = view.findViewById(R.id.add);
 			add.setOnClickListener(new OnClickListener() {
@@ -211,13 +208,11 @@ public final class FloatingFolder extends StandOutWindow {
 					addAppToFolder(id, app, flow);
 				}
 			}
-
-			return view;
 		}
 	}
 
 	@Override
-	protected LayoutParams getParams(int id, View view) {
+	protected LayoutParams getParams(int id, Window window) {
 		if (APP_SELECTOR_ID == id) {
 			return new LayoutParams(id, 400, LayoutParams.FILL_PARENT, 0, 0,
 					Gravity.CENTER);
@@ -243,9 +238,8 @@ public final class FloatingFolder extends StandOutWindow {
 			case APP_SELECTOR_CODE:
 				if (APP_SELECTOR_ID == id) {
 					// app selector receives data
-					View window = show(APP_SELECTOR_ID);
-					WrappedTag tag = (WrappedTag) window.getTag();
-					tag.data.putInt("fromId", fromId);
+					Window window = show(APP_SELECTOR_ID);
+					window.data.putInt("fromId", fromId);
 				}
 				break;
 			case APP_SELECTOR_FINISHED_CODE:
@@ -443,9 +437,8 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
-	protected boolean onTouchBody(final int id, final View window,
-			final WindowTouchInfo touchInfo, final View view,
-			android.view.MotionEvent event) {
+	protected boolean onTouchBody(final int id, final Window window,
+			final View view, MotionEvent event) {
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_OUTSIDE:
 				close(APP_SELECTOR_ID);
@@ -459,13 +452,11 @@ public final class FloatingFolder extends StandOutWindow {
 					final ImageView screenshot = (ImageView) window
 							.findViewById(R.id.preview);
 
-					WrappedTag tag = (WrappedTag) window.getTag();
-
 					// if touch edge
 					if (params.x <= 0) {
 						// first time touch edge
-						if (tag.shown) {
-							tag.shown = false;
+						if (window.shown) {
+							window.shown = false;
 
 							final Drawable drawable = getResources()
 									.getDrawable(R.drawable.ic_menu_archive);
@@ -523,8 +514,8 @@ public final class FloatingFolder extends StandOutWindow {
 					} else { // not touch edge
 
 						// first time not touch edge
-						if (!tag.shown) {
-							tag.shown = true;
+						if (!window.shown) {
+							window.shown = true;
 
 							mFadeOut.setAnimationListener(new AnimationListener() {
 
@@ -544,14 +535,13 @@ public final class FloatingFolder extends StandOutWindow {
 									screenshot.setVisibility(View.GONE);
 
 									// post so that screenshot is invisible
-									// before
-									// anything else happens
+									// before anything else happens
 									screenshot.post(new Runnable() {
 
 										@Override
 										public void run() {
 											LayoutParams originalParams = getParams(
-													id, view);
+													id, window);
 
 											Drawable drawable = screenshot
 													.getDrawable();

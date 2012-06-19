@@ -4,18 +4,18 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 public class WidgetsWindow extends MultiWindow {
 	public static final int DATA_CHANGED_TEXT = 0;
 
 	@Override
-	protected View createAndAttachView(final int id, ViewGroup root) {
+	protected void createAndAttachView(final int id, FrameLayout frame) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-		View view = inflater.inflate(R.layout.widgets, root, true);
+		View view = inflater.inflate(R.layout.widgets, frame, true);
 
 		final TextView status = (TextView) view.findViewById(R.id.status);
 		final EditText edit = (EditText) view.findViewById(R.id.edit);
@@ -45,12 +45,10 @@ public class WidgetsWindow extends MultiWindow {
 						data);
 			}
 		});
-
-		return view;
 	}
 
 	@Override
-	protected LayoutParams getParams(int id, View view) {
+	protected LayoutParams getParams(int id, Window window) {
 		return new LayoutParams(id, 300, 500);
 	}
 

@@ -3,8 +3,7 @@ package wei.mark.example;
 import wei.mark.standout.StandOutWindow;
 import android.content.Intent;
 import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 public class SimpleWindow extends StandOutWindow {
 
@@ -19,17 +18,15 @@ public class SimpleWindow extends StandOutWindow {
 	}
 
 	@Override
-	protected View createAndAttachView(final int id, ViewGroup root) {
+	protected void createAndAttachView(int id, FrameLayout frame) {
 		// create a new layout from body.xml
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-		final View view = inflater.inflate(R.layout.simple, root, true);
-
-		return view;
+		inflater.inflate(R.layout.simple, frame, true);
 	}
 
 	// the window will be centered
 	@Override
-	protected LayoutParams getParams(int id, View view) {
+	protected LayoutParams getParams(int id, Window window) {
 		return new LayoutParams(id, 250, 300);
 	}
 

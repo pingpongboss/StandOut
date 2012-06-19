@@ -3,8 +3,7 @@ package wei.mark.example;
 import wei.mark.standout.StandOutWindow;
 import android.graphics.Color;
 import android.view.Gravity;
-import android.view.View;
-import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 public class MostBasicWindow extends StandOutWindow {
@@ -20,18 +19,16 @@ public class MostBasicWindow extends StandOutWindow {
 	}
 
 	@Override
-	protected View createAndAttachView(int id, ViewGroup root) {
+	protected void createAndAttachView(int id, FrameLayout frame) {
 		TextView view = new TextView(this);
 		view.setText("MostBasicWindow");
 		view.setBackgroundColor(Color.CYAN);
 
-		root.addView(view);
-
-		return view;
+		frame.addView(view);
 	}
 
 	@Override
-	protected LayoutParams getParams(int id, View view) {
+	protected LayoutParams getParams(int id, Window window) {
 		return new LayoutParams(id, 200, 150, 100, 100, Gravity.LEFT
 				| Gravity.TOP);
 	}

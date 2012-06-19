@@ -6,9 +6,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 /**
@@ -39,20 +39,18 @@ public class MultiWindow extends StandOutWindow {
 	}
 
 	@Override
-	protected View createAndAttachView(int id, ViewGroup root) {
+	protected void createAndAttachView(int id, FrameLayout frame) {
 		// create a new layout from body.xml
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-		View view = inflater.inflate(R.layout.body, root, true);
+		View view = inflater.inflate(R.layout.body, frame, true);
 
 		TextView idText = (TextView) view.findViewById(R.id.id);
 		idText.setText(String.valueOf(id));
-
-		return view;
 	}
 
 	// every window is initially same size
 	@Override
-	protected LayoutParams getParams(int id, View view) {
+	protected LayoutParams getParams(int id, Window window) {
 		return new LayoutParams(id, 400, 300);
 	}
 

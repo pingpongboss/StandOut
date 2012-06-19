@@ -30,11 +30,8 @@ import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 
 /**
@@ -458,17 +455,17 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	// internal map of ids to shown/hidden views
-	private static Map<Class<? extends StandOutWindow>, Map<Integer, View>> sViews;
-	private static View sFocusedWindow;
+	private static Map<Class<? extends StandOutWindow>, Map<Integer, Window>> sWindows;
+	private static Window sFocusedWindow;
 
 	// static constructors
 	static {
-		sViews = new HashMap<Class<? extends StandOutWindow>, Map<Integer, View>>();
+		sWindows = new HashMap<Class<? extends StandOutWindow>, Map<Integer, Window>>();
 	}
 
 	/**
 	 * Returns whether the window corresponding to the class and id exists in
-	 * the {@link #sViews} cache.
+	 * the {@link #sWindows} cache.
 	 * 
 	 * @param cls
 	 *            Class corresponding to the window.
@@ -478,7 +475,7 @@ public abstract class StandOutWindow extends Service {
 	 *         the cache, or false if it does not exist.
 	 */
 	private static boolean isCached(Class<? extends StandOutWindow> cls, int id) {
-		Map<Integer, View> l2 = sViews.get(cls);
+		Map<Integer, Window> l2 = sWindows.get(cls);
 		return l2 != null && l2.containsKey(id);
 	}
 
@@ -577,26 +574,24 @@ public abstract class StandOutWindow extends Service {
 
 	/**
 	 * Create a new {@link View} corresponding to the id, and add it as a child
-	 * to the root. The view will become the contents of this StandOut window.
-	 * The view MUST be newly created, and you MUST attach it to root.
+	 * to the frame. The view will become the contents of this StandOut window.
+	 * The view MUST be newly created, and you MUST attach it to the frame.
 	 * 
 	 * <p>
 	 * If you are inflating your view from XML, make sure you use
 	 * {@link LayoutInflater#inflate(int, ViewGroup, boolean)} to attach your
-	 * view to root. Set the ViewGroup to be root, and the boolean to true.
+	 * view to frame. Set the ViewGroup to be frame, and the boolean to true.
 	 * 
 	 * <p>
 	 * If you are creating your view programmatically, make sure you use
-	 * {@link ViewGroup#addView(View)} to add your view to root.
+	 * {@link FrameLayout#addView(View)} to add your view to the frame.
 	 * 
 	 * @param id
 	 *            The id representing the window.
-	 * @param root
-	 *            The {@link ViewGroup} to attach your view as a child to.
-	 * @return A new {@link View} corresponding to the id. The view will be the
-	 *         content of this StandOut window. The view MUST be newly created.
+	 * @param frame
+	 *            The {@link FrameLayout} to attach your view as a child to.
 	 */
-	protected abstract View createAndAttachView(int id, ViewGroup root);
+	protected abstract void createAndAttachView(int id, FrameLayout frame);
 
 	/**
 	 * Return the {@link StandOutWindow#LayoutParams} for the corresponding id.
@@ -606,30 +601,31 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @param id
 	 *            The id of the window.
-	 * @param view
-	 *            The view corresponding to the id. Given as courtesy, so you
+	 * @param window
+	 *            The window corresponding to the id. Given as courtesy, so you
 	 *            may get the existing layout params.
 	 * @return The {@link StandOutWindow#LayoutParams} corresponding to the id.
-	 *         The layout params will be set on the view. The layout params may
-	 *         be reused.
+	 *         The layout params will be set on the window. The layout params
+	 *         returned will be reused whenever possible, minimizing the number
+	 *         of times getParams() will be called.
 	 */
-	protected abstract StandOutWindow.LayoutParams getParams(int id, View view);
+	protected abstract LayoutParams getParams(int id, Window window);
 
 	/**
 	 * Implement this method to change modify the behavior and appearance of the
 	 * window corresponding to the id.
 	 * 
 	 * <p>
-	 * You may use any of the flags defined in {@link StandOutWindow} such as
-	 * {@link #FLAG_DECORATION_NONE}.
+	 * You may use any of the flags defined in {@link StandOutFlags}. This
+	 * method will be called many times, so keep it fast.
 	 * 
 	 * <p>
 	 * Use bitwise OR (|) to set flags, and bitwise XOR (^) to unset flags. To
-	 * test if a flag is set, use (getFlags(id) & flag) != 0.
+	 * test if a flag is set, use {@link Utils#isSet(int, int)}.
 	 * 
 	 * @param id
 	 *            The id of the window.
-	 * @return Bitwise OR'd flags
+	 * @return A combination of flags.
 	 */
 	protected int getFlags(int id) {
 		return StandOutFlags.FLAG_DECORATION_NONE;
@@ -873,15 +869,13 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the view, provided as a courtesy.
 	 * @param window
 	 *            The window corresponding to the id, provided as a courtesy.
-	 * @param touchInfo
-	 *            The touch information of the window, provided as a courtesy.
 	 * @param view
 	 *            The view where the event originated from.
 	 * @param event
 	 *            See linked method.
 	 */
-	protected boolean onTouchBody(int id, View window,
-			WindowTouchInfo touchInfo, View view, MotionEvent event) {
+	protected boolean onTouchBody(int id, Window window, View view,
+			MotionEvent event) {
 		return false;
 	}
 
@@ -894,15 +888,12 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the view, provided as a courtesy.
 	 * @param window
 	 *            The window corresponding to the id, provided as a courtesy.
-	 * @param touchInfo
-	 *            The touch information of the window, provided as a courtesy.
 	 * @param view
 	 *            The view where the event originated from.
 	 * @param event
 	 *            See linked method.
 	 */
-	protected void onMove(int id, View window, WindowTouchInfo touchInfo,
-			View view, MotionEvent event) {
+	protected void onMove(int id, Window window, View view, MotionEvent event) {
 	}
 
 	/**
@@ -914,15 +905,12 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the view, provided as a courtesy.
 	 * @param window
 	 *            The window corresponding to the id, provided as a courtesy.
-	 * @param touchInfo
-	 *            The touch information of the window, provided as a courtesy.
 	 * @param view
 	 *            The view where the event originated from.
 	 * @param event
 	 *            See linked method.
 	 */
-	protected void onResize(int id, View window, WindowTouchInfo touchInfo,
-			View view, MotionEvent event) {
+	protected void onResize(int id, Window window, View view, MotionEvent event) {
 	}
 
 	/**
@@ -938,7 +926,7 @@ public abstract class StandOutWindow extends Service {
 	 *         continue.
 	 * @see #show(int)
 	 */
-	protected boolean onShow(int id, View window) {
+	protected boolean onShow(int id, Window window) {
 		return false;
 	}
 
@@ -956,7 +944,7 @@ public abstract class StandOutWindow extends Service {
 	 *         continue.
 	 * @see #hide(int)
 	 */
-	protected boolean onHide(int id, View window) {
+	protected boolean onHide(int id, Window window) {
 		return false;
 	}
 
@@ -973,7 +961,7 @@ public abstract class StandOutWindow extends Service {
 	 *         continue.
 	 * @see #close(int)
 	 */
-	protected boolean onClose(int id, View window) {
+	protected boolean onClose(int id, Window window) {
 		return false;
 	}
 
@@ -1021,16 +1009,16 @@ public abstract class StandOutWindow extends Service {
 	 * the view is updated by the window manager.
 	 * 
 	 * @param id
-	 *            The id of the view, provided as a courtesy.
+	 *            The id of the window, provided as a courtesy.
 	 * @param view
-	 *            The view about to be closed.
+	 *            The window about to be updated.
 	 * @param params
 	 *            The updated layout params.
-	 * @return Return true to cancel the view from being updated, or false to
+	 * @return Return true to cancel the window from being updated, or false to
 	 *         continue.
-	 * @see #updateViewLayout(int, View, LayoutParams)
+	 * @see #updateViewLayout(int, Window, LayoutParams)
 	 */
-	protected boolean onUpdate(int id, View window,
+	protected boolean onUpdate(int id, Window window,
 			StandOutWindow.LayoutParams params) {
 		return false;
 	}
@@ -1038,17 +1026,17 @@ public abstract class StandOutWindow extends Service {
 	/**
 	 * Implement this callback to be alerted when a window corresponding to the
 	 * id is about to be bought to the front. This callback will occur before
-	 * the view is brought to the front by the window manager.
+	 * the window is brought to the front by the window manager.
 	 * 
 	 * @param id
-	 *            The id of the view, provided as a courtesy.
+	 *            The id of the window, provided as a courtesy.
 	 * @param view
-	 *            The view about to be brought to the front.
-	 * @return Return true to cancel the view from being brought to the front,
+	 *            The window about to be brought to the front.
+	 * @return Return true to cancel the window from being brought to the front,
 	 *         or false to continue.
 	 * @see #bringToFront(int)
 	 */
-	protected boolean onBringToFront(int id, View window) {
+	protected boolean onBringToFront(int id, Window window) {
 		return false;
 	}
 
@@ -1060,31 +1048,31 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The window shown.
 	 */
-	protected final synchronized View show(int id) {
-		// get the view corresponding to the id
-		final View window = getWrappedView(id);
+	protected final synchronized Window show(int id) {
+		// get the window corresponding to the id
+		Window cachedWindow = getWindow(id);
+		final Window window;
 
-		if (window == null) {
-			Log.w(TAG, "Tried to show(" + id + ") a null view");
-			return null;
+		// check cache first
+		if (cachedWindow != null) {
+			window = cachedWindow;
+		} else {
+			window = new Window(id);
 		}
 
 		// alert callbacks and cancel if instructed
-		if (onShow(id, window))
+		if (onShow(id, window)) {
+			Log.d(TAG, "Window " + id + " show cancelled by implementation.");
 			return null;
+		}
 
 		// get animation
 		Animation animation = getShowAnimation(id);
 
-		WrappedTag tag = (WrappedTag) window.getTag();
-		tag.shown = true;
+		window.shown = true;
 
 		// get the params corresponding to the id
-		StandOutWindow.LayoutParams params = (LayoutParams) window
-				.getLayoutParams();
-		if (params == null) {
-			params = getParams(id, window);
-		}
+		LayoutParams params = window.getLayoutParams();
 
 		try {
 			// add the view to the window manager
@@ -1092,7 +1080,7 @@ public abstract class StandOutWindow extends Service {
 
 			// animate
 			if (animation != null) {
-				((ViewGroup) window).getChildAt(0).startAnimation(animation);
+				window.getChildAt(0).startAnimation(animation);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -1153,22 +1141,24 @@ public abstract class StandOutWindow extends Service {
 			Notification notification = getHiddenNotification(id);
 
 			// get the view corresponding to the id
-			final View window = getWrappedView(id);
+			final Window window = getWindow(id);
 
 			if (window == null) {
-				Log.w(TAG, "Tried to hide(" + id + ") a null view");
+				Log.w(TAG, "Tried to hide(" + id + ") a null window.");
 				return;
 			}
 
 			// alert callbacks and cancel if instructed
-			if (onHide(id, window))
+			if (onHide(id, window)) {
+				Log.w(TAG, "Window " + id
+						+ " hide cancelled by implementation.");
 				return;
+			}
 
 			// get animation
 			Animation animation = getHideAnimation(id);
 
-			WrappedTag tag = (WrappedTag) window.getTag();
-			tag.shown = false;
+			window.shown = false;
 
 			try {
 				// animate
@@ -1185,14 +1175,13 @@ public abstract class StandOutWindow extends Service {
 
 						@Override
 						public void onAnimationEnd(Animation animation) {
-							// remove the view from the window manager
+							// remove the window from the window manager
 							mWindowManager.removeView(window);
 						}
 					});
-					((ViewGroup) window).getChildAt(0)
-							.startAnimation(animation);
+					window.getChildAt(0).startAnimation(animation);
 				} else {
-					// remove the view from the window manager
+					// remove the window from the window manager
 					mWindowManager.removeView(window);
 				}
 			} catch (Exception ex) {
@@ -1220,16 +1209,18 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected final synchronized void close(int id) {
 		// get the view corresponding to the id
-		final View window = getWrappedView(id);
+		final Window window = getWindow(id);
 
 		if (window == null) {
-			Log.w(TAG, "Tried to close(" + id + ") a null view");
+			Log.w(TAG, "Tried to close(" + id + ") a null window.");
 			return;
 		}
 
 		// alert callbacks and cancel if instructed
-		if (onClose(id, window))
+		if (onClose(id, window)) {
+			Log.w(TAG, "Window " + id + " close cancelled by implementation.");
 			return;
+		}
 
 		// remove view from internal map
 		removeCache(id);
@@ -1237,9 +1228,7 @@ public abstract class StandOutWindow extends Service {
 		// get animation
 		Animation animation = getCloseAnimation(id);
 
-		WrappedTag tag = (WrappedTag) window.getTag();
-
-		if (tag.shown) {
+		if (window.shown) {
 			try {
 				// animate
 				if (animation != null) {
@@ -1255,26 +1244,25 @@ public abstract class StandOutWindow extends Service {
 
 						@Override
 						public void onAnimationEnd(Animation animation) {
-							// remove the view from the window manager
+							// remove the window from the window manager
 							mWindowManager.removeView(window);
 						}
 					});
-					((ViewGroup) window).getChildAt(0)
-							.startAnimation(animation);
+					window.getChildAt(0).startAnimation(animation);
 				} else {
-					// remove the view from the window manager
+					// remove the window from the window manager
 					mWindowManager.removeView(window);
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		} else {
-			tag.shown = false;
+			window.shown = false;
 			// cancel hidden notification
 			mNotificationManager.cancel(id);
 		}
 
-		// if we just released the last view, quit
+		// if we just released the last window, quit
 		if (getCacheSize() == 0) {
 			// tell Android to remove the persistent notification
 			// the Service will be shutdown by the system on low memory
@@ -1288,8 +1276,10 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected final synchronized void closeAll() {
 		// alert callbacks and cancel if instructed
-		if (onCloseAll())
+		if (onCloseAll()) {
+			Log.w(TAG, "Windows close all cancelled by implementation.");
 			return;
+		}
 
 		// add ids to temporary set to avoid concurrent modification
 		LinkedList<Integer> ids = new LinkedList<Integer>();
@@ -1340,14 +1330,16 @@ public abstract class StandOutWindow extends Service {
 	 * @param params
 	 *            The updated layout params to apply.
 	 */
-	protected final void updateViewLayout(int id, View window,
-			StandOutWindow.LayoutParams params) {
+	protected final void updateViewLayout(int id, Window window,
+			LayoutParams params) {
 		// alert callbacks and cancel if instructed
-		if (onUpdate(id, window, params))
+		if (onUpdate(id, window, params)) {
+			Log.w(TAG, "Window " + id + " update cancelled by implementation.");
 			return;
+		}
 
 		if (window == null) {
-			Log.w(TAG, "Tried to updateViewLayout() a null window");
+			Log.w(TAG, "Tried to updateViewLayout() a null window.");
 			return;
 		}
 
@@ -1367,21 +1359,20 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window to bring to the front.
 	 */
 	protected final synchronized void bringToFront(int id) {
-		View window = getWrappedView(id);
+		Window window = getWindow(id);
 		if (window == null) {
-			Log.w(TAG, "Tried to bringToFront() a null view");
+			Log.w(TAG, "Tried to bringToFront() a null window.");
 			return;
 		}
 
 		// alert callbacks and cancel if instructed
-		if (onBringToFront(id, window))
+		if (onBringToFront(id, window)) {
+			Log.w(TAG, "Window " + id
+					+ " bring to front cancelled by implementation.");
 			return;
-
-		StandOutWindow.LayoutParams params = (LayoutParams) window
-				.getLayoutParams();
-		if (params == null) {
-			params = getParams(id, window);
 		}
+
+		LayoutParams params = window.getLayoutParams();
 
 		// remove from window manager then add back
 		try {
@@ -1407,14 +1398,15 @@ public abstract class StandOutWindow extends Service {
 	protected final synchronized void focus(int id) {
 		// remove focus from previously focused window
 		unfocus(sFocusedWindow);
-		sFocusedWindow = null;
 
-		View window = getWindow(id);
+		Window window = getWindow(id);
 		if (window != null) {
-			LayoutParams params = (LayoutParams) window.getLayoutParams();
-			params.setFocus();
+			LayoutParams params = window.getLayoutParams();
+			params.setFocus(true);
 
 			updateViewLayout(id, window, params);
+
+			sFocusedWindow = window;
 		}
 	}
 
@@ -1426,7 +1418,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 */
 	protected final synchronized void unfocus(int id) {
-		View window = getWindow(id);
+		Window window = getWindow(id);
 		unfocus(window);
 	}
 
@@ -1440,33 +1432,37 @@ public abstract class StandOutWindow extends Service {
 	 * @param window
 	 *            The window to unfocus.
 	 */
-	private synchronized void unfocus(View window) {
+	private synchronized void unfocus(Window window) {
 		if (window != null) {
 			LayoutParams params = (LayoutParams) window.getLayoutParams();
-			params.setUnfocus();
+			params.setFocus(false);
 
 			// don't pass along the window id if it is from a different
 			// application
-			WrappedTag tag = (WrappedTag) window.getTag();
 			int id = DISREGARD_ID;
-			if (tag.cls.equals(getClass())) {
-				id = tag.id;
+			if (window.cls == getClass()) {
+				id = window.id;
 			}
 
 			updateViewLayout(id, window, params);
+
+			if (sFocusedWindow == window) {
+				sFocusedWindow = null;
+			}
 		}
 	}
 
 	/**
-	 * Gets a unique id to assign to a new window.
+	 * Courtesy method for your implementation to use if you want to. Gets a
+	 * unique id to assign to a new window.
 	 * 
 	 * @return The unique id.
 	 */
 	protected final int getUniqueId() {
-		Map<Integer, View> l2 = sViews.get(getClass());
+		Map<Integer, Window> l2 = sWindows.get(getClass());
 		if (l2 == null) {
-			l2 = new HashMap<Integer, View>();
-			sViews.put(getClass(), l2);
+			l2 = new HashMap<Integer, Window>();
+			sWindows.put(getClass(), l2);
 		}
 
 		int unique = DEFAULT_ID;
@@ -1495,129 +1491,14 @@ public abstract class StandOutWindow extends Service {
 	 * Return the window corresponding to the id, if it exists in cache. The
 	 * window will not be created with
 	 * {@link #createAndAttachView(int, ViewGroup)}. This means the returned
-	 * value will be null if the window is not shown/hidden.
+	 * value will be null if the window is not shown or hidden.
 	 * 
 	 * @param id
 	 *            The id of the window.
 	 * @return The window if it is shown/hidden, or null if it is closed.
 	 */
-	protected final View getWindow(int id) {
+	protected final Window getWindow(int id) {
 		return getCache(id);
-	}
-
-	/**
-	 * Wraps the view from getView() into a frame that is easier to manage. The
-	 * frame allows us to pass touch input to implementations and set a
-	 * {@link WrappedTag} to keep track of the id, visibility, etc.
-	 * 
-	 * @param id
-	 *            The id representing the wrapped view.
-	 * @return The wrapped view from cache, or created from the implementation.
-	 */
-	private View getWrappedView(final int id) {
-		// try get the wrapped view from the internal map
-		View cachedView = getCache(id);
-
-		// if the wrapped view exists, then return it rather than creating one
-		if (cachedView != null) {
-			return cachedView;
-		}
-
-		// create the wrapping frame and body
-		final FrameLayout window = new FrameLayout(this);
-		View content;
-		FrameLayout body;
-
-		final int flags = getFlags(id);
-
-		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_SYSTEM)) {
-			// requested system window decorations
-			content = getSystemWindowContent(id);
-			body = (FrameLayout) content.findViewById(R.id.body);
-		} else {
-			// did not request decorations. will provide own implementation
-			content = new FrameLayout(this);
-			body = (FrameLayout) content;
-		}
-
-		window.addView(content);
-		content.setTag(window);
-
-		// body should always send touch events to onTouchBody()
-		body.setOnTouchListener(new OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				// pass all touch events to the implementation
-				WrappedTag tag = (WrappedTag) window.getTag();
-				WindowTouchInfo touchInfo = tag.touchInfo;
-
-				boolean consumed = false;
-
-				consumed = onTouchWindow(id, window, touchInfo, v, event)
-						|| consumed;
-
-				// if set FLAG_BODY_MOVE_ENABLE, move the window
-				if (Utils.isSet(flags, StandOutFlags.FLAG_BODY_MOVE_ENABLE)) {
-					consumed = onTouchHandleMove(id, window, touchInfo, v,
-							event) || consumed;
-				}
-
-				consumed = onTouchBody(id, window, touchInfo, v, event)
-						|| consumed;
-
-				return consumed;
-			}
-		});
-
-		// attach the view corresponding to the id from the implementation
-		View view = createAndAttachView(id, body);
-
-		// make sure the implemention created a view
-		if (view == null) {
-			throw new RuntimeException(
-					"Your view must not be null in createAndAttachView()");
-		}
-		// make sure the implementation attached the view
-		if (view != body && view.getParent() == null) {
-			throw new RuntimeException(
-					"You must attach your view to the given root ViewGroup in createAndAttachView()");
-		}
-
-		// implement StandOut specific workarounds
-		if (!Utils.isSet(flags,
-				StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE)) {
-			fixCompatibility(view, id);
-		}
-		// implement StandOut specific additional functionality
-		if (!Utils.isSet(flags,
-				StandOutFlags.FLAG_ADD_FUNCTIONALITY_ALL_DISABLE)) {
-			addFunctionality(view, id);
-		}
-
-		// wrap the existing tag and attach it to the frame
-		window.setTag(new WrappedTag(getClass(), id, false, view.getTag()));
-
-		window.setOnTouchListener(new OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				Log.d(TAG, "Event: " + event);
-				if (MotionEvent.ACTION_OUTSIDE == event.getAction()) {
-					// notify implementation that ACTION_OUTSIDE occurred
-					WrappedTag tag = (WrappedTag) window.getTag();
-					WindowTouchInfo touchInfo = tag.touchInfo;
-					onTouchBody(id, window, touchInfo, v, event);
-
-					unfocus(window);
-					return true;
-				}
-
-				return false;
-			}
-		});
-
-		return window;
 	}
 
 	/**
@@ -1630,29 +1511,27 @@ public abstract class StandOutWindow extends Service {
 	 * Attach resize handles: For every View found to have id R.id.corner,
 	 * attach an OnTouchListener that implements resizing the window.
 	 * 
-	 * @param view
-	 *            The view hierarchy to implement additional functionality.
+	 * @param root
+	 *            The view hierarchy that is part of the window.
 	 * @param id
 	 *            The id of the window.
 	 */
-	private void addFunctionality(View view, final int id) {
+	private void addFunctionality(View root, final int id) {
 		int flags = getFlags(id);
 
 		if (!Utils.isSet(flags,
 				StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE)) {
-			View corner = view.findViewById(R.id.corner);
+			View corner = root.findViewById(R.id.corner);
 			if (corner != null) {
 				corner.setOnTouchListener(new OnTouchListener() {
 
 					@Override
 					public boolean onTouch(View v, MotionEvent event) {
-						View window = getWindow(id);
+						Window window = getWindow(id);
 						if (window != null) {
-							WindowTouchInfo touchInfo = ((WrappedTag) window
-									.getTag()).touchInfo;
 							// handle dragging to move
 							boolean consumed = onTouchHandleResize(id, window,
-									touchInfo, v, event);
+									v, event);
 
 							return consumed;
 						}
@@ -1672,28 +1551,7 @@ public abstract class StandOutWindow extends Service {
 	 * Currently, this method does the following:
 	 * 
 	 * <p>
-	 * Fix {@link Button}: visual state does not change on click. The fix
-	 * enables the window focus on ACTION_DOWN then disables the focus on
-	 * ACTION_UP.
-	 * 
-	 * <p>
-	 * Fix {@link ListView}: visual state does not change on item click and
-	 * onItemClick events are not dispatched. The fix enables the window focus
-	 * on ACTION_DOWN then disables the focus when the ListView stops scrolling.
-	 * 
-	 * <p>
-	 * Fix {@link EditText}: is not focusable and does not open the keyboard.
-	 * The fix enables the window focus on ACTION_DOWN but does not disable the
-	 * focus at any time. We assume there is a Button that the user will click
-	 * after entering text or the user will click outside the window, which will
-	 * disable the window focus.
-	 * 
-	 * <p>
-	 * Why we need compatibility fixes: Focused StandOut windows prevent the
-	 * Back and Home buttons from working. This is a limitation in the Android
-	 * system. This is the reason why all windows start with disabled focus, but
-	 * that messes up the previously mentioned views. So we must switch focus on
-	 * and off for the views to behave the way we want.
+	 * Nothing yet.
 	 * 
 	 * @param root
 	 *            The root view hierarchy to iterate through and check.
@@ -1730,20 +1588,20 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The frame view containing the system window decorations.
 	 */
-	private View getSystemWindowContent(final int id) {
-		final View content = mLayoutInflater.inflate(
+	private View getSystemWindowDecorations(final int id) {
+		final View decorations = mLayoutInflater.inflate(
 				R.layout.system_window_decorators, null);
 
 		// icon
-		ImageView icon = (ImageView) content.findViewById(R.id.icon);
+		ImageView icon = (ImageView) decorations.findViewById(R.id.icon);
 		icon.setImageResource(getAppIcon());
 
 		// title
-		TextView title = (TextView) content.findViewById(R.id.title);
+		TextView title = (TextView) decorations.findViewById(R.id.title);
 		title.setText(getAppName());
 
 		// hide
-		View hide = content.findViewById(R.id.hide);
+		View hide = decorations.findViewById(R.id.hide);
 		hide.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -1754,7 +1612,7 @@ public abstract class StandOutWindow extends Service {
 		hide.setVisibility(View.GONE);
 
 		// close
-		View close = content.findViewById(R.id.close);
+		View close = decorations.findViewById(R.id.close);
 		close.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -1764,33 +1622,28 @@ public abstract class StandOutWindow extends Service {
 		});
 
 		// move
-		View titlebar = content.findViewById(R.id.titlebar);
+		View titlebar = decorations.findViewById(R.id.titlebar);
 		titlebar.setOnTouchListener(new OnTouchListener() {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				View window = (View) content.getTag();
-				WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
+				Window window = getWindow(id);
+
 				// handle dragging to move
-				boolean consumed = onTouchWindow(id, window, touchInfo, v,
-						event);
-				consumed = onTouchHandleMove(id, window, touchInfo, v, event)
-						|| consumed;
+				boolean consumed = onTouchHandleMove(id, window, v, event);
 				return consumed;
 			}
 		});
 
 		// resize
-		View corner = content.findViewById(R.id.corner);
+		View corner = decorations.findViewById(R.id.corner);
 		corner.setOnTouchListener(new OnTouchListener() {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				View window = (View) content.getTag();
-				WindowTouchInfo touchInfo = ((WrappedTag) window.getTag()).touchInfo;
+				Window window = getWindow(id);
 				// handle dragging to move
-				boolean consumed = onTouchHandleResize(id, window, touchInfo,
-						v, event);
+				boolean consumed = onTouchHandleResize(id, window, v, event);
 
 				return consumed;
 			}
@@ -1812,44 +1665,7 @@ public abstract class StandOutWindow extends Service {
 			corner.setVisibility(View.GONE);
 		}
 
-		return content;
-	}
-
-	/**
-	 * Generic internal touch handler for window-level views such as the
-	 * titlebar and body.
-	 * 
-	 * @see {@link View#onTouchEvent(MotionEvent)}
-	 * 
-	 * @param id
-	 * @param window
-	 * @param view
-	 * @param event
-	 * @return
-	 */
-	private boolean onTouchWindow(int id, View window,
-			WindowTouchInfo touchInfo, View view, MotionEvent event) {
-		int flags = getFlags(id);
-
-		if (MotionEvent.ACTION_OUTSIDE != event.getAction()) {
-			if (MotionEvent.ACTION_UP == event.getAction()) {
-				int deltaX = touchInfo.lastX - touchInfo.firstX;
-				int deltaY = touchInfo.lastY - touchInfo.firstY;
-				boolean tap = deltaX == 0 && deltaY == 0;
-				if (Utils.isSet(flags,
-						StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH)) {
-					bringToFront(id);
-				} else if (Utils.isSet(flags,
-						StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP) && tap) {
-					bringToFront(id);
-				}
-			}
-
-			focus(id);
-			return true;
-		}
-
-		return false;
+		return decorations;
 	}
 
 	/**
@@ -1863,44 +1679,58 @@ public abstract class StandOutWindow extends Service {
 	 * @param event
 	 * @return
 	 */
-	private boolean onTouchHandleMove(int id, View window,
-			WindowTouchInfo touchInfo, View view, MotionEvent event) {
-		StandOutWindow.LayoutParams params = (LayoutParams) window
-				.getLayoutParams();
+	private boolean onTouchHandleMove(int id, Window window, View view,
+			MotionEvent event) {
+		LayoutParams params = window.getLayoutParams();
 		int flags = getFlags(id);
+
+		// how much you have to move in either direction in order for the
+		// gesture to be a move and not tap
+		int threshold = 20;
+
+		int totalDeltaX = window.touchInfo.lastX - window.touchInfo.firstX;
+		int totalDeltaY = window.touchInfo.lastY - window.touchInfo.firstY;
+
+		Log.d(TAG, "x,y: " + totalDeltaX + "," + totalDeltaY);
 
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
-				touchInfo.lastX = (int) event.getRawX();
-				touchInfo.lastY = (int) event.getRawY();
+				window.touchInfo.lastX = (int) event.getRawX();
+				window.touchInfo.lastY = (int) event.getRawY();
 
-				touchInfo.firstX = touchInfo.lastX;
-				touchInfo.firstY = touchInfo.lastY;
+				window.touchInfo.firstX = window.touchInfo.lastX;
+				window.touchInfo.firstY = window.touchInfo.lastY;
 				break;
 			case MotionEvent.ACTION_MOVE:
-				int deltaX = (int) event.getRawX() - touchInfo.lastX;
-				int deltaY = (int) event.getRawY() - touchInfo.lastY;
+				int deltaX = (int) event.getRawX() - window.touchInfo.lastX;
+				int deltaY = (int) event.getRawY() - window.touchInfo.lastY;
 
-				touchInfo.lastX = (int) event.getRawX();
-				touchInfo.lastY = (int) event.getRawY();
+				window.touchInfo.lastX = (int) event.getRawX();
+				window.touchInfo.lastY = (int) event.getRawY();
 
-				// update the position of the window
-				params.x += deltaX;
-				params.y += deltaY;
+				if (window.touchInfo.moving
+						|| Math.abs(totalDeltaX) >= threshold
+						|| Math.abs(totalDeltaY) >= threshold) {
+					window.touchInfo.moving = true;
 
-				updateViewLayout(id, window, params);
+					// update the position of the window
+					params.x += deltaX;
+					params.y += deltaY;
+
+					updateViewLayout(id, window, params);
+				}
 				break;
 			case MotionEvent.ACTION_UP:
+				window.touchInfo.moving = false;
+
+				// keep window within edges
 				if (Utils.isSet(flags,
 						StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
 					if (params.gravity == (Gravity.TOP | Gravity.LEFT)) {
-						// keep window inside of edges and gravity is TOP|LEFT
+						// only do this if gravity is TOP|LEFT
 						Display display = mWindowManager.getDefaultDisplay();
 						int displayWidth = display.getWidth();
 						int displayHeight = display.getHeight();
-
-						int[] location = new int[2];
-						window.getLocationOnScreen(location);
 
 						params.x = Math.min(Math.max(params.x, 0), displayWidth
 								- params.width);
@@ -1908,10 +1738,26 @@ public abstract class StandOutWindow extends Service {
 								displayHeight - params.height);
 					}
 				}
+
+				// bring to front on tap
+				boolean tap = Math.abs(totalDeltaX) < threshold
+						&& Math.abs(totalDeltaY) < threshold;
+				if (tap
+						&& Utils.isSet(flags,
+								StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP)) {
+					StandOutWindow.this.bringToFront(id);
+				}
+
+				// bring to front on touch
+				else if (Utils.isSet(flags,
+						StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH)) {
+					StandOutWindow.this.bringToFront(id);
+				}
+
 				break;
 		}
 
-		onMove(id, window, touchInfo, view, event);
+		onMove(id, window, view, event);
 
 		return true;
 	}
@@ -1927,25 +1773,25 @@ public abstract class StandOutWindow extends Service {
 	 * @param event
 	 * @return
 	 */
-	private boolean onTouchHandleResize(int id, View window,
-			WindowTouchInfo touchInfo, View view, MotionEvent event) {
+	private boolean onTouchHandleResize(int id, Window window, View view,
+			MotionEvent event) {
 		StandOutWindow.LayoutParams params = (LayoutParams) window
 				.getLayoutParams();
 
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
-				touchInfo.lastX = (int) event.getRawX();
-				touchInfo.lastY = (int) event.getRawY();
+				window.touchInfo.lastX = (int) event.getRawX();
+				window.touchInfo.lastY = (int) event.getRawY();
 
-				touchInfo.firstX = touchInfo.lastX;
-				touchInfo.firstY = touchInfo.lastY;
+				window.touchInfo.firstX = window.touchInfo.lastX;
+				window.touchInfo.firstY = window.touchInfo.lastY;
 				break;
 			case MotionEvent.ACTION_MOVE:
-				int deltaX = (int) event.getRawX() - touchInfo.lastX;
-				int deltaY = (int) event.getRawY() - touchInfo.lastY;
+				int deltaX = (int) event.getRawX() - window.touchInfo.lastX;
+				int deltaY = (int) event.getRawY() - window.touchInfo.lastY;
 
-				touchInfo.lastX = (int) event.getRawX();
-				touchInfo.lastY = (int) event.getRawY();
+				window.touchInfo.lastX = (int) event.getRawX();
+				window.touchInfo.lastY = (int) event.getRawY();
 
 				// update the size of the window
 				params.width += deltaX;
@@ -1961,55 +1807,56 @@ public abstract class StandOutWindow extends Service {
 				break;
 		}
 
-		onResize(id, window, touchInfo, view, event);
+		onResize(id, window, view, event);
 
 		return true;
 	}
 
 	/**
-	 * Add the window corresponding to the id in the {@link #sViews} cache.
+	 * Add the window corresponding to the id in the {@link #sWindows} cache.
 	 * 
 	 * @param id
 	 *            The id representing the window.
 	 * @param window
 	 *            The window to be put in the cache.
 	 */
-	private void putCache(int id, View window) {
-		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+	private void putCache(int id, Window window) {
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
 				.get(getClass());
 		if (l2 == null) {
-			l2 = new HashMap<Integer, View>();
-			sViews.put(getClass(), l2);
+			l2 = new HashMap<Integer, Window>();
+			sWindows.put(getClass(), l2);
 		}
 
 		l2.put(id, window);
 	}
 
 	/**
-	 * Remove the window corresponding to the id from the {@link #sViews} cache.
+	 * Remove the window corresponding to the id from the {@link #sWindows}
+	 * cache.
 	 * 
 	 * @param id
 	 *            The id representing the window.
 	 */
 	private void removeCache(int id) {
-		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
 				.get(getClass());
 		if (l2 != null) {
 			l2.remove(id);
 			if (l2.isEmpty()) {
-				sViews.remove(getClass());
+				sWindows.remove(getClass());
 			}
 		}
 	}
 
 	/**
-	 * Returns the size of the {@link #sViews} cache.
+	 * Returns the size of the {@link #sWindows} cache.
 	 * 
 	 * @return True if the cache corresponding to this class is empty, false if
 	 *         it is not empty.
 	 */
 	private int getCacheSize() {
-		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
 				.get(getClass());
 		if (l2 == null) {
 			return 0;
@@ -2019,12 +1866,12 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Returns the ids in the {@link #sViews} cache.
+	 * Returns the ids in the {@link #sWindows} cache.
 	 * 
 	 * @return The ids representing the cached windows.
 	 */
 	private Set<Integer> getCacheIds() {
-		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
 				.get(getClass());
 		if (l2 == null) {
 			return new HashSet<Integer>();
@@ -2034,7 +1881,7 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Returns the window corresponding to the id from the {@link #sViews}
+	 * Returns the window corresponding to the id from the {@link #sWindows}
 	 * cache.
 	 * 
 	 * @param id
@@ -2042,8 +1889,8 @@ public abstract class StandOutWindow extends Service {
 	 * @return The window corresponding to the id if it exists in the cache, or
 	 *         null if it does not.
 	 */
-	private View getCache(int id) {
-		HashMap<Integer, View> l2 = (HashMap<Integer, View>) sViews
+	private Window getCache(int id) {
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
 				.get(getClass());
 		if (l2 == null) {
 			return null;
@@ -2052,14 +1899,7 @@ public abstract class StandOutWindow extends Service {
 		return l2.get(id);
 	}
 
-	/**
-	 * WrappedTag will be attached to views from
-	 * {@link StandOutWindow#getWrappedView(int)}
-	 * 
-	 * @author Mark Wei <markwei@gmail.com>
-	 * 
-	 */
-	public class WrappedTag {
+	public class Window extends FrameLayout {
 		/**
 		 * Class of the window, indicating which application the window belongs
 		 * to.
@@ -2078,52 +1918,160 @@ public abstract class StandOutWindow extends Service {
 		/**
 		 * Touch information of the window.
 		 */
-		public WindowTouchInfo touchInfo;
+		public TouchInfo touchInfo;
 
 		/**
 		 * Data attached to the window.
 		 */
 		public Bundle data;
 
-		/**
-		 * Original tag of the wrapped view.
-		 */
-		public Object tag;
+		public Window(final int id) {
+			super(StandOutWindow.this);
+			Context context = StandOutWindow.this;
 
-		public WrappedTag(Class<? extends StandOutWindow> cls, int id,
-				boolean shown, Object tag) {
-			super();
-			this.cls = cls;
+			this.cls = StandOutWindow.this.getClass();
 			this.id = id;
-			this.shown = shown;
-			this.touchInfo = new WindowTouchInfo();
+			this.touchInfo = new TouchInfo();
 			this.data = new Bundle();
-			this.tag = tag;
+
+			// create the window contents
+			View content;
+			FrameLayout body;
+
+			final int flags = getFlags(id);
+
+			if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_SYSTEM)) {
+				// requested system window decorations
+				content = getSystemWindowDecorations(id);
+				body = (FrameLayout) content.findViewById(R.id.body);
+			} else {
+				// did not request decorations. will provide own implementation
+				content = new FrameLayout(context);
+				body = (FrameLayout) content;
+			}
+
+			addView(content);
+
+			body.setOnTouchListener(new OnTouchListener() {
+
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					// pass all touch events to the implementation
+					boolean consumed = false;
+
+					// if set FLAG_BODY_MOVE_ENABLE, move the window
+					if (Utils.isSet(flags, StandOutFlags.FLAG_BODY_MOVE_ENABLE)) {
+						consumed = onTouchHandleMove(id, Window.this, v, event)
+								|| consumed;
+					}
+
+					consumed = onTouchBody(id, Window.this, v, event)
+							|| consumed;
+
+					return consumed;
+				}
+			});
+
+			// attach the view corresponding to the id from the
+			// implementation
+			createAndAttachView(id, body);
+
+			// make sure the implementation attached the view
+			if (body.getChildCount() == 0) {
+				throw new RuntimeException(
+						"You must attach your view to the given frame in createAndAttachView()");
+			}
+
+			// implement StandOut specific workarounds
+			if (!Utils.isSet(flags,
+					StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE)) {
+				fixCompatibility(body, id);
+			}
+			// implement StandOut specific additional functionality
+			if (!Utils.isSet(flags,
+					StandOutFlags.FLAG_ADD_FUNCTIONALITY_ALL_DISABLE)) {
+				addFunctionality(body, id);
+			}
+
+			// attach the existing tag from the frame to the window
+			setTag(body.getTag());
 		}
-	}
-
-	/**
-	 * This class holds temporal touch and gesture information.
-	 * 
-	 * @author Mark Wei <markwei@gmail.com>
-	 * 
-	 */
-	public class WindowTouchInfo {
-		/**
-		 * The state of the window.
-		 */
-		public int firstX, firstY, lastX, lastY, lastWidth, lastHeight;
-
-		/**
-		 * The absolute last position of the window on screen.
-		 */
-		public int lastAbsoluteX, lastAbsoluteY;
 
 		@Override
-		public String toString() {
-			return String
-					.format("WindowTouchInfo { firstX=%d, firstY=%d,lastX=%d, lastY=%d, lastWidth=%d, lastHeight=%d }",
-							firstX, firstY, lastX, lastY, lastWidth, lastHeight);
+		public void setLayoutParams(ViewGroup.LayoutParams params) {
+			if (params instanceof StandOutWindow.LayoutParams) {
+				super.setLayoutParams(params);
+			} else {
+				throw new IllegalArgumentException(
+						"Window: LayoutParams must be an instance of StandOutWindow.LayoutParams.");
+			}
+		}
+
+		@Override
+		public StandOutWindow.LayoutParams getLayoutParams() {
+			StandOutWindow.LayoutParams params = (StandOutWindow.LayoutParams) super
+					.getLayoutParams();
+			if (params == null) {
+				params = getParams(id, this);
+			}
+			return params;
+		}
+
+		@Override
+		public boolean onInterceptTouchEvent(MotionEvent event) {
+			switch (event.getAction()) {
+				case MotionEvent.ACTION_DOWN:
+					// focus window
+					if (sFocusedWindow != this) {
+						focus(id);
+					}
+					break;
+			}
+
+			return false;
+		}
+
+		@Override
+		public boolean onTouchEvent(MotionEvent event) {
+			switch (event.getAction()) {
+				case MotionEvent.ACTION_OUTSIDE:
+					// unfocus window
+					if (sFocusedWindow == this) {
+						unfocus(this);
+					}
+
+					// notify implementation that ACTION_OUTSIDE occurred
+					onTouchBody(id, this, this, event);
+					break;
+			}
+
+			return true;
+		}
+
+		/**
+		 * This class holds temporal touch and gesture information.
+		 * 
+		 * @author Mark Wei <markwei@gmail.com>
+		 * 
+		 */
+		public class TouchInfo {
+			/**
+			 * The state of the window.
+			 */
+			public int firstX, firstY, lastX, lastY, lastWidth, lastHeight;
+
+			/**
+			 * Whether we're past the threshold already.
+			 */
+			public boolean moving;
+
+			@Override
+			public String toString() {
+				return String
+						.format("WindowTouchInfo { firstX=%d, firstY=%d,lastX=%d, lastY=%d, lastWidth=%d, lastHeight=%d }",
+								firstX, firstY, lastX, lastY, lastWidth,
+								lastHeight);
+			}
 		}
 	}
 
@@ -2135,9 +2083,11 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
 		public LayoutParams(int id) {
-			super(200, 200, TYPE_PHONE, 0, PixelFormat.TRANSLUCENT);
+			super(200, 200, TYPE_PHONE, LayoutParams.FLAG_NOT_TOUCH_MODAL
+					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+					PixelFormat.TRANSLUCENT);
 
-			setUnfocus();
+			setFocus(false);
 
 			int windowFlags = getFlags(id);
 
@@ -2188,7 +2138,7 @@ public abstract class StandOutWindow extends Service {
 			Display display = mWindowManager.getDefaultDisplay();
 			int displayWidth = display.getWidth();
 
-			int types = sViews.size();
+			int types = sWindows.size();
 
 			int initialX = 100 * types;
 			int variableX = 100 * id;
@@ -2202,7 +2152,7 @@ public abstract class StandOutWindow extends Service {
 			int displayWidth = display.getWidth();
 			int displayHeight = display.getHeight();
 
-			int types = sViews.size();
+			int types = sWindows.size();
 
 			int initialY = 100 * types;
 			int variableY = x + 200 * (100 * id) / (displayWidth - width);
@@ -2212,15 +2162,14 @@ public abstract class StandOutWindow extends Service {
 			return rawY % (displayHeight - height);
 		}
 
-		private void setFocus() {
-			flags = LayoutParams.FLAG_NOT_TOUCH_MODAL
-					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
-		}
-
-		private void setUnfocus() {
-			flags = LayoutParams.FLAG_NOT_FOCUSABLE
-					| LayoutParams.FLAG_NOT_TOUCH_MODAL
-					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+		private void setFocus(boolean focused) {
+			if (focused) {
+				flags = flags ^ LayoutParams.FLAG_NOT_FOCUSABLE
+						^ LayoutParams.FLAG_ALT_FOCUSABLE_IM;
+			} else {
+				flags = flags | LayoutParams.FLAG_NOT_FOCUSABLE
+						| LayoutParams.FLAG_ALT_FOCUSABLE_IM;
+			}
 		}
 	}
 }
