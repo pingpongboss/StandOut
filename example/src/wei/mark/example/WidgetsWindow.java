@@ -56,9 +56,4 @@ public class WidgetsWindow extends MultiWindow {
 	protected String getAppName() {
 		return "WidgetWindow";
 	}
-
-	@Override
-	protected int getFlags(int id) {
-		return super.getFlags(id) ^ StandOutFlags.FLAG_DECORATION_SYSTEM;
-	}
 }

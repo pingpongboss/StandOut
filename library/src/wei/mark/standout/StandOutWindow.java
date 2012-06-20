@@ -149,6 +149,16 @@ public abstract class StandOutWindow extends Service {
 		public static final int FLAG_BODY_MOVE_ENABLE = 1 << flag_counter++;
 
 		/**
+		 * Setting this flag indicates that windows are able to be hidden, that
+		 * {@link StandOutWindow#getHiddenIcon(int)},
+		 * {@link StandOutWindow#getHiddenTitle(int)}, and
+		 * {@link StandOutWindow#getHiddenMessage(int)} are implemented, and
+		 * that the system window decorator should provide a hide button if
+		 * {@link #FLAG_DECORATION_SYSTEM} is set.
+		 */
+		public static final int FLAG_WINDOW_HIDE_ENABLE = 1 << flag_counter++;
+
+		/**
 		 * Setting this flag indicates that the window should be brought to the
 		 * front upon user interaction.
 		 * 
@@ -206,14 +216,15 @@ public abstract class StandOutWindow extends Service {
 		public static final int FLAG_WINDOW_FOCUSABLE_DISABLE = 1 << flag_counter++;
 
 		/**
-		 * Setting this flag indicates that windows are able to be hidden, that
-		 * {@link StandOutWindow#getHiddenIcon(int)},
-		 * {@link StandOutWindow#getHiddenTitle(int)}, and
-		 * {@link StandOutWindow#getHiddenMessage(int)} are implemented, and
-		 * that the system window decorator should provide a hide button if
-		 * {@link #FLAG_DECORATION_SYSTEM} is set.
+		 * Setting this flag indicates that the system should not change the
+		 * window's visual state when focus is changed. If this flag is set, the
+		 * implementation can choose to change the visual state in
+		 * {@link StandOutWindow#onFocusChange(int, Window, boolean)}.
+		 * 
+		 * @see {@link StandOutWindow.Window#onFocus(boolean)}
+		 * 
 		 */
-		public static final int FLAG_HIDE_ENABLE = 1 << flag_counter++;
+		public static final int FLAG_WINDOW_FOCUS_INDICATOR_DISABLE = 1 << flag_counter++;
 
 		/**
 		 * Setting this flag indicates that the system should disable all
@@ -1182,7 +1193,7 @@ public abstract class StandOutWindow extends Service {
 		int flags = getFlags(id);
 
 		// check if hide enabled
-		if (Utils.isSet(flags, StandOutFlags.FLAG_HIDE_ENABLE)) {
+		if (Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
 			// get the hidden notification for this view
 			Notification notification = getHiddenNotification(id);
 
@@ -1689,7 +1700,7 @@ public abstract class StandOutWindow extends Service {
 		// set window appearance and behavior based on flags
 		int flags = getFlags(id);
 
-		if (Utils.isSet(flags, StandOutFlags.FLAG_HIDE_ENABLE)) {
+		if (Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
 			hide.setVisibility(View.VISIBLE);
 		}
 		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_CLOSE_DISABLE)) {
@@ -2109,20 +2120,23 @@ public abstract class StandOutWindow extends Service {
 					return false;
 				}
 
-				// add visual distinction
-				View content = findViewById(R.id.content);
-				if (focus) {
-					// gaining focus
-					content.setBackgroundResource(R.drawable.border_focused);
-				} else {
-					// losing focus
-					if (Utils
-							.isSet(flags, StandOutFlags.FLAG_DECORATION_SYSTEM)) {
-						// system decorations
-						content.setBackgroundResource(R.drawable.border);
+				if (!Utils.isSet(flags,
+						StandOutFlags.FLAG_WINDOW_FOCUS_INDICATOR_DISABLE)) {
+					// change visual state
+					View content = findViewById(R.id.content);
+					if (focus) {
+						// gaining focus
+						content.setBackgroundResource(R.drawable.border_focused);
 					} else {
-						// no decorations
-						content.setBackgroundResource(0);
+						// losing focus
+						if (Utils.isSet(flags,
+								StandOutFlags.FLAG_DECORATION_SYSTEM)) {
+							// system decorations
+							content.setBackgroundResource(R.drawable.border);
+						} else {
+							// no decorations
+							content.setBackgroundResource(0);
+						}
 					}
 				}
 
