@@ -549,17 +549,23 @@ public abstract class StandOutWindow extends Service {
 			} else if (ACTION_CLOSE_ALL.equals(action)) {
 				closeAll();
 			} else if (ACTION_SEND_DATA.equals(action)) {
-				Bundle data = intent.getBundleExtra("wei.mark.standout.data");
-				int requestCode = intent.getIntExtra("requestCode", 0);
-				@SuppressWarnings("unchecked")
-				Class<? extends StandOutWindow> fromCls = (Class<? extends StandOutWindow>) intent
-						.getSerializableExtra("wei.mark.standout.fromCls");
-				int fromId = intent.getIntExtra("fromId", DEFAULT_ID);
+				if (isExistingId(id) || id == DISREGARD_ID) {
+					Bundle data = intent
+							.getBundleExtra("wei.mark.standout.data");
+					int requestCode = intent.getIntExtra("requestCode", 0);
+					@SuppressWarnings("unchecked")
+					Class<? extends StandOutWindow> fromCls = (Class<? extends StandOutWindow>) intent
+							.getSerializableExtra("wei.mark.standout.fromCls");
+					int fromId = intent.getIntExtra("fromId", DEFAULT_ID);
 
-				onReceiveData(id, requestCode, data, fromCls, fromId);
+					onReceiveData(id, requestCode, data, fromCls, fromId);
+				} else {
+					Log.w(TAG,
+							"Failed to send data to non-existant window. Make sure toId is either an existing window's id, or is DISREGARD_ID.");
+				}
 			}
 		} else {
-			Log.w(TAG, "Tried to onStartCommand() with a null intent");
+			Log.w(TAG, "Tried to onStartCommand() with a null intent.");
 		}
 
 		// the service is started in foreground in show()
@@ -1062,6 +1068,25 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Implement this callback to be alerted when a window corresponding to the
+	 * id is about to have its focus changed. This callback will occur before
+	 * the window's focus is changed.
+	 * 
+	 * @param id
+	 *            The id of the window, provided as a courtesy.
+	 * @param view
+	 *            The window about to be brought to the front.
+	 * @param focus
+	 *            Whether the window is gaining or losing focus.
+	 * @return Return true to cancel the window's focus from being changed, or
+	 *         false to continue.
+	 * @see #focus(int)
+	 */
+	protected boolean onFocusChange(int id, Window window, boolean focus) {
+		return false;
+	}
+
+	/**
 	 * Show or restore a window corresponding to the id. Return the window that
 	 * was shown/restored.
 	 * 
@@ -1415,24 +1440,21 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @param id
 	 *            The id of the window.
+	 * @return True if focus changed successfully, false if it failed.
 	 */
-	protected final synchronized void focus(int id) {
+	protected final synchronized boolean focus(int id) {
 		int flags = getFlags(id);
 
 		if (!Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
-			// remove focus from previously focused window
-			unfocus(sFocusedWindow);
-
-			Window window = getWindow(id);
+			final Window window = getWindow(id);
 			if (window != null) {
-				LayoutParams params = window.getLayoutParams();
-				params.setFocus(true);
+				// remove focus from previously focused window
+				unfocus(sFocusedWindow);
 
-				updateViewLayout(id, window, params);
-
-				sFocusedWindow = window;
+				return window.onFocus(true);
 			}
 		}
+		return false;
 	}
 
 	/**
@@ -1441,10 +1463,11 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @param id
 	 *            The id of the window.
+	 * @return True if focus changed successfully, false if it failed.
 	 */
-	protected final synchronized void unfocus(int id) {
+	protected final synchronized boolean unfocus(int id) {
 		Window window = getWindow(id);
-		unfocus(window);
+		return unfocus(window);
 	}
 
 	/**
@@ -1456,32 +1479,14 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @param window
 	 *            The window to unfocus.
+	 * @return True if focus changed successfully, false if it failed.
 	 */
-	private synchronized void unfocus(Window window) {
+	private synchronized boolean unfocus(Window window) {
 		if (window != null) {
-			// don't pass along the window id if it is from a different
-			// application
-			int id = DISREGARD_ID;
-			if (window.cls == getClass()) {
-				id = window.id;
-
-				// don't do anything if focus disabled
-				int flags = getFlags(id);
-				if (Utils.isSet(flags,
-						StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
-					return;
-				}
-			}
-
-			LayoutParams params = (LayoutParams) window.getLayoutParams();
-			params.setFocus(false);
-
-			updateViewLayout(id, window, params);
-
-			if (sFocusedWindow == window) {
-				sFocusedWindow = null;
-			}
+			return window.onFocus(false);
 		}
+
+		return false;
 	}
 
 	/**
@@ -1931,6 +1936,10 @@ public abstract class StandOutWindow extends Service {
 
 	public class Window extends FrameLayout {
 		/**
+		 * Context of the window.
+		 */
+		StandOutWindow context;
+		/**
 		 * Class of the window, indicating which application the window belongs
 		 * to.
 		 */
@@ -1955,11 +1964,11 @@ public abstract class StandOutWindow extends Service {
 		 */
 		public Bundle data;
 
-		public Window(final int id) {
+		public Window(int id) {
 			super(StandOutWindow.this);
-			Context context = StandOutWindow.this;
+			this.context = StandOutWindow.this;
 
-			this.cls = StandOutWindow.this.getClass();
+			this.cls = context.getClass();
 			this.id = id;
 			this.touchInfo = new TouchInfo();
 			this.data = new Bundle();
@@ -1977,6 +1986,7 @@ public abstract class StandOutWindow extends Service {
 			} else {
 				// did not request decorations. will provide own implementation
 				content = new FrameLayout(context);
+				content.setId(R.id.content);
 				body = (FrameLayout) content;
 			}
 
@@ -1991,12 +2001,12 @@ public abstract class StandOutWindow extends Service {
 
 					// if set FLAG_BODY_MOVE_ENABLE, move the window
 					if (Utils.isSet(flags, StandOutFlags.FLAG_BODY_MOVE_ENABLE)) {
-						consumed = onTouchHandleMove(id, Window.this, v, event)
-								|| consumed;
+						consumed = onTouchHandleMove(Window.this.id,
+								Window.this, v, event) || consumed;
 					}
 
-					consumed = onTouchBody(id, Window.this, v, event)
-							|| consumed;
+					consumed = onTouchBody(Window.this.id, Window.this, v,
+							event) || consumed;
 
 					return consumed;
 				}
@@ -2076,6 +2086,62 @@ public abstract class StandOutWindow extends Service {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Request or remove the focus from this window.
+		 * 
+		 * @param focus
+		 *            Whether we want to gain or lose focus.
+		 * @return True if focus changed successfully, false if it failed.
+		 */
+		public boolean onFocus(boolean focus) {
+			int flags = getFlags(id);
+			if (!Utils
+					.isSet(flags, StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
+				// window is focusable
+
+				// alert callbacks and cancel if instructed
+				if (context.onFocusChange(id, this, focus)) {
+					Log.d(TAG, "Window " + id + " focus change "
+							+ (focus ? "(true)" : "(false)")
+							+ " cancelled by implementation.");
+					return false;
+				}
+
+				// add visual distinction
+				View content = findViewById(R.id.content);
+				if (focus) {
+					// gaining focus
+					content.setBackgroundResource(R.drawable.border_focused);
+				} else {
+					// losing focus
+					if (Utils
+							.isSet(flags, StandOutFlags.FLAG_DECORATION_SYSTEM)) {
+						// system decorations
+						content.setBackgroundResource(R.drawable.border);
+					} else {
+						// no decorations
+						content.setBackgroundResource(0);
+					}
+				}
+
+				// set window manager params
+				StandOutWindow.LayoutParams params = getLayoutParams();
+				params.setFocus(focus);
+				context.updateViewLayout(id, this, params);
+
+				if (focus) {
+					sFocusedWindow = this;
+				} else {
+					if (sFocusedWindow == this) {
+						sFocusedWindow = null;
+					}
+				}
+
+				return true;
+			}
+			return false;
 		}
 
 		/**
