@@ -346,7 +346,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The Service's class extending {@link StandOutWindow} that is
 	 *            managing the receiving window.
 	 * @param toId
-	 *            The id of the receiving window.
+	 *            The id of the receiving window, or DISREGARD_ID.
 	 * @param requestCode
 	 *            Provide a request code to declare what kind of data is being
 	 *            sent.
@@ -354,11 +354,9 @@ public abstract class StandOutWindow extends Service {
 	 *            A bundle of parceleable data to be sent to the receiving
 	 *            window.
 	 * @param fromCls
-	 *            If the sending window wants a result, provide the class of the
-	 *            sending window.
+	 *            Provide the class of the sending window if you want a result.
 	 * @param fromId
-	 *            If the sending window wants a result, provide the id of the
-	 *            sending window.
+	 *            Provide the id of the sending window if you want a result.
 	 * @see #sendData(int, Class, int, int, Bundle)
 	 */
 	public static void sendData(Context context,
@@ -385,7 +383,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static Intent getShowIntent(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
-		boolean cached = isCached(cls, id);
+		boolean cached = isCached(id, cls);
 		String action = cached ? ACTION_RESTORE : ACTION_SHOW;
 		Uri uri = cached ? Uri.parse("standout://" + cls + '/' + id) : null;
 		return new Intent(context, cls).putExtra("id", id).setAction(action)
@@ -493,22 +491,120 @@ public abstract class StandOutWindow extends Service {
 	// static constructors
 	static {
 		sWindows = new HashMap<Class<? extends StandOutWindow>, Map<Integer, Window>>();
+		sFocusedWindow = null;
 	}
 
 	/**
 	 * Returns whether the window corresponding to the class and id exists in
 	 * the {@link #sWindows} cache.
 	 * 
-	 * @param cls
-	 *            Class corresponding to the window.
 	 * @param id
 	 *            The id representing the window.
+	 * @param cls
+	 *            Class corresponding to the window.
 	 * @return True if the window corresponding to the class and id exists in
 	 *         the cache, or false if it does not exist.
 	 */
-	private static boolean isCached(Class<? extends StandOutWindow> cls, int id) {
-		Map<Integer, Window> l2 = sWindows.get(cls);
-		return l2 != null && l2.containsKey(id);
+	private static boolean isCached(int id, Class<? extends StandOutWindow> cls) {
+		return getCache(id, cls) != null;
+	}
+
+	/**
+	 * Returns the window corresponding to the id from the {@link #sWindows}
+	 * cache.
+	 * 
+	 * @param id
+	 *            The id representing the window.
+	 * @param cls
+	 *            The class of the implementation of the window.
+	 * @return The window corresponding to the id if it exists in the cache, or
+	 *         null if it does not.
+	 */
+	private static Window getCache(int id, Class<? extends StandOutWindow> cls) {
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
+				.get(cls);
+		if (l2 == null) {
+			return null;
+		}
+
+		return l2.get(id);
+	}
+
+	/**
+	 * Add the window corresponding to the id in the {@link #sWindows} cache.
+	 * 
+	 * @param id
+	 *            The id representing the window.
+	 * @param cls
+	 *            The class of the implementation of the window.
+	 * @param window
+	 *            The window to be put in the cache.
+	 */
+	private static void putCache(int id, Class<? extends StandOutWindow> cls,
+			Window window) {
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
+				.get(cls);
+		if (l2 == null) {
+			l2 = new HashMap<Integer, Window>();
+			sWindows.put(cls, l2);
+		}
+
+		l2.put(id, window);
+	}
+
+	/**
+	 * Remove the window corresponding to the id from the {@link #sWindows}
+	 * cache.
+	 * 
+	 * @param id
+	 *            The id representing the window.
+	 * @param cls
+	 *            The class of the implementation of the window.
+	 */
+	private static void removeCache(int id, Class<? extends StandOutWindow> cls) {
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
+				.get(cls);
+		if (l2 != null) {
+			l2.remove(id);
+			if (l2.isEmpty()) {
+				sWindows.remove(cls);
+			}
+		}
+	}
+
+	/**
+	 * Returns the size of the {@link #sWindows} cache.
+	 * 
+	 * @return True if the cache corresponding to this class is empty, false if
+	 *         it is not empty.
+	 * @param cls
+	 *            The class of the implementation of the window.
+	 */
+	private static int getCacheSize(Class<? extends StandOutWindow> cls) {
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
+				.get(cls);
+		if (l2 == null) {
+			return 0;
+		}
+
+		return l2.size();
+	}
+
+	/**
+	 * Returns the ids in the {@link #sWindows} cache.
+	 * 
+	 * @param cls
+	 *            The class of the implementation of the window.
+	 * @return The ids representing the cached windows.
+	 */
+	private static Set<Integer> getCacheIds(Class<? extends StandOutWindow> cls) {
+		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
+				.get(cls);
+		if (l2 == null) {
+			return new HashSet<Integer>();
+		}
+
+		return l2.keySet();
 	}
 
 	// internal system services
@@ -1144,7 +1240,7 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// add view to internal map
-		putCache(id, window);
+		putCache(id, getClass(), window);
 
 		// get the persistent notification
 		Notification notification = getPersistentNotification(id);
@@ -1280,7 +1376,7 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// remove view from internal map
-		removeCache(id);
+		removeCache(id, getClass());
 
 		// get animation
 		Animation animation = getCloseAnimation(id);
@@ -1320,7 +1416,7 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// if we just released the last window, quit
-		if (getCacheSize() == 0) {
+		if (getCacheSize(getClass()) == 0) {
 			// tell Android to remove the persistent notification
 			// the Service will be shutdown by the system on low memory
 			startedForeground = false;
@@ -1340,7 +1436,7 @@ public abstract class StandOutWindow extends Service {
 
 		// add ids to temporary set to avoid concurrent modification
 		LinkedList<Integer> ids = new LinkedList<Integer>();
-		for (int id : getCacheIds()) {
+		for (int id : getExistingIds()) {
 			ids.add(id);
 		}
 
@@ -1356,8 +1452,7 @@ public abstract class StandOutWindow extends Service {
 	 * with the data. To receive a result, provide the id of the sender.
 	 * 
 	 * @param fromId
-	 *            If your window wants a result, provide the id of the sending
-	 *            window.
+	 *            Provide the id of the sending window if you want a result.
 	 * @param toCls
 	 *            The Service's class extending {@link StandOutWindow} that is
 	 *            managing the receiving window.
@@ -1532,7 +1627,16 @@ public abstract class StandOutWindow extends Service {
 	 *         closed.
 	 */
 	protected final boolean isExistingId(int id) {
-		return isCached(getClass(), id);
+		return isCached(id, getClass());
+	}
+
+	/**
+	 * Return the ids of all shown or hidden windows.
+	 * 
+	 * @return A set of ids, or an empty set.
+	 */
+	protected final Set<Integer> getExistingIds() {
+		return getCacheIds(getClass());
 	}
 
 	/**
@@ -1546,7 +1650,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return The window if it is shown/hidden, or null if it is closed.
 	 */
 	protected final Window getWindow(int id) {
-		return getCache(id);
+		return getCache(id, getClass());
 	}
 
 	/**
@@ -1856,93 +1960,6 @@ public abstract class StandOutWindow extends Service {
 		onResize(id, window, view, event);
 
 		return true;
-	}
-
-	/**
-	 * Add the window corresponding to the id in the {@link #sWindows} cache.
-	 * 
-	 * @param id
-	 *            The id representing the window.
-	 * @param window
-	 *            The window to be put in the cache.
-	 */
-	private void putCache(int id, Window window) {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(getClass());
-		if (l2 == null) {
-			l2 = new HashMap<Integer, Window>();
-			sWindows.put(getClass(), l2);
-		}
-
-		l2.put(id, window);
-	}
-
-	/**
-	 * Remove the window corresponding to the id from the {@link #sWindows}
-	 * cache.
-	 * 
-	 * @param id
-	 *            The id representing the window.
-	 */
-	private void removeCache(int id) {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(getClass());
-		if (l2 != null) {
-			l2.remove(id);
-			if (l2.isEmpty()) {
-				sWindows.remove(getClass());
-			}
-		}
-	}
-
-	/**
-	 * Returns the size of the {@link #sWindows} cache.
-	 * 
-	 * @return True if the cache corresponding to this class is empty, false if
-	 *         it is not empty.
-	 */
-	private int getCacheSize() {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(getClass());
-		if (l2 == null) {
-			return 0;
-		}
-
-		return l2.size();
-	}
-
-	/**
-	 * Returns the ids in the {@link #sWindows} cache.
-	 * 
-	 * @return The ids representing the cached windows.
-	 */
-	private Set<Integer> getCacheIds() {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(getClass());
-		if (l2 == null) {
-			return new HashSet<Integer>();
-		}
-
-		return l2.keySet();
-	}
-
-	/**
-	 * Returns the window corresponding to the id from the {@link #sWindows}
-	 * cache.
-	 * 
-	 * @param id
-	 *            The id representing the window.
-	 * @return The window corresponding to the id if it exists in the cache, or
-	 *         null if it does not.
-	 */
-	private Window getCache(int id) {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(getClass());
-		if (l2 == null) {
-			return null;
-		}
-
-		return l2.get(id);
 	}
 
 	public class Window extends FrameLayout {
