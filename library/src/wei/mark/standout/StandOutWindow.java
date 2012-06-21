@@ -20,6 +20,7 @@ import android.os.IBinder;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -1551,6 +1552,7 @@ public abstract class StandOutWindow extends Service {
 	protected final synchronized boolean focus(int id) {
 		int flags = getFlags(id);
 
+		// check if that window is focusable
 		if (!Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
 			final Window window = getWindow(id);
 			if (window != null) {
@@ -2114,6 +2116,21 @@ public abstract class StandOutWindow extends Service {
 			}
 
 			return true;
+		}
+
+		@Override
+		public boolean dispatchKeyEvent(KeyEvent event) {
+			Log.d(TAG, "event: " + event);
+
+			if (event.getAction() == KeyEvent.ACTION_UP) {
+				switch (event.getKeyCode()) {
+					case KeyEvent.KEYCODE_BACK:
+						unfocus(this);
+						return true;
+				}
+			}
+
+			return super.dispatchKeyEvent(event);
 		}
 
 		/**
