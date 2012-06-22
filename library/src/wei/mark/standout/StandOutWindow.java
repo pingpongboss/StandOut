@@ -1791,16 +1791,27 @@ public abstract class StandOutWindow extends Service {
 				int deltaX = (int) event.getRawX() - window.touchInfo.lastX;
 				int deltaY = (int) event.getRawY() - window.touchInfo.lastY;
 
-				window.touchInfo.lastX = (int) event.getRawX();
-				window.touchInfo.lastY = (int) event.getRawY();
-
 				// update the size of the window
 				params.width += deltaX;
 				params.height += deltaY;
 
-				// keep window larger than 0 px
-				params.width = Math.max(params.width, 0);
-				params.height = Math.max(params.height, 0);
+				// keep window between min/max width/height
+				if (params.width >= params.minWidth
+						&& params.width <= params.maxWidth) {
+					window.touchInfo.lastX = (int) event.getRawX();
+				}
+
+				if (params.height >= params.minHeight
+						&& params.height <= params.maxHeight) {
+					window.touchInfo.lastY = (int) event.getRawY();
+				}
+
+				params.width = Math.min(
+						Math.max(params.width, params.minWidth),
+						params.maxWidth);
+				params.height = Math.min(
+						Math.max(params.height, params.minHeight),
+						params.maxHeight);
 
 				updateViewLayout(id, window, params);
 				break;
@@ -2265,6 +2276,7 @@ public abstract class StandOutWindow extends Service {
 
 			threshold = 20;
 			minWidth = minHeight = 0;
+			maxWidth = maxHeight = Integer.MAX_VALUE;
 		}
 
 		/**
