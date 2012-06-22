@@ -228,6 +228,18 @@ public abstract class StandOutWindow extends Service {
 		public static final int FLAG_WINDOW_FOCUS_INDICATOR_DISABLE = 1 << flag_counter++;
 
 		/**
+		 * Setting this flag indicates that the system should move the window
+		 * immediately when dragged. Normally, the user's touch will be
+		 * interpreted as a click if ACTION_DOWN and ACTION_UP occur within a
+		 * set threshold distance. If this flag is set, then that threshold will
+		 * be set to 0.
+		 * 
+		 * @see {@link StandOutWindow#onTouchHandleMove(int, Window, View, MotionEvent)}
+		 * 
+		 */
+		public static final int FLAG_WINDOW_MOVE_THRESHOLD_DISABLE = 1 << flag_counter++;
+
+		/**
 		 * Setting this flag indicates that the system should disable all
 		 * compatibility workarounds. The default behavior is to run
 		 * {@link StandOutWindow#fixCompatibility(View, int)} on the view
@@ -1195,6 +1207,25 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Implement this callback to be alerted when a window corresponding to the
+	 * id receives a key event. This callback will occur before the window
+	 * handles the event with {@link Window#dispatchKeyEvent(KeyEvent)}.
+	 * 
+	 * @param id
+	 *            The id of the window, provided as a courtesy.
+	 * @param view
+	 *            The window about to receive the key event.
+	 * @param event
+	 *            The key event.
+	 * @return Return true to cancel the window from handling the key event, or
+	 *         false to let the window handle the key event.
+	 * @see {@link Window#dispatchKeyEvent(KeyEvent)}
+	 */
+	protected boolean onKeyEvent(int id, Window window, KeyEvent event) {
+		return false;
+	}
+
+	/**
 	 * Show or restore a window corresponding to the id. Return the window that
 	 * was shown/restored.
 	 * 
@@ -1382,38 +1413,38 @@ public abstract class StandOutWindow extends Service {
 		// get animation
 		Animation animation = getCloseAnimation(id);
 
-		if (window.shown) {
-			try {
-				// animate
-				if (animation != null) {
-					animation.setAnimationListener(new AnimationListener() {
+		// remove hidden notification
+		if (!window.shown) {
+			mNotificationManager.cancel(getClass().hashCode() + id);
+		}
 
-						@Override
-						public void onAnimationStart(Animation animation) {
-						}
+		// remove window
+		try {
+			// animate
+			if (animation != null) {
+				animation.setAnimationListener(new AnimationListener() {
 
-						@Override
-						public void onAnimationRepeat(Animation animation) {
-						}
+					@Override
+					public void onAnimationStart(Animation animation) {
+					}
 
-						@Override
-						public void onAnimationEnd(Animation animation) {
-							// remove the window from the window manager
-							mWindowManager.removeView(window);
-						}
-					});
-					window.getChildAt(0).startAnimation(animation);
-				} else {
-					// remove the window from the window manager
-					mWindowManager.removeView(window);
-				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
+					@Override
+					public void onAnimationRepeat(Animation animation) {
+					}
+
+					@Override
+					public void onAnimationEnd(Animation animation) {
+						// remove the window from the window manager
+						mWindowManager.removeView(window);
+					}
+				});
+				window.getChildAt(0).startAnimation(animation);
+			} else {
+				// remove the window from the window manager
+				mWindowManager.removeView(window);
 			}
-		} else {
-			window.shown = false;
-			// cancel hidden notification
-			mNotificationManager.cancel(id);
+		} catch (Exception ex) {
+			ex.printStackTrace();
 		}
 
 		// if we just released the last window, quit
@@ -1842,6 +1873,11 @@ public abstract class StandOutWindow extends Service {
 		// gesture to be a move and not tap
 		int threshold = 20;
 
+		if (Utils
+				.isSet(flags, StandOutFlags.FLAG_WINDOW_MOVE_THRESHOLD_DISABLE)) {
+			threshold = 0;
+		}
+
 		int totalDeltaX = window.touchInfo.lastX - window.touchInfo.firstX;
 		int totalDeltaY = window.touchInfo.lastY - window.touchInfo.firstY;
 
@@ -2120,7 +2156,10 @@ public abstract class StandOutWindow extends Service {
 
 		@Override
 		public boolean dispatchKeyEvent(KeyEvent event) {
-			Log.d(TAG, "event: " + event);
+			if (onKeyEvent(id, this, event)) {
+				Log.d(TAG, "Window " + id + " key event " + event
+						+ " cancelled by implementation.");
+			}
 
 			if (event.getAction() == KeyEvent.ACTION_UP) {
 				switch (event.getKeyCode()) {
