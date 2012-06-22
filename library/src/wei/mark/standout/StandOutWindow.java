@@ -24,8 +24,6 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
@@ -1687,173 +1685,6 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Implement StandOut specific additional functionalities.
-	 * 
-	 * <p>
-	 * Currently, this method does the following:
-	 * 
-	 * <p>
-	 * Attach resize handles: For every View found to have id R.id.corner,
-	 * attach an OnTouchListener that implements resizing the window.
-	 * 
-	 * @param root
-	 *            The view hierarchy that is part of the window.
-	 * @param id
-	 *            The id of the window.
-	 */
-	private void addFunctionality(View root, final int id) {
-		int flags = getFlags(id);
-
-		if (!Utils.isSet(flags,
-				StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE)) {
-			View corner = root.findViewById(R.id.corner);
-			if (corner != null) {
-				corner.setOnTouchListener(new OnTouchListener() {
-
-					@Override
-					public boolean onTouch(View v, MotionEvent event) {
-						Window window = getWindow(id);
-						if (window != null) {
-							// handle dragging to move
-							boolean consumed = onTouchHandleResize(id, window,
-									v, event);
-
-							return consumed;
-						}
-
-						return false;
-					}
-				});
-			}
-		}
-	}
-
-	/**
-	 * Iterate through each View in the view hiearchy and implement StandOut
-	 * specific compatibility workarounds.
-	 * 
-	 * <p>
-	 * Currently, this method does the following:
-	 * 
-	 * <p>
-	 * Nothing yet.
-	 * 
-	 * @param root
-	 *            The root view hierarchy to iterate through and check.
-	 * @param id
-	 *            The id of the window.
-	 */
-	private void fixCompatibility(View root, final int id) {
-		Queue<View> queue = new LinkedList<View>();
-		queue.add(root);
-
-		View view = null;
-		while ((view = queue.poll()) != null) {
-			// do nothing yet
-
-			// iterate through children
-			if (view instanceof ViewGroup) {
-				ViewGroup group = (ViewGroup) view;
-				for (int i = 0; i < group.getChildCount(); i++) {
-					queue.add(group.getChildAt(i));
-				}
-			}
-		}
-	}
-
-	/**
-	 * Returns the system window decorations if the implementation sets
-	 * {@link #FLAG_DECORATION_SYSTEM}.
-	 * 
-	 * <p>
-	 * The system window decorations support hiding, closing, moving, and
-	 * resizing.
-	 * 
-	 * @param id
-	 *            The id of the window.
-	 * @return The frame view containing the system window decorations.
-	 */
-	private View getSystemWindowDecorations(final int id) {
-		final View decorations = mLayoutInflater.inflate(
-				R.layout.system_window_decorators, null);
-
-		// icon
-		ImageView icon = (ImageView) decorations.findViewById(R.id.icon);
-		icon.setImageResource(getAppIcon());
-
-		// title
-		TextView title = (TextView) decorations.findViewById(R.id.title);
-		title.setText(getAppName());
-
-		// hide
-		View hide = decorations.findViewById(R.id.hide);
-		hide.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				hide(id);
-			}
-		});
-		hide.setVisibility(View.GONE);
-
-		// close
-		View close = decorations.findViewById(R.id.close);
-		close.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				close(id);
-			}
-		});
-
-		// move
-		View titlebar = decorations.findViewById(R.id.titlebar);
-		titlebar.setOnTouchListener(new OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				Window window = getWindow(id);
-
-				// handle dragging to move
-				boolean consumed = onTouchHandleMove(id, window, v, event);
-				return consumed;
-			}
-		});
-
-		// resize
-		View corner = decorations.findViewById(R.id.corner);
-		corner.setOnTouchListener(new OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				Window window = getWindow(id);
-				// handle dragging to move
-				boolean consumed = onTouchHandleResize(id, window, v, event);
-
-				return consumed;
-			}
-		});
-
-		// set window appearance and behavior based on flags
-		int flags = getFlags(id);
-
-		if (Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
-			hide.setVisibility(View.VISIBLE);
-		}
-		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_CLOSE_DISABLE)) {
-			close.setVisibility(View.GONE);
-		}
-		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_MOVE_DISABLE)) {
-			titlebar.setOnTouchListener(null);
-		}
-		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_RESIZE_DISABLE)) {
-			corner.setVisibility(View.GONE);
-		}
-
-		return decorations;
-	}
-
-	/**
 	 * Internal touch handler for handling moving the window.
 	 * 
 	 * @see {@link View#onTouchEvent(MotionEvent)}
@@ -2047,7 +1878,7 @@ public abstract class StandOutWindow extends Service {
 
 			if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_SYSTEM)) {
 				// requested system window decorations
-				content = getSystemWindowDecorations(id);
+				content = getSystemDecorations();
 				body = (FrameLayout) content.findViewById(R.id.body);
 			} else {
 				// did not request decorations. will provide own implementation
@@ -2091,12 +1922,12 @@ public abstract class StandOutWindow extends Service {
 			// implement StandOut specific workarounds
 			if (!Utils.isSet(flags,
 					StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE)) {
-				fixCompatibility(body, id);
+				fixCompatibility(body);
 			}
 			// implement StandOut specific additional functionality
 			if (!Utils.isSet(flags,
 					StandOutFlags.FLAG_ADD_FUNCTIONALITY_ALL_DISABLE)) {
-				addFunctionality(body, id);
+				addFunctionality(body);
 			}
 
 			// attach the existing tag from the frame to the window
@@ -2229,6 +2060,162 @@ public abstract class StandOutWindow extends Service {
 				return true;
 			}
 			return false;
+		}
+
+		/**
+		 * Returns the system window decorations if the implementation sets
+		 * {@link #FLAG_DECORATION_SYSTEM}.
+		 * 
+		 * <p>
+		 * The system window decorations support hiding, closing, moving, and
+		 * resizing.
+		 * 
+		 * @return The frame view containing the system window decorations.
+		 */
+		private View getSystemDecorations() {
+			final View decorations = mLayoutInflater.inflate(
+					R.layout.system_window_decorators, null);
+
+			// icon
+			ImageView icon = (ImageView) decorations.findViewById(R.id.icon);
+			icon.setImageResource(getAppIcon());
+
+			// title
+			TextView title = (TextView) decorations.findViewById(R.id.title);
+			title.setText(getAppName());
+
+			// hide
+			View hide = decorations.findViewById(R.id.hide);
+			hide.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					hide(id);
+				}
+			});
+			hide.setVisibility(View.GONE);
+
+			// close
+			View close = decorations.findViewById(R.id.close);
+			close.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					close(id);
+				}
+			});
+
+			// move
+			View titlebar = decorations.findViewById(R.id.titlebar);
+			titlebar.setOnTouchListener(new OnTouchListener() {
+
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					// handle dragging to move
+					boolean consumed = onTouchHandleMove(id, Window.this, v,
+							event);
+					return consumed;
+				}
+			});
+
+			// resize
+			View corner = decorations.findViewById(R.id.corner);
+			corner.setOnTouchListener(new OnTouchListener() {
+
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					// handle dragging to move
+					boolean consumed = onTouchHandleResize(id, Window.this, v,
+							event);
+
+					return consumed;
+				}
+			});
+
+			// set window appearance and behavior based on flags
+			int flags = getFlags(id);
+
+			if (Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
+				hide.setVisibility(View.VISIBLE);
+			}
+			if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_CLOSE_DISABLE)) {
+				close.setVisibility(View.GONE);
+			}
+			if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_MOVE_DISABLE)) {
+				titlebar.setOnTouchListener(null);
+			}
+			if (Utils
+					.isSet(flags, StandOutFlags.FLAG_DECORATION_RESIZE_DISABLE)) {
+				corner.setVisibility(View.GONE);
+			}
+
+			return decorations;
+		}
+
+		/**
+		 * Implement StandOut specific additional functionalities.
+		 * 
+		 * <p>
+		 * Currently, this method does the following:
+		 * 
+		 * <p>
+		 * Attach resize handles: For every View found to have id R.id.corner,
+		 * attach an OnTouchListener that implements resizing the window.
+		 * 
+		 * @param root
+		 *            The view hierarchy that is part of the window.
+		 */
+		private void addFunctionality(View root) {
+			int flags = getFlags(id);
+
+			if (!Utils.isSet(flags,
+					StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE)) {
+				View corner = root.findViewById(R.id.corner);
+				if (corner != null) {
+					corner.setOnTouchListener(new OnTouchListener() {
+
+						@Override
+						public boolean onTouch(View v, MotionEvent event) {
+							// handle dragging to move
+							boolean consumed = onTouchHandleResize(id,
+									Window.this, v, event);
+
+							return consumed;
+						}
+					});
+				}
+			}
+		}
+
+		/**
+		 * Iterate through each View in the view hiearchy and implement StandOut
+		 * specific compatibility workarounds.
+		 * 
+		 * <p>
+		 * Currently, this method does the following:
+		 * 
+		 * <p>
+		 * Nothing yet.
+		 * 
+		 * @param root
+		 *            The root view hierarchy to iterate through and check.
+		 */
+		private void fixCompatibility(View root) {
+			Queue<View> queue = new LinkedList<View>();
+			queue.add(root);
+
+			View view = null;
+			while ((view = queue.poll()) != null) {
+				// do nothing yet
+
+				// iterate through children
+				if (view instanceof ViewGroup) {
+					ViewGroup group = (ViewGroup) view;
+					for (int i = 0; i < group.getChildCount(); i++) {
+						queue.add(group.getChildAt(i));
+					}
+				}
+			}
 		}
 
 		/**
