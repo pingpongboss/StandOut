@@ -226,18 +226,6 @@ public abstract class StandOutWindow extends Service {
 		public static final int FLAG_WINDOW_FOCUS_INDICATOR_DISABLE = 1 << flag_counter++;
 
 		/**
-		 * Setting this flag indicates that the system should move the window
-		 * immediately when dragged. Normally, the user's touch will be
-		 * interpreted as a click if ACTION_DOWN and ACTION_UP occur within a
-		 * set threshold distance. If this flag is set, then that threshold will
-		 * be set to 0.
-		 * 
-		 * @see {@link StandOutWindow#onTouchHandleMove(int, Window, View, MotionEvent)}
-		 * 
-		 */
-		public static final int FLAG_WINDOW_MOVE_THRESHOLD_DISABLE = 1 << flag_counter++;
-
-		/**
 		 * Setting this flag indicates that the system should disable all
 		 * compatibility workarounds. The default behavior is to run
 		 * {@link StandOutWindow#fixCompatibility(View, int)} on the view
@@ -1702,12 +1690,6 @@ public abstract class StandOutWindow extends Service {
 
 		// how much you have to move in either direction in order for the
 		// gesture to be a move and not tap
-		int threshold = 20;
-
-		if (Utils
-				.isSet(flags, StandOutFlags.FLAG_WINDOW_MOVE_THRESHOLD_DISABLE)) {
-			threshold = 0;
-		}
 
 		int totalDeltaX = window.touchInfo.lastX - window.touchInfo.firstX;
 		int totalDeltaY = window.touchInfo.lastY - window.touchInfo.firstY;
@@ -1728,8 +1710,8 @@ public abstract class StandOutWindow extends Service {
 				window.touchInfo.lastY = (int) event.getRawY();
 
 				if (window.touchInfo.moving
-						|| Math.abs(totalDeltaX) >= threshold
-						|| Math.abs(totalDeltaY) >= threshold) {
+						|| Math.abs(totalDeltaX) >= params.threshold
+						|| Math.abs(totalDeltaY) >= params.threshold) {
 					window.touchInfo.moving = true;
 
 					// update the position of the window
@@ -1759,8 +1741,8 @@ public abstract class StandOutWindow extends Service {
 				}
 
 				// bring to front on tap
-				boolean tap = Math.abs(totalDeltaX) < threshold
-						&& Math.abs(totalDeltaY) < threshold;
+				boolean tap = Math.abs(totalDeltaX) < params.threshold
+						&& Math.abs(totalDeltaY) < params.threshold;
 				if (tap
 						&& Utils.isSet(flags,
 								StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP)) {
@@ -2252,6 +2234,13 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
+		public int threshold;
+		public int minWidth, minHeight, maxWidth, maxHeight;
+
+		/**
+		 * @param id
+		 *            The id of the window.
+		 */
 		public LayoutParams(int id) {
 			super(200, 200, TYPE_PHONE, LayoutParams.FLAG_NOT_TOUCH_MODAL
 					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
@@ -2273,14 +2262,37 @@ public abstract class StandOutWindow extends Service {
 			y = getY(id, height);
 
 			gravity = Gravity.TOP | Gravity.LEFT;
+
+			threshold = 20;
+			minWidth = minHeight = 0;
 		}
 
+		/**
+		 * @param id
+		 *            The id of the window.
+		 * @param w
+		 *            The width of the window.
+		 * @param h
+		 *            The height of the window.
+		 */
 		public LayoutParams(int id, int w, int h) {
 			this(id);
 			width = w;
 			height = h;
 		}
 
+		/**
+		 * @param id
+		 *            The id of the window.
+		 * @param w
+		 *            The width of the window.
+		 * @param h
+		 *            The height of the window.
+		 * @param xpos
+		 *            The x position of the window.
+		 * @param ypos
+		 *            The y position of the window.
+		 */
 		public LayoutParams(int id, int w, int h, int xpos, int ypos) {
 			this(id, w, h);
 
@@ -2288,6 +2300,20 @@ public abstract class StandOutWindow extends Service {
 			y = ypos;
 		}
 
+		/**
+		 * @param id
+		 *            The id of the window.
+		 * @param w
+		 *            The width of the window.
+		 * @param h
+		 *            The height of the window.
+		 * @param xpos
+		 *            The x position of the window.
+		 * @param ypos
+		 *            The y position of the window.
+		 * @param gravityFlag
+		 *            The {@link Gravity} of the window.
+		 */
 		public LayoutParams(int id, int w, int h, int xpos, int ypos,
 				int gravityFlag) {
 			this(id, w, h, xpos, ypos);
@@ -2304,6 +2330,85 @@ public abstract class StandOutWindow extends Service {
 			}
 		}
 
+		/**
+		 * @param id
+		 *            The id of the window.
+		 * @param w
+		 *            The width of the window.
+		 * @param h
+		 *            The height of the window.
+		 * @param xpos
+		 *            The x position of the window.
+		 * @param ypos
+		 *            The y position of the window.
+		 * @param minWidth
+		 *            The minimum width of the window.
+		 * @param minHeight
+		 *            The mininum height of the window.
+		 */
+		public LayoutParams(int id, int w, int h, int xpos, int ypos,
+				int minWidth, int minHeight) {
+			this(id, w, h, xpos, ypos);
+
+			this.minWidth = minWidth;
+			this.minHeight = minHeight;
+		}
+
+		/**
+		 * @param id
+		 *            The id of the window.
+		 * @param w
+		 *            The width of the window.
+		 * @param h
+		 *            The height of the window.
+		 * @param xpos
+		 *            The x position of the window.
+		 * @param ypos
+		 *            The y position of the window.
+		 * @param minWidth
+		 *            The minimum width of the window.
+		 * @param minHeight
+		 *            The mininum height of the window.
+		 * @param gravityFlag
+		 *            The {@link Gravity} of the window.
+		 */
+		public LayoutParams(int id, int w, int h, int xpos, int ypos,
+				int minWidth, int minHeight, int gravityFlag) {
+			this(id, w, h, xpos, ypos, gravityFlag);
+
+			this.minWidth = minWidth;
+			this.minHeight = minHeight;
+		}
+
+		/**
+		 * @param id
+		 *            The id of the window.
+		 * @param w
+		 *            The width of the window.
+		 * @param h
+		 *            The height of the window.
+		 * @param xpos
+		 *            The x position of the window.
+		 * @param ypos
+		 *            The y position of the window.
+		 * @param minWidth
+		 *            The minimum width of the window.
+		 * @param minHeight
+		 *            The mininum height of the window.
+		 * @param gravityFlag
+		 *            The {@link Gravity} of the window.
+		 * @param threshold
+		 *            The touch distance threshold that distinguishes a tap from
+		 *            a drag.
+		 */
+		public LayoutParams(int id, int w, int h, int xpos, int ypos,
+				int minWidth, int minHeight, int gravityFlag, int threshold) {
+			this(id, w, h, xpos, ypos, minWidth, minHeight, gravityFlag);
+
+			this.threshold = threshold;
+		}
+
+		// helper to create cascading windows
 		private int getX(int id, int width) {
 			Display display = mWindowManager.getDefaultDisplay();
 			int displayWidth = display.getWidth();
@@ -2317,6 +2422,7 @@ public abstract class StandOutWindow extends Service {
 			return rawX % (displayWidth - width);
 		}
 
+		// helper to create cascading windows
 		private int getY(int id, int height) {
 			Display display = mWindowManager.getDefaultDisplay();
 			int displayWidth = display.getWidth();
