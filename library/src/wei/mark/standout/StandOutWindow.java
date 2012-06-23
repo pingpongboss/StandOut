@@ -195,6 +195,21 @@ public abstract class StandOutWindow extends Service {
 		public static final int FLAG_WINDOW_EDGE_LIMITS_ENABLE = 1 << flag_counter++;
 
 		/**
+		 * Setting this flag indicates that the system should keep the window's
+		 * aspect ratio constant when resizing.
+		 * 
+		 * <p>
+		 * The aspect ratio will only be enforced in
+		 * {@link StandOutWindow#onTouchHandleResize(int, Window, View, MotionEvent)}
+		 * . The aspect ratio will not be enforced if you set the width or
+		 * height of the window's LayoutParams manually.
+		 * 
+		 * @see StandOutWindow#onTouchHandleResize(int, Window, View,
+		 *      MotionEvent)
+		 */
+		public static final int FLAG_WINDOW_ASPECT_RATIO_ENABLE = 1 << flag_counter++;
+
+		/**
 		 * Setting this flag indicates that the window does not need focus. If
 		 * this flag is set, the system will not take care of setting and
 		 * unsetting the focus of windows based on user touch and key events.
@@ -1778,6 +1793,7 @@ public abstract class StandOutWindow extends Service {
 			MotionEvent event) {
 		StandOutWindow.LayoutParams params = (LayoutParams) window
 				.getLayoutParams();
+		int flags = getFlags(id);
 
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
@@ -1786,6 +1802,8 @@ public abstract class StandOutWindow extends Service {
 
 				window.touchInfo.firstX = window.touchInfo.lastX;
 				window.touchInfo.firstY = window.touchInfo.lastY;
+
+				params.ratio = (float) params.width / params.height;
 				break;
 			case MotionEvent.ACTION_MOVE:
 				int deltaX = (int) event.getRawX() - window.touchInfo.lastX;
@@ -1812,6 +1830,21 @@ public abstract class StandOutWindow extends Service {
 				params.height = Math.min(
 						Math.max(params.height, params.minHeight),
 						params.maxHeight);
+
+				// keep window in aspect ratio
+				if (Utils.isSet(flags,
+						StandOutFlags.FLAG_WINDOW_ASPECT_RATIO_ENABLE)) {
+					int ratioWidth = (int) (params.height * params.ratio);
+					int ratioHeight = (int) (params.width / params.ratio);
+					if (ratioHeight >= params.minHeight
+							&& ratioHeight <= params.maxHeight) {
+						// width good adjust height
+						params.height = ratioHeight;
+					} else {
+						// height good adjust width
+						params.width = ratioWidth;
+					}
+				}
 
 				updateViewLayout(id, window, params);
 				break;
@@ -2247,6 +2280,7 @@ public abstract class StandOutWindow extends Service {
 	protected class LayoutParams extends WindowManager.LayoutParams {
 		public int threshold;
 		public int minWidth, minHeight, maxWidth, maxHeight;
+		public float ratio;
 
 		/**
 		 * @param id
