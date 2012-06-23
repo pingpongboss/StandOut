@@ -1016,7 +1016,6 @@ public abstract class StandOutWindow extends Service {
 	 * Implement this method to be alerted to when the window corresponding to
 	 * the id is moved.
 	 * 
-	 * @see {@link View.OnTouchListener#onTouch(View, MotionEvent)}
 	 * @param id
 	 *            The id of the view, provided as a courtesy.
 	 * @param window
@@ -1025,6 +1024,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The view where the event originated from.
 	 * @param event
 	 *            See linked method.
+	 * @see {@link #onTouchHandleMove(int, Window, View, MotionEvent)}
 	 */
 	protected void onMove(int id, Window window, View view, MotionEvent event) {
 	}
@@ -1033,7 +1033,6 @@ public abstract class StandOutWindow extends Service {
 	 * Implement this method to be alerted to when the window corresponding to
 	 * the id is resized.
 	 * 
-	 * @see {@link View.OnTouchListener#onTouch(View, MotionEvent)}
 	 * @param id
 	 *            The id of the view, provided as a courtesy.
 	 * @param window
@@ -1042,6 +1041,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The view where the event originated from.
 	 * @param event
 	 *            See linked method.
+	 * @see {@link #onTouchHandleResize(int, Window, View, MotionEvent)}
 	 */
 	protected void onResize(int id, Window window, View view, MotionEvent event) {
 	}
