@@ -2308,7 +2308,7 @@ public abstract class StandOutWindow extends Service {
 
 			gravity = Gravity.TOP | Gravity.LEFT;
 
-			threshold = 20;
+			threshold = 10;
 			minWidth = minHeight = 0;
 			maxWidth = maxHeight = Integer.MAX_VALUE;
 		}
