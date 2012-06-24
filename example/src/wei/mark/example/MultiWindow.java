@@ -39,6 +39,11 @@ public class MultiWindow extends StandOutWindow {
 	}
 
 	@Override
+	protected String getTitle(int id) {
+		return getAppName() + " " + id;
+	}
+
+	@Override
 	protected void createAndAttachView(int id, FrameLayout frame) {
 		// create a new layout from body.xml
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);

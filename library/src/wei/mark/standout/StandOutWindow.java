@@ -780,6 +780,18 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Implement this method to set a custom title for the window corresponding
+	 * to the id.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @return The title of the window.
+	 */
+	protected String getTitle(int id) {
+		return getAppName();
+	}
+
+	/**
 	 * Return the title for the persistent notification. This is called every
 	 * time {@link #show(int)} is called.
 	 * 
@@ -1688,6 +1700,24 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Change the title of the window, if such a title exists. A title exists if
+	 * {@link StandOutFlags#FLAG_DECORATION_SYSTEM} is set, or if your own view
+	 * contains a TextView with id R.id.title.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 */
+	protected final void setTitle(int id, String text) {
+		Window window = getWindow(id);
+		if (window != null) {
+			View title = window.findViewById(R.id.title);
+			if (title instanceof TextView) {
+				((TextView) title).setText(text);
+			}
+		}
+	}
+
+	/**
 	 * Internal touch handler for handling moving the window.
 	 * 
 	 * @see {@link View#onTouchEvent(MotionEvent)}
@@ -2108,7 +2138,7 @@ public abstract class StandOutWindow extends Service {
 
 			// title
 			TextView title = (TextView) decorations.findViewById(R.id.title);
-			title.setText(getAppName());
+			title.setText(getTitle(id));
 
 			// hide
 			View hide = decorations.findViewById(R.id.hide);
