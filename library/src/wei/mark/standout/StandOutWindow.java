@@ -792,6 +792,18 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Implement this method to set a custom icon for the window corresponding
+	 * to the id.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @return The icon of the window.
+	 */
+	protected int getIcon(int id) {
+		return getAppIcon();
+	}
+
+	/**
 	 * Return the title for the persistent notification. This is called every
 	 * time {@link #show(int)} is called.
 	 * 
@@ -1706,6 +1718,8 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @param id
 	 *            The id of the window.
+	 * @param text
+	 *            The new title.
 	 */
 	protected final void setTitle(int id, String text) {
 		Window window = getWindow(id);
@@ -1713,6 +1727,26 @@ public abstract class StandOutWindow extends Service {
 			View title = window.findViewById(R.id.title);
 			if (title instanceof TextView) {
 				((TextView) title).setText(text);
+			}
+		}
+	}
+
+	/**
+	 * Change the icon of the window, if such a icon exists. A icon exists if
+	 * {@link StandOutFlags#FLAG_DECORATION_SYSTEM} is set, or if your own view
+	 * contains a TextView with id R.id.icon.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @param drawableRes
+	 *            The new icon.
+	 */
+	protected final void setIcon(int id, int drawableRes) {
+		Window window = getWindow(id);
+		if (window != null) {
+			View icon = window.findViewById(R.id.icon);
+			if (icon instanceof ImageView) {
+				((ImageView) icon).setImageResource(drawableRes);
 			}
 		}
 	}
