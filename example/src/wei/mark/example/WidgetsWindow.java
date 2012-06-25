@@ -58,7 +58,7 @@ public class WidgetsWindow extends MultiWindow {
 	}
 
 	@Override
-	protected int getTheme(int id) {
+	protected int getThemeStyle() {
 		return android.R.style.Theme_Light;
 	}
 }

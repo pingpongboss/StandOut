@@ -1029,14 +1029,12 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Implement this method to set a custom theme for the window corresponding
-	 * to the id.
+	 * Implement this method to set a custom theme for all windows in this
+	 * implementation.
 	 * 
-	 * @param id
-	 *            The id of the window.
 	 * @return The theme to set on the window.
 	 */
-	protected int getTheme(int id) {
+	protected int getThemeStyle() {
 		return 0;
 	}
 
@@ -1966,7 +1964,7 @@ public abstract class StandOutWindow extends Service {
 		public Window(int id) {
 			super(StandOutWindow.this);
 
-			setTheme(getTheme(id));
+			setTheme(getThemeStyle());
 
 			this.context = StandOutWindow.this;
 
