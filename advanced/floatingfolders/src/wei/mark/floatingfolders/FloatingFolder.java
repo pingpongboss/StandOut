@@ -218,7 +218,7 @@ public final class FloatingFolder extends StandOutWindow {
 			return new LayoutParams(id, 400, LayoutParams.FILL_PARENT, 0, 0,
 					Gravity.CENTER);
 		} else {
-			return new LayoutParams(id, 400, 400, 50, 50, 250, 300);
+			return new LayoutParams(id, 400, 400, 50, 50);
 		}
 	}
 
@@ -472,7 +472,7 @@ public final class FloatingFolder extends StandOutWindow {
 		View child = flow.getChildAt(0);
 		int width = flow.getLeft()
 				+ (((ViewGroup) flow.getParent()).getWidth() - flow.getRight())
-				+ cols * child.getWidth();
+				+ cols * squareWidth;
 		int height = flow.getTop()
 				+ (((ViewGroup) flow.getParent()).getHeight() - flow
 						.getBottom()) + rows * child.getHeight();
