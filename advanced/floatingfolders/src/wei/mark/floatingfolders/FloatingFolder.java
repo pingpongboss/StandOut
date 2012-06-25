@@ -184,6 +184,7 @@ public final class FloatingFolder extends StandOutWindow {
 				}
 			});
 		} else {
+			// id is not app selector
 			View view = inflater.inflate(R.layout.folder, frame, true);
 
 			View add = view.findViewById(R.id.add);
@@ -196,7 +197,7 @@ public final class FloatingFolder extends StandOutWindow {
 				}
 			});
 
-			ViewGroup flow = (ViewGroup) view.findViewById(R.id.flow);
+			FlowLayout flow = (FlowLayout) view.findViewById(R.id.flow);
 
 			if (mFolders == null) {
 				loadAllFolders();
@@ -281,6 +282,8 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	private void onUserAddApp(int id, ActivityInfo app) {
+		snapToSize(id, -1);
+
 		FolderModel folder = mFolders.get(id);
 		folder.apps.add(app);
 
@@ -306,6 +309,8 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	private void onUserRemoveApp(int id, ActivityInfo app) {
+		snapToSize(id, -1);
+
 		List<ActivityInfo> apps = mFolders.get(id).apps;
 		apps.remove(app);
 
@@ -438,8 +443,50 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
+	protected void onResize(int id, Window window, View view, MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_UP) {
+			snapToSize(id, -1);
+		}
+	}
+
+	private void snapToSize(int id, int cols) {
+		Window window = getWindow(id);
+		FlowLayout flow = (FlowLayout) window.findViewById(R.id.flow);
+
+		int count = flow.getChildCount();
+
+		if (cols == -1) {
+			cols = flow.getCols();
+		}
+
+		if (count == 0 || cols == 0) {
+			count = 4;
+			cols = 2;
+		}
+
+		int rows = count / cols;
+		if (count % cols > 0) {
+			rows++;
+		}
+
+		View child = flow.getChildAt(0);
+		int width = flow.getLeft()
+				+ (((ViewGroup) flow.getParent()).getWidth() - flow.getRight())
+				+ cols * child.getWidth();
+		int height = flow.getTop()
+				+ (((ViewGroup) flow.getParent()).getHeight() - flow
+						.getBottom()) + rows * child.getHeight();
+
+		LayoutParams params = window.getLayoutParams();
+		params.width = width;
+		params.height = height;
+		updateViewLayout(id, window, params);
+	}
+
+	@Override
 	protected boolean onTouchBody(final int id, final Window window,
 			final View view, MotionEvent event) {
+		Log.d("FloatingFolder", "Event: " + event);
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_OUTSIDE:
 				close(APP_SELECTOR_ID);

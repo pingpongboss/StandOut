@@ -15,8 +15,6 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_above="@+id/label"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
             android:layout_marginTop="8dp" >
         </wei.mark.floatingfolders.FlowLayout>
 

@@ -15,8 +15,9 @@ import android.view.ViewGroup;
  * @author Melinda Green
  */
 public class FlowLayout extends ViewGroup {
-	private final static int PAD_H = 2, PAD_V = 2; // Space between child views.
+	private final static int PAD_H = 0, PAD_V = 0; // Space between child views.
 	private int mHeight;
+	private int mCols;
 
 	public FlowLayout(Context context) {
 		super(context);
@@ -44,6 +45,8 @@ public class FlowLayout extends ViewGroup {
 			childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(0,
 					MeasureSpec.UNSPECIFIED);
 		mHeight = 0;
+		int cols = 0;
+		mCols = 0;
 		for (int i = 0; i < count; i++) {
 			final View child = getChildAt(i);
 			if (child.getVisibility() != GONE) {
@@ -55,10 +58,17 @@ public class FlowLayout extends ViewGroup {
 				if (xpos + childw > width) {
 					xpos = getPaddingLeft();
 					ypos += mHeight;
+					mCols = Math.max(mCols, cols);
+					cols = 0;
+				} else {
+					cols++;
 				}
 				xpos += childw + PAD_H;
 			}
 		}
+
+		mCols = Math.max(mCols, cols);
+
 		if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) {
 			height = ypos + mHeight;
 		} else if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.AT_MOST) {
@@ -90,4 +100,7 @@ public class FlowLayout extends ViewGroup {
 		}
 	} // end onLayout()
 
+	protected int getCols() {
+		return mCols;
+	}
 }
