@@ -103,4 +103,8 @@ public class FlowLayout extends ViewGroup {
 	protected int getCols() {
 		return mCols;
 	}
+
+	protected int getChildHeight() {
+		return mHeight;
+	}
 }

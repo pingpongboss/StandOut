@@ -41,6 +41,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public final class FloatingFolder extends StandOutWindow {
 	private static final int APP_SELECTOR_ID = -2;
@@ -218,7 +219,17 @@ public final class FloatingFolder extends StandOutWindow {
 			return new LayoutParams(id, 400, LayoutParams.FILL_PARENT, 0, 0,
 					Gravity.CENTER);
 		} else {
-			return new LayoutParams(id, 400, 400, 50, 50);
+			FolderModel folder = mFolders.get(id);
+			int width = folder.width;
+			int height = folder.height;
+
+			if (width == 0) {
+				width = 400;
+			}
+			if (height == 0) {
+				height = 400;
+			}
+			return new LayoutParams(id, width, height, 50, 50);
 		}
 	}
 
@@ -282,43 +293,29 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	private void onUserAddApp(int id, ActivityInfo app) {
-		snapToSize(id, -1);
-
 		FolderModel folder = mFolders.get(id);
 		folder.apps.add(app);
 
-		FileOutputStream out = null;
-		try {
-			out = openFileOutput(String.format("folder%d", id), MODE_APPEND);
-			ComponentName name = new ComponentName(app.packageName, app.name);
-
-			out.write((name.flattenToString() + "\n").getBytes());
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (out != null) {
-				try {
-					out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+		resizeToGridAndSave(id, -1);
 	}
 
 	private void onUserRemoveApp(int id, ActivityInfo app) {
-		snapToSize(id, -1);
+		FolderModel folder = mFolders.get(id);
+		folder.apps.remove(app);
 
-		List<ActivityInfo> apps = mFolders.get(id).apps;
-		apps.remove(app);
+		resizeToGridAndSave(id, -1);
+	}
 
+	private void saveFolder(FolderModel folder) {
 		FileOutputStream out = null;
 		try {
-			out = openFileOutput(String.format("folder%d", id), MODE_PRIVATE);
+			out = openFileOutput(String.format("folder%d", folder.id),
+					MODE_PRIVATE);
 
-			for (ActivityInfo appInFolder : apps) {
+			out.write(String.format("%d\n", folder.width).getBytes());
+			out.write(String.format("%d\n", folder.height).getBytes());
+
+			for (ActivityInfo appInFolder : folder.apps) {
 				ComponentName name = new ComponentName(appInFolder.packageName,
 						appInFolder.name);
 
@@ -361,17 +358,36 @@ public final class FloatingFolder extends StandOutWindow {
 					byte[] bytes = bos.toByteArray();
 					String appNames = new String(bytes);
 
+					int i = 0;
 					for (String appName : appNames.split("\n")) {
-						if (appName.length() > 0) {
-							ComponentName name = ComponentName
-									.unflattenFromString(appName);
+						if (i < 2) {
+							// width and height
 							try {
-								ActivityInfo app = mPackageManager
-										.getActivityInfo(name, 0);
-								folder.apps.add(app);
-								mFolders.put(folder.id, folder);
-							} catch (NameNotFoundException e) {
-								e.printStackTrace();
+								if (i == 0) {
+									folder.width = Integer.parseInt(appName);
+								} else if (i == 1) {
+									folder.height = Integer.parseInt(appName);
+								}
+							} catch (NumberFormatException ex) {
+								String msg = "Please uninstall Floating Folders and reinstall it. The folder format has changed.";
+								Log.d("FloatingFolder", msg);
+								Toast.makeText(this, msg, Toast.LENGTH_SHORT)
+										.show();
+								break;
+							}
+							i++;
+						} else {
+							if (appName.length() > 0) {
+								ComponentName name = ComponentName
+										.unflattenFromString(appName);
+								try {
+									ActivityInfo app = mPackageManager
+											.getActivityInfo(name, 0);
+									folder.apps.add(app);
+									mFolders.put(folder.id, folder);
+								} catch (NameNotFoundException e) {
+									e.printStackTrace();
+								}
 							}
 						}
 					}
@@ -445,48 +461,69 @@ public final class FloatingFolder extends StandOutWindow {
 	@Override
 	protected void onResize(int id, Window window, View view, MotionEvent event) {
 		if (event.getAction() == MotionEvent.ACTION_UP) {
-			snapToSize(id, -1);
+			resizeToGridAndSave(id, -1);
 		}
 	}
 
-	private void snapToSize(int id, int cols) {
-		Window window = getWindow(id);
-		FlowLayout flow = (FlowLayout) window.findViewById(R.id.flow);
+	private void resizeToGridAndSave(final int id, final int cols) {
+		final Window window = getWindow(id);
 
-		int count = flow.getChildCount();
+		window.post(new Runnable() {
 
-		if (cols == -1) {
-			cols = flow.getCols();
-		}
+			@Override
+			public void run() {
+				FlowLayout flow = (FlowLayout) window.findViewById(R.id.flow);
 
-		if (count == 0 || cols == 0) {
-			count = 4;
-			cols = 2;
-		}
+				FolderModel folder = mFolders.get(id);
 
-		int rows = count / cols;
-		if (count % cols > 0) {
-			rows++;
-		}
+				int count = folder.apps.size();
+				int columns = cols;
 
-		View child = flow.getChildAt(0);
-		int width = flow.getLeft()
-				+ (((ViewGroup) flow.getParent()).getWidth() - flow.getRight())
-				+ cols * squareWidth;
-		int height = flow.getTop()
-				+ (((ViewGroup) flow.getParent()).getHeight() - flow
-						.getBottom()) + rows * child.getHeight();
+				if (cols == -1) {
+					columns = flow.getCols();
+				}
 
-		LayoutParams params = window.getLayoutParams();
-		params.width = width;
-		params.height = height;
-		updateViewLayout(id, window, params);
+				if (columns < 2) {
+					columns = 2;
+				}
+
+				int rows = count / columns;
+				if (count % columns > 0) {
+					rows++;
+				}
+
+				if (rows < 1) {
+					rows = 1;
+				}
+
+				int width = flow.getLeft()
+						+ (((ViewGroup) flow.getParent()).getWidth() - flow
+								.getRight()) + columns * squareWidth;
+				int height = width;
+
+				if (count > 0) {
+					height = flow.getTop()
+							+ (((ViewGroup) flow.getParent()).getHeight() - flow
+									.getBottom()) + rows
+							* flow.getChildHeight();
+				}
+
+				LayoutParams params = window.getLayoutParams();
+				params.width = width;
+				params.height = height;
+				updateViewLayout(id, window, params);
+
+				folder.width = width;
+				folder.height = height;
+
+				saveFolder(folder);
+			}
+		});
 	}
 
 	@Override
 	protected boolean onTouchBody(final int id, final Window window,
 			final View view, MotionEvent event) {
-		Log.d("FloatingFolder", "Event: " + event);
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_OUTSIDE:
 				close(APP_SELECTOR_ID);
