@@ -1029,6 +1029,18 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Implement this method to set a custom theme for the window corresponding
+	 * to the id.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @return The theme to set on the window.
+	 */
+	protected int getTheme(int id) {
+		return 0;
+	}
+
+	/**
 	 * Implement this method to be alerted to touch events in the body of the
 	 * window corresponding to the id.
 	 * 
@@ -1953,6 +1965,9 @@ public abstract class StandOutWindow extends Service {
 
 		public Window(int id) {
 			super(StandOutWindow.this);
+
+			setTheme(getTheme(id));
+
 			this.context = StandOutWindow.this;
 
 			this.cls = context.getClass();
