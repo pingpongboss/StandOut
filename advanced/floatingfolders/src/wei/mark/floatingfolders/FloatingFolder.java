@@ -216,8 +216,8 @@ public final class FloatingFolder extends StandOutWindow {
 	@Override
 	protected LayoutParams getParams(int id, Window window) {
 		if (APP_SELECTOR_ID == id) {
-			return new LayoutParams(id, 400, LayoutParams.FILL_PARENT, 0, 0,
-					Gravity.CENTER);
+			return new LayoutParams(id, 400, LayoutParams.FILL_PARENT,
+					LayoutParams.CENTER, LayoutParams.TOP);
 		} else {
 			FolderModel folder = mFolders.get(id);
 			int width = folder.width;

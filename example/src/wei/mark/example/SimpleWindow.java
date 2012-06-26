@@ -27,7 +27,8 @@ public class SimpleWindow extends StandOutWindow {
 	// the window will be centered
 	@Override
 	protected LayoutParams getParams(int id, Window window) {
-		return new LayoutParams(id, 250, 300);
+		return new LayoutParams(id, 250, 300, LayoutParams.CENTER,
+				LayoutParams.CENTER);
 	}
 
 	// move the window by dragging the view

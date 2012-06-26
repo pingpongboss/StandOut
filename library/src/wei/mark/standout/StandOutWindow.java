@@ -2355,6 +2355,29 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
+		/**
+		 * Special value for x or y position that represents the center of the
+		 * screen.
+		 */
+		public static final int CENTER = Integer.MIN_VALUE;
+		/**
+		 * Special value for x position that represents the left of the screen.
+		 */
+		public static final int LEFT = 0;
+		/**
+		 * Special value for y position that represents the top of the screen.
+		 */
+		public static final int TOP = 0;
+		/**
+		 * Special value for x position that represents the right of the screen.
+		 */
+		public static final int RIGHT = Integer.MAX_VALUE;
+		/**
+		 * Special value for y position that represents the bottom of the
+		 * screen.
+		 */
+		public static final int BOTTOM = Integer.MAX_VALUE;
+
 		public int threshold;
 		public int minWidth, minHeight, maxWidth, maxHeight;
 		public float ratio;
@@ -2418,38 +2441,23 @@ public abstract class StandOutWindow extends Service {
 		 */
 		public LayoutParams(int id, int w, int h, int xpos, int ypos) {
 			this(id, w, h);
-
 			x = xpos;
 			y = ypos;
-		}
 
-		/**
-		 * @param id
-		 *            The id of the window.
-		 * @param w
-		 *            The width of the window.
-		 * @param h
-		 *            The height of the window.
-		 * @param xpos
-		 *            The x position of the window.
-		 * @param ypos
-		 *            The y position of the window.
-		 * @param gravityFlag
-		 *            The {@link Gravity} of the window.
-		 */
-		public LayoutParams(int id, int w, int h, int xpos, int ypos,
-				int gravityFlag) {
-			this(id, w, h, xpos, ypos);
-			gravity = gravityFlag;
+			Display display = mWindowManager.getDefaultDisplay();
+			int width = display.getWidth();
+			int height = display.getHeight();
 
-			if (!Utils.isSet(flags, FLAG_LAYOUT_NO_LIMITS)) {
-				if (gravity != (Gravity.TOP | Gravity.LEFT)) {
-					// windows stay within edges AND gravity is not normal
-					Log.w(TAG,
-							String.format(
-									"Window #%d set flag FLAG_WINDOW_EDGE_LIMITS_ENABLE. Gravity TOP|LEFT is recommended for best behavior.",
-									id));
-				}
+			if (x == RIGHT) {
+				x = width - w;
+			} else if (x == CENTER) {
+				x = (width - w) / 2;
+			}
+
+			if (y == BOTTOM) {
+				y = height - h;
+			} else if (y == CENTER) {
+				y = (height - h) / 2;
 			}
 		}
 
@@ -2492,41 +2500,13 @@ public abstract class StandOutWindow extends Service {
 		 *            The minimum width of the window.
 		 * @param minHeight
 		 *            The mininum height of the window.
-		 * @param gravityFlag
-		 *            The {@link Gravity} of the window.
-		 */
-		public LayoutParams(int id, int w, int h, int xpos, int ypos,
-				int minWidth, int minHeight, int gravityFlag) {
-			this(id, w, h, xpos, ypos, gravityFlag);
-
-			this.minWidth = minWidth;
-			this.minHeight = minHeight;
-		}
-
-		/**
-		 * @param id
-		 *            The id of the window.
-		 * @param w
-		 *            The width of the window.
-		 * @param h
-		 *            The height of the window.
-		 * @param xpos
-		 *            The x position of the window.
-		 * @param ypos
-		 *            The y position of the window.
-		 * @param minWidth
-		 *            The minimum width of the window.
-		 * @param minHeight
-		 *            The mininum height of the window.
-		 * @param gravityFlag
-		 *            The {@link Gravity} of the window.
 		 * @param threshold
 		 *            The touch distance threshold that distinguishes a tap from
 		 *            a drag.
 		 */
 		public LayoutParams(int id, int w, int h, int xpos, int ypos,
-				int minWidth, int minHeight, int gravityFlag, int threshold) {
-			this(id, w, h, xpos, ypos, minWidth, minHeight, gravityFlag);
+				int minWidth, int minHeight, int threshold) {
+			this(id, w, h, xpos, ypos, minWidth, minHeight);
 
 			this.threshold = threshold;
 		}
