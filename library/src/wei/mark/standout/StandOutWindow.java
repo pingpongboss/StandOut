@@ -1032,7 +1032,7 @@ public abstract class StandOutWindow extends Service {
 	 * Implement this method to set a custom theme for all windows in this
 	 * implementation.
 	 * 
-	 * @return The theme to set on the window.
+	 * @return The theme to set on the window, or 0 for device default.
 	 */
 	protected int getThemeStyle() {
 		return 0;
