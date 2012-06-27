@@ -68,7 +68,8 @@ public class MultiWindow extends StandOutWindow {
 				| StandOutFlags.FLAG_BODY_MOVE_ENABLE
 				| StandOutFlags.FLAG_WINDOW_HIDE_ENABLE
 				| StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP
-				| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE;
+				| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE
+				| StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE;
 	}
 
 	@Override

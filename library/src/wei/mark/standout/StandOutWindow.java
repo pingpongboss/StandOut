@@ -210,6 +210,14 @@ public abstract class StandOutWindow extends Service {
 		public static final int FLAG_WINDOW_ASPECT_RATIO_ENABLE = 1 << flag_counter++;
 
 		/**
+		 * Setting this flag indicates that the system should resize the window
+		 * when it detects a pinch-to-zoom gesture.
+		 * 
+		 * @see StandOutWindow.Window#onInterceptTouchEvent(MotionEvent)
+		 */
+		public static final int FLAG_WINDOW_PINCH_RESIZE_ENABLE = 1 << flag_counter++;
+
+		/**
 		 * Setting this flag indicates that the window does not need focus. If
 		 * this flag is set, the system will not take care of setting and
 		 * unsetting the focus of windows based on user touch and key events.
@@ -1774,6 +1782,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	private boolean onTouchHandleMove(int id, Window window, View view,
 			MotionEvent event) {
+
 		LayoutParams params = window.getLayoutParams();
 		int flags = getFlags(id);
 
@@ -1804,8 +1813,10 @@ public abstract class StandOutWindow extends Service {
 					window.touchInfo.moving = true;
 
 					// update the position of the window
-					params.x += deltaX;
-					params.y += deltaY;
+					if (event.getPointerCount() == 1) {
+						params.x += deltaX;
+						params.y += deltaY;
+					}
 
 					updateViewLayout(id, window, params);
 				}
@@ -1814,18 +1825,21 @@ public abstract class StandOutWindow extends Service {
 				window.touchInfo.moving = false;
 
 				// keep window within edges
-				if (Utils.isSet(flags,
-						StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
-					if (params.gravity == (Gravity.TOP | Gravity.LEFT)) {
-						// only do this if gravity is TOP|LEFT
-						Display display = mWindowManager.getDefaultDisplay();
-						int displayWidth = display.getWidth();
-						int displayHeight = display.getHeight();
+				if (event.getPointerCount() == 1) {
+					if (Utils.isSet(flags,
+							StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
+						if (params.gravity == (Gravity.TOP | Gravity.LEFT)) {
+							// only do this if gravity is TOP|LEFT
+							Display display = mWindowManager
+									.getDefaultDisplay();
+							int displayWidth = display.getWidth();
+							int displayHeight = display.getHeight();
 
-						params.x = Math.min(Math.max(params.x, 0), displayWidth
-								- params.width);
-						params.y = Math.min(Math.max(params.y, 0),
-								displayHeight - params.height);
+							params.x = Math.min(Math.max(params.x, 0),
+									displayWidth - params.width);
+							params.y = Math.min(Math.max(params.y, 0),
+									displayHeight - params.height);
+						}
 					}
 				}
 
@@ -2059,13 +2073,49 @@ public abstract class StandOutWindow extends Service {
 
 		@Override
 		public boolean onInterceptTouchEvent(MotionEvent event) {
-			switch (event.getAction()) {
-				case MotionEvent.ACTION_DOWN:
-					// focus window
-					if (sFocusedWindow != this) {
-						focus(id);
-					}
-					break;
+			StandOutWindow.LayoutParams params = getLayoutParams();
+			int flags = getFlags(id);
+
+			// focus window
+			if (event.getAction() == MotionEvent.ACTION_DOWN) {
+				if (sFocusedWindow != this) {
+					focus(id);
+				}
+			}
+
+			// multitouch
+			if (event.getPointerCount() >= 2
+					&& Utils.isSet(flags,
+							StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE)) {
+				// 2 fingers or more
+				float x0 = event.getX(0);
+				float y0 = event.getY(0);
+				float x1 = event.getX(1);
+				float y1 = event.getY(1);
+
+				float distX = Math.abs(x0 - x1);
+				float distY = Math.abs(y0 - y1);
+
+				switch (event.getAction() & MotionEvent.ACTION_MASK) {
+					case MotionEvent.ACTION_POINTER_DOWN:
+						touchInfo.lastDistX = distX;
+						touchInfo.lastDistY = distY;
+						touchInfo.firstDistX = touchInfo.lastDistX;
+						touchInfo.firstDistY = touchInfo.lastDistY;
+						break;
+					case MotionEvent.ACTION_MOVE:
+						double deltaX = distX - touchInfo.lastDistX;
+						double deltaY = distY - touchInfo.lastDistY;
+
+						params.width += deltaX;
+						params.height += deltaY;
+
+						touchInfo.lastDistX = distX;
+						touchInfo.lastDistY = distY;
+
+						StandOutWindow.this.updateViewLayout(id, this, params);
+						break;
+				}
 			}
 
 			return false;
@@ -2332,6 +2382,7 @@ public abstract class StandOutWindow extends Service {
 			 * The state of the window.
 			 */
 			public int firstX, firstY, lastX, lastY, lastWidth, lastHeight;
+			public double firstDistX, firstDistY, lastDistX, lastDistY;
 
 			/**
 			 * Whether we're past the threshold already.
