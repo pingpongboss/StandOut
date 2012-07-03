@@ -1449,6 +1449,8 @@ public abstract class StandOutWindow extends Service {
 			Log.w(TAG, "Window " + id + " close cancelled by implementation.");
 			return;
 		}
+		
+		unfocus(window);
 
 		// remove view from internal map
 		removeCache(id, getClass());
