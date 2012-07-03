@@ -2145,6 +2145,7 @@ public abstract class StandOutWindow extends Service {
 			if (onKeyEvent(id, this, event)) {
 				Log.d(TAG, "Window " + id + " key event " + event
 						+ " cancelled by implementation.");
+				return false;
 			}
 
 			if (event.getAction() == KeyEvent.ACTION_UP) {
