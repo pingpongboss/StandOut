@@ -18,6 +18,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -507,12 +508,12 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	// internal map of ids to shown/hidden views
-	private static Map<Class<? extends StandOutWindow>, Map<Integer, Window>> sWindows;
+	private static Map<Class<? extends StandOutWindow>, SparseArray<Window>> sWindows;
 	private static Window sFocusedWindow;
 
 	// static constructors
 	static {
-		sWindows = new HashMap<Class<? extends StandOutWindow>, Map<Integer, Window>>();
+		sWindows = new HashMap<Class<? extends StandOutWindow>, SparseArray<Window>>();
 		sFocusedWindow = null;
 	}
 
@@ -543,8 +544,7 @@ public abstract class StandOutWindow extends Service {
 	 *         null if it does not.
 	 */
 	private static Window getCache(int id, Class<? extends StandOutWindow> cls) {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(cls);
+		SparseArray<Window> l2 = sWindows.get(cls);
 		if (l2 == null) {
 			return null;
 		}
@@ -564,10 +564,9 @@ public abstract class StandOutWindow extends Service {
 	 */
 	private static void putCache(int id, Class<? extends StandOutWindow> cls,
 			Window window) {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(cls);
+		SparseArray<Window> l2 = sWindows.get(cls);
 		if (l2 == null) {
-			l2 = new HashMap<Integer, Window>();
+			l2 = new SparseArray<Window>();
 			sWindows.put(cls, l2);
 		}
 
@@ -584,11 +583,10 @@ public abstract class StandOutWindow extends Service {
 	 *            The class of the implementation of the window.
 	 */
 	private static void removeCache(int id, Class<? extends StandOutWindow> cls) {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(cls);
+		SparseArray<Window> l2 = sWindows.get(cls);
 		if (l2 != null) {
 			l2.remove(id);
-			if (l2.isEmpty()) {
+			if (l2.size() == 0) {
 				sWindows.remove(cls);
 			}
 		}
@@ -603,8 +601,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The class of the implementation of the window.
 	 */
 	private static int getCacheSize(Class<? extends StandOutWindow> cls) {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(cls);
+		SparseArray<Window> l2 = sWindows.get(cls);
 		if (l2 == null) {
 			return 0;
 		}
@@ -620,13 +617,16 @@ public abstract class StandOutWindow extends Service {
 	 * @return The ids representing the cached windows.
 	 */
 	private static Set<Integer> getCacheIds(Class<? extends StandOutWindow> cls) {
-		HashMap<Integer, Window> l2 = (HashMap<Integer, Window>) sWindows
-				.get(cls);
+		SparseArray<Window> l2 = sWindows.get(cls);
 		if (l2 == null) {
 			return new HashSet<Integer>();
 		}
 
-		return l2.keySet();
+		Set<Integer> keys = new HashSet<Integer>();
+		for (int i = 0; i < l2.size(); i++) {
+			keys.add(l2.keyAt(i));
+		}
+		return keys;
 	}
 
 	// internal system services
@@ -1680,14 +1680,8 @@ public abstract class StandOutWindow extends Service {
 	 * @return The unique id.
 	 */
 	protected final int getUniqueId() {
-		Map<Integer, Window> l2 = sWindows.get(getClass());
-		if (l2 == null) {
-			l2 = new HashMap<Integer, Window>();
-			sWindows.put(getClass(), l2);
-		}
-
 		int unique = DEFAULT_ID;
-		for (int id : l2.keySet()) {
+		for (int id : getExistingIds()) {
 			unique = Math.max(unique, id + 1);
 		}
 		return unique;
