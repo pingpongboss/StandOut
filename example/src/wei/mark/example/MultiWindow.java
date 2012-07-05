@@ -56,7 +56,7 @@ public class MultiWindow extends StandOutWindow {
 	// every window is initially same size
 	@Override
 	protected LayoutParams getParams(int id, Window window) {
-		return new LayoutParams(id, 400, 300, 0, 0, 200, 200);
+		return new LayoutParams(id, 400, 300);
 	}
 
 	// we want the system window decorations, we want to drag the body, we want

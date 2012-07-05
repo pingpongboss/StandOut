@@ -1361,27 +1361,24 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 */
 	protected final synchronized void hide(int id) {
-		int flags = getFlags(id);
+		// get the view corresponding to the id
+		final Window window = getWindow(id);
+
+		if (window == null) {
+			Log.w(TAG, "Tried to hide(" + id + ") a null window.");
+			return;
+		}
+
+		// alert callbacks and cancel if instructed
+		if (onHide(id, window)) {
+			Log.w(TAG, "Window " + id + " hide cancelled by implementation.");
+			return;
+		}
 
 		// check if hide enabled
-		if (Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
+		if (Utils.isSet(window.flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
 			// get the hidden notification for this view
 			Notification notification = getHiddenNotification(id);
-
-			// get the view corresponding to the id
-			final Window window = getWindow(id);
-
-			if (window == null) {
-				Log.w(TAG, "Tried to hide(" + id + ") a null window.");
-				return;
-			}
-
-			// alert callbacks and cancel if instructed
-			if (onHide(id, window)) {
-				Log.w(TAG, "Window " + id
-						+ " hide cancelled by implementation.");
-				return;
-			}
 
 			// get animation
 			Animation animation = getHideAnimation(id);
@@ -1423,6 +1420,7 @@ public abstract class StandOutWindow extends Service {
 
 			mNotificationManager.notify(getClass().hashCode() + id,
 					notification);
+
 		} else {
 			// if hide not enabled, close window
 			close(id);
@@ -1626,12 +1624,12 @@ public abstract class StandOutWindow extends Service {
 	 * @return True if focus changed successfully, false if it failed.
 	 */
 	protected final synchronized boolean focus(int id) {
-		int flags = getFlags(id);
-
 		// check if that window is focusable
-		if (!Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
-			final Window window = getWindow(id);
-			if (window != null) {
+
+		final Window window = getWindow(id);
+		if (window != null) {
+			if (!Utils.isSet(window.flags,
+					StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
 				// remove focus from previously focused window
 				unfocus(sFocusedWindow);
 
@@ -1778,9 +1776,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	private boolean onTouchHandleMove(int id, Window window, View view,
 			MotionEvent event) {
-
 		LayoutParams params = window.getLayoutParams();
-		int flags = getFlags(id);
 
 		// how much you have to move in either direction in order for the
 		// gesture to be a move and not tap
@@ -1822,7 +1818,7 @@ public abstract class StandOutWindow extends Service {
 
 				// keep window within edges
 				if (event.getPointerCount() == 1) {
-					if (Utils.isSet(flags,
+					if (Utils.isSet(window.flags,
 							StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
 						if (params.gravity == (Gravity.TOP | Gravity.LEFT)) {
 							// only do this if gravity is TOP|LEFT
@@ -1843,13 +1839,13 @@ public abstract class StandOutWindow extends Service {
 				boolean tap = Math.abs(totalDeltaX) < params.threshold
 						&& Math.abs(totalDeltaY) < params.threshold;
 				if (tap
-						&& Utils.isSet(flags,
+						&& Utils.isSet(window.flags,
 								StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP)) {
 					StandOutWindow.this.bringToFront(id);
 				}
 
 				// bring to front on touch
-				else if (Utils.isSet(flags,
+				else if (Utils.isSet(window.flags,
 						StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH)) {
 					StandOutWindow.this.bringToFront(id);
 				}
@@ -1916,6 +1912,12 @@ public abstract class StandOutWindow extends Service {
 		return true;
 	}
 
+	/**
+	 * Special view that represents a floating window.
+	 * 
+	 * @author Mark Wei <markwei@gmail.com>
+	 * 
+	 */
 	public class Window extends FrameLayout {
 		/**
 		 * Context of the window.
@@ -1936,7 +1938,15 @@ public abstract class StandOutWindow extends Service {
 		 */
 		public boolean shown;
 
+		/**
+		 * Original params from {@link StandOutWindow#getParams(int, Window)}.
+		 */
 		public StandOutWindow.LayoutParams originalParams;
+		/**
+		 * Original flags from {@link StandOutWindow#getFlags(int)}.
+		 */
+		public int flags;
+
 		/**
 		 * Touch information of the window.
 		 */
@@ -1957,6 +1967,7 @@ public abstract class StandOutWindow extends Service {
 			this.cls = context.getClass();
 			this.id = id;
 			this.originalParams = getParams(id, this);
+			this.flags = getFlags(id);
 			this.touchInfo = new TouchInfo();
 			touchInfo.ratio = (float) originalParams.width
 					/ originalParams.height;
@@ -1965,8 +1976,6 @@ public abstract class StandOutWindow extends Service {
 			// create the window contents
 			View content;
 			FrameLayout body;
-
-			final int flags = getFlags(id);
 
 			if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_SYSTEM)) {
 				// requested system window decorations
@@ -2028,7 +2037,6 @@ public abstract class StandOutWindow extends Service {
 
 		@Override
 		public boolean onInterceptTouchEvent(MotionEvent event) {
-			int flags = getFlags(id);
 			StandOutWindow.LayoutParams params = getLayoutParams();
 
 			// focus window
@@ -2056,8 +2064,6 @@ public abstract class StandOutWindow extends Service {
 		@Override
 		public boolean onTouchEvent(MotionEvent event) {
 			Log.d(TAG, "Event: " + event);
-			int flags = getFlags(id);
-
 			// handle touching outside
 			switch (event.getAction()) {
 				case MotionEvent.ACTION_OUTSIDE:
@@ -2132,7 +2138,6 @@ public abstract class StandOutWindow extends Service {
 		 * @return True if focus changed successfully, false if it failed.
 		 */
 		public boolean onFocus(boolean focus) {
-			int flags = getFlags(id);
 			if (!Utils
 					.isSet(flags, StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
 				// window is focusable
@@ -2285,8 +2290,6 @@ public abstract class StandOutWindow extends Service {
 			});
 
 			// set window appearance and behavior based on flags
-			int flags = getFlags(id);
-
 			if (Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
 				hide.setVisibility(View.VISIBLE);
 			}
@@ -2318,8 +2321,6 @@ public abstract class StandOutWindow extends Service {
 		 *            The view hierarchy that is part of the window.
 		 */
 		private void addFunctionality(View root) {
-			int flags = getFlags(id);
-
 			if (!Utils.isSet(flags,
 					StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE)) {
 				View corner = root.findViewById(R.id.corner);
@@ -2435,8 +2436,6 @@ public abstract class StandOutWindow extends Service {
 			 */
 			public Editor setSize(int width, int height, float anchorX,
 					float anchorY) {
-				int flags = getFlags(id);
-
 				if (mParams != null) {
 					if (anchorX < 0 || anchorX > 1 || anchorY < 0
 							|| anchorY > 1) {
@@ -2590,12 +2589,12 @@ public abstract class StandOutWindow extends Service {
 					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
 					PixelFormat.TRANSLUCENT);
 
+			int flags = getFlags(id);
+
 			setFocusFlag(false);
 
-			int windowFlags = getFlags(id);
-
-			if (Utils.isSet(windowFlags,
-					StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
+			if (Utils
+					.isSet(flags, StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
 				// windows stay within edges
 			} else {
 				// windows may be moved beyond edges
