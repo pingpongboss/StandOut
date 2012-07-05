@@ -1449,7 +1449,7 @@ public abstract class StandOutWindow extends Service {
 			Log.w(TAG, "Window " + id + " close cancelled by implementation.");
 			return;
 		}
-		
+
 		unfocus(window);
 
 		// remove view from internal map
@@ -2054,29 +2054,9 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		@Override
-		public void setLayoutParams(ViewGroup.LayoutParams params) {
-			if (params instanceof StandOutWindow.LayoutParams) {
-				super.setLayoutParams(params);
-			} else {
-				throw new IllegalArgumentException(
-						"Window: LayoutParams must be an instance of StandOutWindow.LayoutParams.");
-			}
-		}
-
-		@Override
-		public StandOutWindow.LayoutParams getLayoutParams() {
-			StandOutWindow.LayoutParams params = (StandOutWindow.LayoutParams) super
-					.getLayoutParams();
-			if (params == null) {
-				params = getParams(id, this);
-			}
-			return params;
-		}
-
-		@Override
 		public boolean onInterceptTouchEvent(MotionEvent event) {
-			StandOutWindow.LayoutParams params = getLayoutParams();
 			int flags = getFlags(id);
+			StandOutWindow.LayoutParams params = getLayoutParams();
 
 			// focus window
 			if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -2088,36 +2068,13 @@ public abstract class StandOutWindow extends Service {
 			// multitouch
 			if (event.getPointerCount() >= 2
 					&& Utils.isSet(flags,
-							StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE)) {
-				// 2 fingers or more
-				float x0 = event.getX(0);
-				float y0 = event.getY(0);
-				float x1 = event.getX(1);
-				float y1 = event.getY(1);
-
-				float distX = Math.abs(x0 - x1);
-				float distY = Math.abs(y0 - y1);
-
-				switch (event.getAction() & MotionEvent.ACTION_MASK) {
-					case MotionEvent.ACTION_POINTER_DOWN:
-						touchInfo.lastDistX = distX;
-						touchInfo.lastDistY = distY;
-						touchInfo.firstDistX = touchInfo.lastDistX;
-						touchInfo.firstDistY = touchInfo.lastDistY;
-						break;
-					case MotionEvent.ACTION_MOVE:
-						double deltaX = distX - touchInfo.lastDistX;
-						double deltaY = distY - touchInfo.lastDistY;
-
-						params.width += deltaX;
-						params.height += deltaY;
-
-						touchInfo.lastDistX = distX;
-						touchInfo.lastDistY = distY;
-
-						StandOutWindow.this.updateViewLayout(id, this, params);
-						break;
-				}
+							StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE)
+					&& (event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_POINTER_DOWN) {
+				touchInfo.scale = 1;
+				touchInfo.dist = -1;
+				touchInfo.firstWidth = params.width;
+				touchInfo.firstHeight = params.height;
+				return true;
 			}
 
 			return false;
@@ -2125,6 +2082,10 @@ public abstract class StandOutWindow extends Service {
 
 		@Override
 		public boolean onTouchEvent(MotionEvent event) {
+			Log.d(TAG, "Event: " + event);
+			int flags = getFlags(id);
+
+			// handle touching outside
 			switch (event.getAction()) {
 				case MotionEvent.ACTION_OUTSIDE:
 					// unfocus window
@@ -2135,6 +2096,37 @@ public abstract class StandOutWindow extends Service {
 					// notify implementation that ACTION_OUTSIDE occurred
 					onTouchBody(id, this, this, event);
 					break;
+			}
+
+			// handle multitouch
+			if (event.getPointerCount() >= 2
+					&& Utils.isSet(flags,
+							StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE)) {
+				// 2 fingers or more
+
+				float x0 = event.getX(0);
+				float y0 = event.getY(0);
+				float x1 = event.getX(1);
+				float y1 = event.getY(1);
+
+				double dist = Math.sqrt(Math.pow(x0 - x1, 2)
+						+ Math.pow(y0 - y1, 2));
+
+				switch (event.getAction() & MotionEvent.ACTION_MASK) {
+					case MotionEvent.ACTION_MOVE:
+						if (touchInfo.dist == -1) {
+							touchInfo.dist = dist;
+						}
+						touchInfo.scale *= dist / touchInfo.dist;
+						touchInfo.dist = dist;
+
+						// scale the window with anchor point set to middle
+						edit().setSize(
+								(int) (touchInfo.firstWidth * touchInfo.scale),
+								(int) (touchInfo.firstHeight * touchInfo.scale),
+								.5f, .5f).commit();
+						break;
+				}
 			}
 
 			return true;
@@ -2202,7 +2194,7 @@ public abstract class StandOutWindow extends Service {
 
 				// set window manager params
 				StandOutWindow.LayoutParams params = getLayoutParams();
-				params.setFocus(focus);
+				params.setFocusFlag(focus);
 				context.updateViewLayout(id, this, params);
 
 				if (focus) {
@@ -2216,6 +2208,37 @@ public abstract class StandOutWindow extends Service {
 				return true;
 			}
 			return false;
+		}
+
+		@Override
+		public void setLayoutParams(ViewGroup.LayoutParams params) {
+			if (params instanceof StandOutWindow.LayoutParams) {
+				super.setLayoutParams(params);
+			} else {
+				throw new IllegalArgumentException(
+						"Window: LayoutParams must be an instance of StandOutWindow.LayoutParams.");
+			}
+		}
+
+		/**
+		 * Convenience method to start editting the size and position of this
+		 * window. Make sure you call {@link Editor#commit()} when you are done
+		 * to update the window.
+		 * 
+		 * @return The Editor associated with this window.
+		 */
+		public Editor edit() {
+			return new Editor();
+		}
+
+		@Override
+		public StandOutWindow.LayoutParams getLayoutParams() {
+			StandOutWindow.LayoutParams params = (StandOutWindow.LayoutParams) super
+					.getLayoutParams();
+			if (params == null) {
+				params = getParams(id, this);
+			}
+			return params;
 		}
 
 		/**
@@ -2375,7 +2398,8 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		/**
-		 * This class holds temporal touch and gesture information.
+		 * This class holds temporal touch and gesture information. Mainly used
+		 * to hold temporary data for onTouchEvent(MotionEvent).
 		 * 
 		 * @author Mark Wei <markwei@gmail.com>
 		 * 
@@ -2384,20 +2408,139 @@ public abstract class StandOutWindow extends Service {
 			/**
 			 * The state of the window.
 			 */
-			public int firstX, firstY, lastX, lastY, lastWidth, lastHeight;
-			public double firstDistX, firstDistY, lastDistX, lastDistY;
+			public int firstX, firstY, lastX, lastY;
+			public double dist, scale, firstWidth, firstHeight;
 
 			/**
-			 * Whether we're past the threshold already.
+			 * Whether we're past the move threshold already.
 			 */
 			public boolean moving;
 
 			@Override
 			public String toString() {
 				return String
-						.format("WindowTouchInfo { firstX=%d, firstY=%d,lastX=%d, lastY=%d, lastWidth=%d, lastHeight=%d }",
-								firstX, firstY, lastX, lastY, lastWidth,
-								lastHeight);
+						.format("WindowTouchInfo { firstX=%d, firstY=%d,lastX=%d, lastY=%d, firstWidth=%d, firstHeight=%d }",
+								firstX, firstY, lastX, lastY, firstWidth,
+								firstHeight);
+			}
+		}
+
+		public class Editor {
+			StandOutWindow.LayoutParams mParams;
+
+			public Editor() {
+				mParams = getLayoutParams();
+			}
+
+			/**
+			 * Set the size of this window in absolute pixels.
+			 * 
+			 * @param width
+			 * @param height
+			 * @return The same Editor, useful for method chaining.
+			 */
+			public Editor setSize(int width, int height) {
+				return setSize(width, height, 0, 0);
+			}
+
+			/**
+			 * Set the size of this window in absolute pixels. The window will
+			 * expand or shrink around the anchor point.
+			 * 
+			 * @param width
+			 * @param height
+			 * @param anchorX
+			 *            The relative x position of the anchor point. 0 means
+			 *            the left, 0.5 is the center, 1 is the right. Must be
+			 *            between 0 and 1, inclusive.
+			 * @param anchorY
+			 *            The relative y position of the anchor point. 0 means
+			 *            the top, 0.5 is the center, 1 is the bottom. Must be
+			 *            between 0 and 1, inclusive.
+			 * @return The same Editor, useful for method chaining.
+			 */
+			public Editor setSize(int width, int height, float anchorX,
+					float anchorY) {
+				if (mParams != null) {
+					if (anchorX < 0 || anchorX > 1 || anchorY < 0
+							|| anchorY > 1) {
+						throw new IllegalArgumentException(
+								"Anchor point must be between 0 and 1, inclusive.");
+					}
+
+					// magic math. sets the x and y correctly
+					mParams.x = (int) (mParams.x + (mParams.width - width)
+							* anchorX);
+					mParams.y = (int) (mParams.y + (mParams.height - height)
+							* anchorY);
+
+					mParams.width = width;
+					mParams.height = height;
+				}
+				return this;
+			}
+
+			/**
+			 * Set the size of this window relative to the size of the display.
+			 * 
+			 * @param widthPercent
+			 *            The percentage of the screen to fill horizontally.
+			 *            Must be between 0 and 1, inclusive.
+			 * @param heightPercent
+			 *            The percentage of the screen to fill vertically. Must
+			 *            be between 0 and 1, inclusive.
+			 * @return The same Editor, useful for method chaining.
+			 */
+			public Editor setSize(float widthPercent, float heightPercent) {
+				return setSize(widthPercent, heightPercent, 0, 0);
+			}
+
+			/**
+			 * Set the size of this window relative to the size of the display.
+			 * 
+			 * @param widthPercent
+			 *            The percentage of the screen to fill horizontally.
+			 *            Must be between 0 and 1, inclusive.
+			 * @param heightPercent
+			 *            The percentage of the screen to fill vertically. Must
+			 *            be between 0 and 1, inclusive.
+			 * @param anchorX
+			 *            The relative x position of the anchor point. 0 means
+			 *            the left, 0.5 is the center, 1 is the right. Must be
+			 *            between 0 and 1, inclusive.
+			 * @param anchorY
+			 *            The relative y position of the anchor point. 0 means
+			 *            the top, 0.5 is the center, 1 is the bottom. Must be
+			 *            between 0 and 1, inclusive.
+			 * @return The same Editor, useful for method chaining.
+			 */
+			public Editor setSize(float widthPercent, float heightPercent,
+					float anchorX, float anchorY) {
+				if (mParams != null) {
+					if (widthPercent < 0 || widthPercent > 1
+							|| heightPercent < 0 || heightPercent > 1) {
+						throw new IllegalArgumentException(
+								"Size percentage must be between 0 and 1, inclusive.");
+					}
+
+					return setSize(
+							(int) (widthPercent * mParams.getDisplayWidth()),
+							(int) (heightPercent * mParams.getDisplayHeight()),
+							anchorX, anchorY);
+				}
+				return this;
+			}
+
+			/**
+			 * Commit the changes to this window. Updates the layout. This
+			 * Editor cannot be used after you commit.
+			 */
+			public void commit() {
+				if (mParams != null) {
+					StandOutWindow.this.updateViewLayout(id, Window.this,
+							mParams);
+					mParams = null;
+				}
 			}
 		}
 	}
@@ -2445,7 +2588,7 @@ public abstract class StandOutWindow extends Service {
 					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
 					PixelFormat.TRANSLUCENT);
 
-			setFocus(false);
+			setFocusFlag(false);
 
 			int windowFlags = getFlags(id);
 
@@ -2595,12 +2738,30 @@ public abstract class StandOutWindow extends Service {
 			return rawY % (displayHeight - height);
 		}
 
-		private void setFocus(boolean focused) {
+		private void setFocusFlag(boolean focused) {
 			if (focused) {
 				flags = flags ^ LayoutParams.FLAG_NOT_FOCUSABLE;
 			} else {
 				flags = flags | LayoutParams.FLAG_NOT_FOCUSABLE;
 			}
+		}
+
+		/**
+		 * Get the width of the entire screen.
+		 * 
+		 * @return The display width.
+		 */
+		public int getDisplayWidth() {
+			return mWindowManager.getDefaultDisplay().getWidth();
+		}
+
+		/**
+		 * Get the height of the entire screen.
+		 * 
+		 * @return The display height.
+		 */
+		public int getDisplayHeight() {
+			return mWindowManager.getDefaultDisplay().getHeight();
 		}
 	}
 }
