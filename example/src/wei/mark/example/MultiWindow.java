@@ -56,7 +56,7 @@ public class MultiWindow extends StandOutWindow {
 	// every window is initially same size
 	@Override
 	protected LayoutParams getParams(int id, Window window) {
-		return new LayoutParams(id, 400, 300);
+		return new LayoutParams(id, 400, 300, 0, 0, 200, 200);
 	}
 
 	// we want the system window decorations, we want to drag the body, we want
@@ -69,7 +69,8 @@ public class MultiWindow extends StandOutWindow {
 				| StandOutFlags.FLAG_WINDOW_HIDE_ENABLE
 				| StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP
 				| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE
-				| StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE;
+				| StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE
+				| StandOutFlags.FLAG_WINDOW_ASPECT_RATIO_ENABLE;
 	}
 
 	@Override

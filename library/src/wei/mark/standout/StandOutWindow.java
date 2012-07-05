@@ -1877,7 +1877,6 @@ public abstract class StandOutWindow extends Service {
 			MotionEvent event) {
 		StandOutWindow.LayoutParams params = (LayoutParams) window
 				.getLayoutParams();
-		int flags = getFlags(id);
 
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
@@ -1886,8 +1885,6 @@ public abstract class StandOutWindow extends Service {
 
 				window.touchInfo.firstX = window.touchInfo.lastX;
 				window.touchInfo.firstY = window.touchInfo.lastY;
-
-				params.ratio = (float) params.width / params.height;
 				break;
 			case MotionEvent.ACTION_MOVE:
 				int deltaX = (int) event.getRawX() - window.touchInfo.lastX;
@@ -1908,29 +1905,7 @@ public abstract class StandOutWindow extends Service {
 					window.touchInfo.lastY = (int) event.getRawY();
 				}
 
-				params.width = Math.min(
-						Math.max(params.width, params.minWidth),
-						params.maxWidth);
-				params.height = Math.min(
-						Math.max(params.height, params.minHeight),
-						params.maxHeight);
-
-				// keep window in aspect ratio
-				if (Utils.isSet(flags,
-						StandOutFlags.FLAG_WINDOW_ASPECT_RATIO_ENABLE)) {
-					int ratioWidth = (int) (params.height * params.ratio);
-					int ratioHeight = (int) (params.width / params.ratio);
-					if (ratioHeight >= params.minHeight
-							&& ratioHeight <= params.maxHeight) {
-						// width good adjust height
-						params.height = ratioHeight;
-					} else {
-						// height good adjust width
-						params.width = ratioWidth;
-					}
-				}
-
-				updateViewLayout(id, window, params);
+				window.edit().setSize(params.width, params.height).commit();
 				break;
 			case MotionEvent.ACTION_UP:
 				break;
@@ -1961,6 +1936,7 @@ public abstract class StandOutWindow extends Service {
 		 */
 		public boolean shown;
 
+		public StandOutWindow.LayoutParams originalParams;
 		/**
 		 * Touch information of the window.
 		 */
@@ -1980,7 +1956,10 @@ public abstract class StandOutWindow extends Service {
 
 			this.cls = context.getClass();
 			this.id = id;
+			this.originalParams = getParams(id, this);
 			this.touchInfo = new TouchInfo();
+			touchInfo.ratio = (float) originalParams.width
+					/ originalParams.height;
 			this.data = new Bundle();
 
 			// create the window contents
@@ -2230,7 +2209,7 @@ public abstract class StandOutWindow extends Service {
 			StandOutWindow.LayoutParams params = (StandOutWindow.LayoutParams) super
 					.getLayoutParams();
 			if (params == null) {
-				params = getParams(id, this);
+				params = originalParams;
 			}
 			return params;
 		}
@@ -2404,6 +2383,7 @@ public abstract class StandOutWindow extends Service {
 			 */
 			public int firstX, firstY, lastX, lastY;
 			public double dist, scale, firstWidth, firstHeight;
+			public float ratio;
 
 			/**
 			 * Whether we're past the move threshold already.
@@ -2455,6 +2435,8 @@ public abstract class StandOutWindow extends Service {
 			 */
 			public Editor setSize(int width, int height, float anchorX,
 					float anchorY) {
+				int flags = getFlags(id);
+
 				if (mParams != null) {
 					if (anchorX < 0 || anchorX > 1 || anchorY < 0
 							|| anchorY > 1) {
@@ -2462,14 +2444,41 @@ public abstract class StandOutWindow extends Service {
 								"Anchor point must be between 0 and 1, inclusive.");
 					}
 
-					// magic math. sets the x and y correctly
-					mParams.x = (int) (mParams.x + (mParams.width - width)
-							* anchorX);
-					mParams.y = (int) (mParams.y + (mParams.height - height)
-							* anchorY);
+					int lastWidth = mParams.width;
+					int lastHeight = mParams.height;
 
 					mParams.width = width;
 					mParams.height = height;
+
+					// keep window between min and max
+					mParams.width = Math.min(
+							Math.max(mParams.width, mParams.minWidth),
+							mParams.maxWidth);
+					mParams.height = Math.min(
+							Math.max(mParams.height, mParams.minHeight),
+							mParams.maxHeight);
+
+					// keep window in aspect ratio
+					if (Utils.isSet(flags,
+							StandOutFlags.FLAG_WINDOW_ASPECT_RATIO_ENABLE)) {
+						int ratioWidth = (int) (mParams.height * touchInfo.ratio);
+						int ratioHeight = (int) (mParams.width / touchInfo.ratio);
+						if (ratioHeight >= mParams.minHeight
+								&& ratioHeight <= mParams.maxHeight) {
+							// width good adjust height
+							mParams.height = ratioHeight;
+						} else {
+							// height good adjust width
+							mParams.width = ratioWidth;
+						}
+					}
+
+					// sets the x and y correctly according to anchorX and
+					// anchorY
+					mParams.x = (int) (mParams.x + (lastWidth - mParams.width)
+							* anchorX);
+					mParams.y = (int) (mParams.y + (lastHeight - mParams.height)
+							* anchorY);
 				}
 				return this;
 			}
@@ -2571,7 +2580,6 @@ public abstract class StandOutWindow extends Service {
 
 		public int threshold;
 		public int minWidth, minHeight, maxWidth, maxHeight;
-		public float ratio;
 
 		/**
 		 * @param id
