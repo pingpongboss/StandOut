@@ -665,7 +665,7 @@ public final class FloatingFolder extends StandOutWindow {
 
 	@Override
 	protected List<DropDownListItem> getDropDownItems(final int id) {
-		List<DropDownListItem> items = new ArrayList<StandOutWindow.DropDownListItem>();
+		List<DropDownListItem> items = new ArrayList<DropDownListItem>();
 		FolderModel folder = mFolders.get(id);
 
 		// add
@@ -682,9 +682,8 @@ public final class FloatingFolder extends StandOutWindow {
 
 		if (!folder.apps.isEmpty()) {
 			// clear all
-			items.add(new DropDownListItem(
-					android.R.drawable.ic_menu_close_clear_cancel, "Clear All",
-					new Runnable() {
+			items.add(new DropDownListItem(android.R.drawable.ic_menu_delete,
+					"Clear All", new Runnable() {
 
 						@Override
 						public void run() {

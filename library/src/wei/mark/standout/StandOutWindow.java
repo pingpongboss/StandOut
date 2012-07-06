@@ -1,5 +1,6 @@
 package wei.mark.standout;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -1075,12 +1076,28 @@ public abstract class StandOutWindow extends Service {
 	 * @return The drop down menu to be anchored to the icon, or null to have no
 	 *         dropdown menu.
 	 */
-	protected PopupWindow getDropDown(int id) {
-		final List<DropDownListItem> items = getDropDownItems(id);
-		if (items == null || items.isEmpty()) {
-			return null;
+	protected PopupWindow getDropDown(final int id) {
+		final List<DropDownListItem> items;
+
+		List<DropDownListItem> dropDownListItems = getDropDownItems(id);
+		if (dropDownListItems != null) {
+			items = dropDownListItems;
+		} else {
+			items = new ArrayList<StandOutWindow.DropDownListItem>();
 		}
 
+		// add default drop down items
+		items.add(new DropDownListItem(
+				android.R.drawable.ic_menu_close_clear_cancel, "Quit "
+						+ getAppName(), new Runnable() {
+
+					@Override
+					public void run() {
+						closeAll();
+					}
+				}));
+
+		// turn item list into views in PopupWindow
 		LinearLayout list = new LinearLayout(this);
 		list.setOrientation(LinearLayout.VERTICAL);
 
