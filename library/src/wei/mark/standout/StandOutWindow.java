@@ -278,7 +278,11 @@ public abstract class StandOutWindow extends Service {
 
 		/**
 		 * Setting this flag indicates that the system should disable adding the
-		 * resize handle additional functionality to R.id.corner.
+		 * resize handle additional functionality to a custom View R.id.corner.
+		 * 
+		 * <p>
+		 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be
+		 * able to resize the window with the default corner.
 		 * 
 		 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
 		 */
@@ -286,7 +290,12 @@ public abstract class StandOutWindow extends Service {
 
 		/**
 		 * Setting this flag indicates that the system should disable adding the
-		 * drop down menu additional functionality to R.id.window_icon.
+		 * drop down menu additional functionality to a custom View
+		 * R.id.window_icon.
+		 * 
+		 * <p>
+		 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be
+		 * able to show the drop down menu with the default window icon.
 		 * 
 		 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
 		 */
