@@ -3,7 +3,7 @@
 
     <string name="hello">Hello World!</string>
     <string name="app_name">StandOut</string>
-    <string name="icon">Window icon</string>
+    <string name="window_icon">Window icon</string>
     <string name="hide">Hide</string>
     <string name="close">Close</string>
     <string name="corner">Corner</string>

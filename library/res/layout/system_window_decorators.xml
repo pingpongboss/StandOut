@@ -17,10 +17,10 @@
         android:padding="4dp" >
 
         <ImageView
-            android:id="@+id/icon"
+            android:id="@+id/window_icon"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:contentDescription="@string/icon" />
+            android:contentDescription="@string/window_icon" />
 
         <TextView
             android:id="@+id/title"

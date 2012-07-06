@@ -8,9 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import wei.mark.standout.StandOutWindow;
 import android.content.ComponentName;
@@ -23,6 +21,7 @@ import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -56,7 +55,7 @@ public final class FloatingFolder extends StandOutWindow {
 	int iconSize;
 	int squareWidth;
 
-	Map<Integer, FolderModel> mFolders;
+	SparseArray<FolderModel> mFolders;
 
 	Animation mFadeOut, mFadeIn;
 
@@ -188,16 +187,6 @@ public final class FloatingFolder extends StandOutWindow {
 			// id is not app selector
 			View view = inflater.inflate(R.layout.folder, frame, true);
 
-			View add = view.findViewById(R.id.add);
-			add.setOnClickListener(new OnClickListener() {
-
-				@Override
-				public void onClick(View v) {
-					sendData(id, FloatingFolder.class, APP_SELECTOR_ID,
-							APP_SELECTOR_CODE, null);
-				}
-			});
-
 			FlowLayout flow = (FlowLayout) view.findViewById(R.id.flow);
 
 			if (mFolders == null) {
@@ -268,11 +257,12 @@ public final class FloatingFolder extends StandOutWindow {
 				break;
 			case STARTUP_CODE:
 				loadAllFolders();
-				if (mFolders.isEmpty()) {
+				if (mFolders.size() == 0) {
 					mFolders.put(DEFAULT_ID, new FolderModel());
 					show(DEFAULT_ID);
 				} else {
-					for (FolderModel folder : mFolders.values()) {
+					for (int i = 0; i < mFolders.size(); i++) {
+						FolderModel folder = mFolders.get(mFolders.keyAt(i));
 						if (folder.shown) {
 							show(folder.id);
 						}
@@ -288,7 +278,11 @@ public final class FloatingFolder extends StandOutWindow {
 		flow.addView(frame);
 	}
 
-	private void removeAppFromFolder(int id, View frame, ViewGroup flow) {
+	private void removeAppFromView(int id, ActivityInfo app) {
+		Window window = getWindow(id);
+		View frame = window.findViewWithTag(app);
+		ViewGroup flow = (ViewGroup) window.findViewById(R.id.flow);
+
 		flow.removeView(frame);
 	}
 
@@ -300,6 +294,8 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	private void onUserRemoveApp(int id, ActivityInfo app) {
+		removeAppFromView(id, app);
+
 		FolderModel folder = mFolders.get(id);
 		folder.apps.remove(app);
 
@@ -337,7 +333,7 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	private void loadAllFolders() {
-		mFolders = new HashMap<Integer, FolderModel>();
+		mFolders = new SparseArray<FolderModel>();
 		String[] folders = fileList();
 		for (String folderFileName : folders) {
 
@@ -432,10 +428,6 @@ public final class FloatingFolder extends StandOutWindow {
 				Log.d("FloatingFolder",
 						"Long clicked: " + app.loadLabel(mPackageManager));
 
-				View window = getWindow(id);
-				ViewGroup flow = (ViewGroup) window.findViewById(R.id.flow);
-
-				removeAppFromFolder(id, frame, flow);
 				onUserRemoveApp(id, app);
 				return true;
 			}
@@ -669,5 +661,49 @@ public final class FloatingFolder extends StandOutWindow {
 
 	protected Intent getPersistentNotificationIntent(int id) {
 		return StandOutWindow.getCloseAllIntent(this, FloatingFolder.class);
+	}
+
+	@Override
+	protected List<DropDownListItem> getDropDownItems(final int id) {
+		List<DropDownListItem> items = new ArrayList<StandOutWindow.DropDownListItem>();
+		FolderModel folder = mFolders.get(id);
+
+		// add
+		items.add(new DropDownListItem(android.R.drawable.ic_menu_add,
+				"Add Application", new Runnable() {
+
+					@Override
+					public void run() {
+						// show app selector
+						sendData(id, FloatingFolder.class, APP_SELECTOR_ID,
+								APP_SELECTOR_CODE, null);
+					}
+				}));
+
+		if (!folder.apps.isEmpty()) {
+			// clear all
+			items.add(new DropDownListItem(
+					android.R.drawable.ic_menu_close_clear_cancel, "Clear All",
+					new Runnable() {
+
+						@Override
+						public void run() {
+							// show app selector
+							FolderModel folder = mFolders.get(id);
+
+							// copy to new array so we don't remove items while
+							// we
+							// iterate
+							List<ActivityInfo> apps = new ArrayList<ActivityInfo>(
+									folder.apps);
+
+							for (ActivityInfo app : apps) {
+								onUserRemoveApp(id, app);
+							}
+						}
+					}));
+		}
+
+		return items;
 	}
 }

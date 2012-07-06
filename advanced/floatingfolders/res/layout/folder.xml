@@ -32,16 +32,17 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:text="Floating Folder" android:textColor="@color/ics_blue"/>
+                android:text="Floating Folder"
+                android:textColor="@color/ics_blue" />
 
             <ImageView
-                android:id="@+id/add"
+                android:id="@+id/window_icon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
                 android:contentDescription="add"
-                android:src="@android:drawable/ic_menu_add" />
+                android:src="@drawable/ic_menu_moreoverflow_normal_holo_dark" />
         </RelativeLayout>
 
         <ImageView
@@ -50,6 +51,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true" android:src="@drawable/corner"/>
+
     </RelativeLayout>
 
     <ImageView

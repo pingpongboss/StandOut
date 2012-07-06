@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+import wei.mark.standout.StandOutWindow.Window.Editor;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -257,17 +258,17 @@ public abstract class StandOutWindow extends Service {
 		/**
 		 * Setting this flag indicates that the system should disable all
 		 * compatibility workarounds. The default behavior is to run
-		 * {@link StandOutWindow#fixCompatibility(View, int)} on the view
+		 * {@link StandOutWindow.Window#fixCompatibility(View, int)} on the view
 		 * returned by the implementation.
 		 * 
-		 * @see {@link StandOutWindow#fixCompatibility(View, int)}
+		 * @see {@link StandOutWindow.Window#fixCompatibility(View, int)}
 		 */
 		public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_counter++;
 
 		/**
 		 * Setting this flag indicates that the system should disable all
 		 * additional functionality. The default behavior is to run
-		 * {@link StandOutWindow#addFunctionality(View, int)} on the view
+		 * {@link StandOutWindow.Window#addFunctionality(View, int)} on the view
 		 * returned by the implementation.
 		 * 
 		 * @see {@link StandOutWindow#addFunctionality(View, int)}
@@ -276,11 +277,19 @@ public abstract class StandOutWindow extends Service {
 
 		/**
 		 * Setting this flag indicates that the system should disable adding the
-		 * resize handle additional functionality.
+		 * resize handle additional functionality to R.id.corner.
 		 * 
-		 * @see {@link StandOutWindow#addFunctionality(View, int)}
+		 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
 		 */
 		public static final int FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE = 1 << flag_counter++;
+
+		/**
+		 * Setting this flag indicates that the system should disable adding the
+		 * drop down menu additional functionality to R.id.window_icon.
+		 * 
+		 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
+		 */
+		public static final int FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE = 1 << flag_counter++;
 	}
 
 	/**
@@ -1084,12 +1093,10 @@ public abstract class StandOutWindow extends Service {
 			list.addView(listItem);
 
 			ImageView icon = (ImageView) listItem.findViewById(R.id.icon);
-			;
 			icon.setImageResource(item.icon);
 
 			TextView description = (TextView) listItem
 					.findViewById(R.id.description);
-			;
 			description.setText(item.description);
 
 			listItem.setOnClickListener(new OnClickListener() {
@@ -1624,7 +1631,9 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Update the window corresponding to this id with the given params.
+	 * Update the window corresponding to this id with the given params. You may
+	 * wish to use {@link Window#edit()} to get an {@link Editor}, which
+	 * simplifies resizing and repositioning.
 	 * 
 	 * @param id
 	 *            The id of the window.
@@ -1822,7 +1831,7 @@ public abstract class StandOutWindow extends Service {
 	/**
 	 * Change the icon of the window, if such a icon exists. A icon exists if
 	 * {@link StandOutFlags#FLAG_DECORATION_SYSTEM} is set, or if your own view
-	 * contains a TextView with id R.id.icon.
+	 * contains a TextView with id R.id.window_icon.
 	 * 
 	 * @param id
 	 *            The id of the window.
@@ -1832,7 +1841,7 @@ public abstract class StandOutWindow extends Service {
 	protected final void setIcon(int id, int drawableRes) {
 		Window window = getWindow(id);
 		if (window != null) {
-			View icon = window.findViewById(R.id.icon);
+			View icon = window.findViewById(R.id.window_icon);
 			if (icon instanceof ImageView) {
 				((ImageView) icon).setImageResource(drawableRes);
 			}
@@ -2310,7 +2319,7 @@ public abstract class StandOutWindow extends Service {
 
 			// icon
 			final ImageView icon = (ImageView) decorations
-					.findViewById(R.id.icon);
+					.findViewById(R.id.window_icon);
 			icon.setImageResource(getAppIcon());
 			icon.setOnClickListener(new OnClickListener() {
 
@@ -2407,6 +2416,7 @@ public abstract class StandOutWindow extends Service {
 		 *            The view hierarchy that is part of the window.
 		 */
 		private void addFunctionality(View root) {
+			// corner for resize
 			if (!Utils.isSet(flags,
 					StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE)) {
 				View corner = root.findViewById(R.id.corner);
@@ -2420,6 +2430,24 @@ public abstract class StandOutWindow extends Service {
 									Window.this, v, event);
 
 							return consumed;
+						}
+					});
+				}
+			}
+
+			// window_icon for drop down
+			if (!Utils.isSet(flags,
+					StandOutFlags.FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE)) {
+				final View icon = root.findViewById(R.id.window_icon);
+				if (icon != null) {
+					icon.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							PopupWindow dropDown = getDropDown(id);
+							if (dropDown != null) {
+								dropDown.showAsDropDown(icon);
+							}
 						}
 					});
 				}
@@ -2486,6 +2514,12 @@ public abstract class StandOutWindow extends Service {
 			}
 		}
 
+		/**
+		 * Convenient way to resize or reposition a Window.
+		 * 
+		 * @author Mark Wei <markwei@gmail.com>
+		 * 
+		 */
 		public class Editor {
 			StandOutWindow.LayoutParams mParams;
 
