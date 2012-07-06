@@ -3,6 +3,7 @@ package wei.mark.standout;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -14,6 +15,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -25,6 +27,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
@@ -32,6 +35,8 @@ import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 /**
@@ -1044,6 +1049,60 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected int getThemeStyle() {
 		return 0;
+	}
+
+	/**
+	 * Implement this method to set a custom drop down menu when the user clicks
+	 * on the icon of the window corresponding to the id. The icon is only shown
+	 * when {@link StandOutFlags#FLAG_DECORATION_SYSTEM} is set.
+	 * 
+	 * @return The drop down menu to be anchored to the icon, or null to have no
+	 *         dropdown menu.
+	 */
+	protected PopupWindow getDropDown(int id) {
+		final List<DropDownListItem> items = getDropDownItems(id);
+		if (items == null || items.isEmpty()) {
+			return null;
+		}
+
+		LinearLayout list = new LinearLayout(this);
+		list.setOrientation(LinearLayout.VERTICAL);
+
+		final PopupWindow dropDown = new PopupWindow(list,
+				LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, true);
+
+		for (final DropDownListItem item : items) {
+			ViewGroup listItem = (ViewGroup) mLayoutInflater.inflate(
+					R.layout.drop_down_list_item, null);
+			list.addView(listItem);
+
+			ImageView icon = (ImageView) listItem.findViewById(R.id.icon);
+			;
+			icon.setImageResource(item.icon);
+
+			TextView description = (TextView) listItem
+					.findViewById(R.id.description);
+			;
+			description.setText(item.description);
+
+			listItem.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					item.action.run();
+					dropDown.dismiss();
+				}
+			});
+		}
+
+		Drawable background = getResources().getDrawable(
+				android.R.drawable.editbox_dropdown_dark_frame);
+		dropDown.setBackgroundDrawable(background);
+		return dropDown;
+	}
+
+	protected List<DropDownListItem> getDropDownItems(int id) {
+		return null;
 	}
 
 	/**
@@ -2063,7 +2122,6 @@ public abstract class StandOutWindow extends Service {
 
 		@Override
 		public boolean onTouchEvent(MotionEvent event) {
-			Log.d(TAG, "Event: " + event);
 			// handle touching outside
 			switch (event.getAction()) {
 				case MotionEvent.ACTION_OUTSIDE:
@@ -2234,8 +2292,19 @@ public abstract class StandOutWindow extends Service {
 					R.layout.system_window_decorators, null);
 
 			// icon
-			ImageView icon = (ImageView) decorations.findViewById(R.id.icon);
+			final ImageView icon = (ImageView) decorations
+					.findViewById(R.id.icon);
 			icon.setImageResource(getAppIcon());
+			icon.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					PopupWindow dropDown = getDropDown(id);
+					if (dropDown != null) {
+						dropDown.showAsDropDown(icon);
+					}
+				}
+			});
 
 			// title
 			TextView title = (TextView) decorations.findViewById(R.id.title);
@@ -2763,6 +2832,24 @@ public abstract class StandOutWindow extends Service {
 		 */
 		public int getDisplayHeight() {
 			return mWindowManager.getDefaultDisplay().getHeight();
+		}
+	}
+
+	protected class DropDownListItem {
+		public int icon;
+		public String description;
+		public Runnable action;
+
+		public DropDownListItem(int icon, String description, Runnable action) {
+			super();
+			this.icon = icon;
+			this.description = description;
+			this.action = action;
+		}
+
+		@Override
+		public String toString() {
+			return description;
 		}
 	}
 }

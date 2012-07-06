@@ -1,5 +1,8 @@
 package wei.mark.example;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import wei.mark.standout.StandOutWindow;
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,6 +13,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * This implementation provides multiple windows. You may extend this class or
@@ -69,8 +73,7 @@ public class MultiWindow extends StandOutWindow {
 				| StandOutFlags.FLAG_WINDOW_HIDE_ENABLE
 				| StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP
 				| StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE
-				| StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE
-				| StandOutFlags.FLAG_WINDOW_ASPECT_RATIO_ENABLE;
+				| StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE;
 	}
 
 	@Override
@@ -126,6 +129,34 @@ public class MultiWindow extends StandOutWindow {
 	protected Animation getHideAnimation(int id) {
 		return AnimationUtils.loadAnimation(this,
 				android.R.anim.slide_out_right);
+	}
+
+	@Override
+	protected List<DropDownListItem> getDropDownItems(int id) {
+		List<DropDownListItem> items = new ArrayList<DropDownListItem>();
+		items.add(new DropDownListItem(android.R.drawable.ic_menu_help,
+				"About", new Runnable() {
+
+					@Override
+					public void run() {
+						Toast.makeText(
+								MultiWindow.this,
+								getAppName()
+										+ " is a demonstration of StandOut.",
+								Toast.LENGTH_SHORT).show();
+					}
+				}));
+		items.add(new DropDownListItem(android.R.drawable.ic_menu_preferences,
+				"Settings", new Runnable() {
+
+					@Override
+					public void run() {
+						Toast.makeText(MultiWindow.this,
+								"There are no settings.", Toast.LENGTH_SHORT)
+								.show();
+					}
+				}));
+		return items;
 	}
 
 	@Override
