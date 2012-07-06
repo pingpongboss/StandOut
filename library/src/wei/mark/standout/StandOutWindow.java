@@ -1052,10 +1052,17 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * You probably want to leave this method alone and implement
+	 * {@link #getDropDownItems(int)} instead. Only implement this method if you
+	 * want more control over the drop down menu.
+	 * 
+	 * <p>
 	 * Implement this method to set a custom drop down menu when the user clicks
 	 * on the icon of the window corresponding to the id. The icon is only shown
 	 * when {@link StandOutFlags#FLAG_DECORATION_SYSTEM} is set.
 	 * 
+	 * @param id
+	 *            The id of the window.
 	 * @return The drop down menu to be anchored to the icon, or null to have no
 	 *         dropdown menu.
 	 */
@@ -1101,6 +1108,16 @@ public abstract class StandOutWindow extends Service {
 		return dropDown;
 	}
 
+	/**
+	 * Implement this method to populate the drop down menu when the user clicks
+	 * on the icon of the window corresponding to the id. The icon is only shown
+	 * when {@link StandOutFlags#FLAG_DECORATION_SYSTEM} is set.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @return The list of items to show in the drop down menu, or null or empty
+	 *         to have no dropdown menu.
+	 */
 	protected List<DropDownListItem> getDropDownItems(int id) {
 		return null;
 	}
