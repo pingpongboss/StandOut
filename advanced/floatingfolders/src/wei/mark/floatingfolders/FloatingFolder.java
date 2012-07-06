@@ -514,142 +514,133 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
+	protected boolean onFocusChange(int id, Window window, boolean focus) {
+		if (id == APP_SELECTOR_ID && !focus) {
+			close(APP_SELECTOR_ID);
+			return false;
+		}
+
+		return super.onFocusChange(id, window, focus);
+	}
+
+	@Override
 	protected boolean onTouchBody(final int id, final Window window,
 			final View view, MotionEvent event) {
-		switch (event.getAction()) {
-			case MotionEvent.ACTION_OUTSIDE:
-				close(APP_SELECTOR_ID);
-				break;
-			case MotionEvent.ACTION_MOVE:
-				if (id != APP_SELECTOR_ID) {
-					final LayoutParams params = (LayoutParams) window
-							.getLayoutParams();
+		if (id != APP_SELECTOR_ID
+				&& event.getAction() == MotionEvent.ACTION_MOVE) {
+			final LayoutParams params = (LayoutParams) window.getLayoutParams();
 
-					final View folder = window.findViewById(R.id.folder);
-					final ImageView screenshot = (ImageView) window
-							.findViewById(R.id.preview);
+			final View folder = window.findViewById(R.id.folder);
+			final ImageView screenshot = (ImageView) window
+					.findViewById(R.id.preview);
 
-					// if touch edge
-					if (params.x <= 0) {
-						// first time touch edge
-						if (window.shown) {
-							window.shown = false;
+			// if touch edge
+			if (params.x <= 0) {
+				// first time touch edge
+				if (window.shown) {
+					window.shown = false;
 
-							final Drawable drawable = getResources()
-									.getDrawable(R.drawable.ic_menu_archive);
+					final Drawable drawable = getResources().getDrawable(
+							R.drawable.ic_menu_archive);
 
-							screenshot.setImageDrawable(drawable);
+					screenshot.setImageDrawable(drawable);
 
-							mFadeOut.setAnimationListener(new AnimationListener() {
+					mFadeOut.setAnimationListener(new AnimationListener() {
+
+						@Override
+						public void onAnimationStart(Animation animation) {
+						}
+
+						@Override
+						public void onAnimationRepeat(Animation animation) {
+						}
+
+						@Override
+						public void onAnimationEnd(Animation animation) {
+							folder.setVisibility(View.GONE);
+
+							// post so that the folder is invisible
+							// before
+							// anything else happens
+							screenshot.post(new Runnable() {
 
 								@Override
-								public void onAnimationStart(Animation animation) {
-								}
+								public void run() {
+									// preview should be centered
+									// vertically
+									params.y = params.y + params.height / 2
+											- drawable.getIntrinsicHeight() / 2;
 
-								@Override
-								public void onAnimationRepeat(
-										Animation animation) {
-								}
+									params.width = drawable.getIntrinsicWidth();
+									params.height = drawable
+											.getIntrinsicHeight();
 
-								@Override
-								public void onAnimationEnd(Animation animation) {
-									folder.setVisibility(View.GONE);
+									updateViewLayout(id, window, params);
 
-									// post so that the folder is invisible
-									// before
-									// anything else happens
-									screenshot.post(new Runnable() {
-
-										@Override
-										public void run() {
-											// preview should be centered
-											// vertically
-											params.y = params.y
-													+ params.height
-													/ 2
-													- drawable
-															.getIntrinsicHeight()
-													/ 2;
-
-											params.width = drawable
-													.getIntrinsicWidth();
-											params.height = drawable
-													.getIntrinsicHeight();
-
-											updateViewLayout(id, window, params);
-
-											screenshot
-													.setVisibility(View.VISIBLE);
-											screenshot.startAnimation(mFadeIn);
-										}
-									});
+									screenshot.setVisibility(View.VISIBLE);
+									screenshot.startAnimation(mFadeIn);
 								}
 							});
-
-							folder.startAnimation(mFadeOut);
 						}
-					} else { // not touch edge
+					});
 
-						// first time not touch edge
-						if (!window.shown) {
-							window.shown = true;
-
-							mFadeOut.setAnimationListener(new AnimationListener() {
-
-								@Override
-								public void onAnimationStart(Animation animation) {
-									Log.d("FloatingFolder", "Animation started");
-								}
-
-								@Override
-								public void onAnimationRepeat(
-										Animation animation) {
-								}
-
-								@Override
-								public void onAnimationEnd(Animation animation) {
-									Log.d("FloatingFolder", "Animation ended");
-									screenshot.setVisibility(View.GONE);
-
-									// post so that screenshot is invisible
-									// before anything else happens
-									screenshot.post(new Runnable() {
-
-										@Override
-										public void run() {
-											LayoutParams originalParams = getParams(
-													id, window);
-
-											Drawable drawable = screenshot
-													.getDrawable();
-											screenshot.setImageDrawable(null);
-
-											params.y = params.y
-													- originalParams.height
-													/ 2
-													+ drawable
-															.getIntrinsicHeight()
-													/ 2;
-
-											params.width = originalParams.width;
-											params.height = originalParams.height;
-
-											updateViewLayout(id, window, params);
-
-											folder.setVisibility(View.VISIBLE);
-
-											folder.startAnimation(mFadeIn);
-										}
-									});
-								}
-							});
-
-							screenshot.startAnimation(mFadeOut);
-						}
-					}
+					folder.startAnimation(mFadeOut);
 				}
+			} else { // not touch edge
 
-				break;
+				// first time not touch edge
+				if (!window.shown) {
+					window.shown = true;
+
+					mFadeOut.setAnimationListener(new AnimationListener() {
+
+						@Override
+						public void onAnimationStart(Animation animation) {
+							Log.d("FloatingFolder", "Animation started");
+						}
+
+						@Override
+						public void onAnimationRepeat(Animation animation) {
+						}
+
+						@Override
+						public void onAnimationEnd(Animation animation) {
+							Log.d("FloatingFolder", "Animation ended");
+							screenshot.setVisibility(View.GONE);
+
+							// post so that screenshot is invisible
+							// before anything else happens
+							screenshot.post(new Runnable() {
+
+								@Override
+								public void run() {
+									LayoutParams originalParams = getParams(id,
+											window);
+
+									Drawable drawable = screenshot
+											.getDrawable();
+									screenshot.setImageDrawable(null);
+
+									params.y = params.y - originalParams.height
+											/ 2 + drawable.getIntrinsicHeight()
+											/ 2;
+
+									params.width = originalParams.width;
+									params.height = originalParams.height;
+
+									updateViewLayout(id, window, params);
+
+									folder.setVisibility(View.VISIBLE);
+
+									folder.startAnimation(mFadeIn);
+								}
+							});
+						}
+					});
+
+					screenshot.startAnimation(mFadeOut);
+				}
+			}
 		}
 
 		return false;

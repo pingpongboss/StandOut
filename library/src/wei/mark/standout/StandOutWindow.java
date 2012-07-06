@@ -2041,6 +2041,11 @@ public abstract class StandOutWindow extends Service {
 		public boolean shown;
 
 		/**
+		 * Whether the window is focused.
+		 */
+		public boolean focused;
+
+		/**
 		 * Original params from {@link StandOutWindow#getParams(int, Window)}.
 		 */
 		public StandOutWindow.LayoutParams originalParams;
@@ -2243,11 +2248,19 @@ public abstract class StandOutWindow extends Service {
 					.isSet(flags, StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
 				// window is focusable
 
+				if (focus == focused) {
+					// window already focused/unfocused
+					return false;
+				}
+
+				focused = focus;
+
 				// alert callbacks and cancel if instructed
 				if (context.onFocusChange(id, this, focus)) {
 					Log.d(TAG, "Window " + id + " focus change "
 							+ (focus ? "(true)" : "(false)")
 							+ " cancelled by implementation.");
+					focused = !focus;
 					return false;
 				}
 
