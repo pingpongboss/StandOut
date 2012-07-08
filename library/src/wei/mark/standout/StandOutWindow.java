@@ -21,6 +21,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.Display;
@@ -108,42 +109,48 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 */
 	public static class StandOutFlags {
-
-		private static int flag_counter = 0;
-
-		/**
-		 * This default flag indicates that the window requires no window
-		 * decorations (titlebar, hide/close buttons, resize handle, etc).
-		 */
-		public static final int FLAG_DECORATION_NONE = 0x00000000;
+		// This counter keeps track of which primary bit to set for each flag
+		private static int flag_bit = 0;
 
 		/**
 		 * Setting this flag indicates that the window wants the system provided
 		 * window decorations (titlebar, hide/close buttons, resize handle,
 		 * etc).
 		 */
-		public static final int FLAG_DECORATION_SYSTEM = 1 << flag_counter++;
+		public static final int FLAG_DECORATION_SYSTEM = 1 << flag_bit++;
 
 		/**
 		 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
 		 * indicates that the window decorator should NOT provide a close
 		 * button.
+		 * 
+		 * <p>
+		 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
 		 */
-		public static final int FLAG_DECORATION_CLOSE_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_DECORATION_CLOSE_DISABLE = FLAG_DECORATION_SYSTEM
+				| 1 << flag_bit++;
 
 		/**
 		 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
 		 * indicates that the window decorator should NOT provide a resize
 		 * handle.
+		 * 
+		 * <p>
+		 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
 		 */
-		public static final int FLAG_DECORATION_RESIZE_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_DECORATION_RESIZE_DISABLE = FLAG_DECORATION_SYSTEM
+				| 1 << flag_bit++;
 
 		/**
 		 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
 		 * indicates that the window decorator should NOT provide a resize
 		 * handle.
+		 * 
+		 * <p>
+		 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
 		 */
-		public static final int FLAG_DECORATION_MOVE_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_DECORATION_MOVE_DISABLE = FLAG_DECORATION_SYSTEM
+				| 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the window can be moved by dragging
@@ -153,7 +160,7 @@ public abstract class StandOutWindow extends Service {
 		 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
 		 * always be moved by dragging the titlebar.
 		 */
-		public static final int FLAG_BODY_MOVE_ENABLE = 1 << flag_counter++;
+		public static final int FLAG_BODY_MOVE_ENABLE = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that windows are able to be hidden, that
@@ -163,7 +170,7 @@ public abstract class StandOutWindow extends Service {
 		 * that the system window decorator should provide a hide button if
 		 * {@link #FLAG_DECORATION_SYSTEM} is set.
 		 */
-		public static final int FLAG_WINDOW_HIDE_ENABLE = 1 << flag_counter++;
+		public static final int FLAG_WINDOW_HIDE_ENABLE = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the window should be brought to the
@@ -174,7 +181,7 @@ public abstract class StandOutWindow extends Service {
 		 * window during {@link MotionEvent#ACTION_UP}. This the hack that
 		 * allows the system to bring the window to the front.
 		 */
-		public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 1 << flag_counter++;
+		public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the window should be brought to the
@@ -185,7 +192,7 @@ public abstract class StandOutWindow extends Service {
 		 * window during {@link MotionEvent#ACTION_UP}. This the hack that
 		 * allows the system to bring the window to the front.
 		 */
-		public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 1 << flag_counter++;
+		public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the system should keep the window's
@@ -200,7 +207,19 @@ public abstract class StandOutWindow extends Service {
 		 * off the screen.
 		 * 
 		 */
-		public static final int FLAG_WINDOW_EDGE_LIMITS_ENABLE = 1 << flag_counter++;
+		public static final int FLAG_WINDOW_EDGE_LIMITS_ENABLE = 1 << flag_bit++;
+
+		/**
+		 * Setting this flag indicates that the system should tile the window
+		 * when it hits the edge of the screen, mimicking the behavior of
+		 * Windows 7.
+		 * 
+		 * <p>
+		 * This flag also sets {@link #FLAG_WINDOW_EDGE_LIMITS_ENABLE}.
+		 * 
+		 */
+		public static final int FLAG_WINDOW_EDGE_TILE_ENABLE = FLAG_WINDOW_EDGE_LIMITS_ENABLE
+				| 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the system should keep the window's
@@ -215,7 +234,7 @@ public abstract class StandOutWindow extends Service {
 		 * @see StandOutWindow#onTouchHandleResize(int, Window, View,
 		 *      MotionEvent)
 		 */
-		public static final int FLAG_WINDOW_ASPECT_RATIO_ENABLE = 1 << flag_counter++;
+		public static final int FLAG_WINDOW_ASPECT_RATIO_ENABLE = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the system should resize the window
@@ -223,7 +242,7 @@ public abstract class StandOutWindow extends Service {
 		 * 
 		 * @see StandOutWindow.Window#onInterceptTouchEvent(MotionEvent)
 		 */
-		public static final int FLAG_WINDOW_PINCH_RESIZE_ENABLE = 1 << flag_counter++;
+		public static final int FLAG_WINDOW_PINCH_RESIZE_ENABLE = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the window does not need focus. If
@@ -243,7 +262,7 @@ public abstract class StandOutWindow extends Service {
 		 * @see {@link StandOutWindow#unfocus(int)}
 		 * 
 		 */
-		public static final int FLAG_WINDOW_FOCUSABLE_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_WINDOW_FOCUSABLE_DISABLE = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the system should not change the
@@ -254,7 +273,7 @@ public abstract class StandOutWindow extends Service {
 		 * @see {@link StandOutWindow.Window#onFocus(boolean)}
 		 * 
 		 */
-		public static final int FLAG_WINDOW_FOCUS_INDICATOR_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_WINDOW_FOCUS_INDICATOR_DISABLE = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the system should disable all
@@ -264,7 +283,7 @@ public abstract class StandOutWindow extends Service {
 		 * 
 		 * @see {@link StandOutWindow.Window#fixCompatibility(View, int)}
 		 */
-		public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the system should disable all
@@ -274,7 +293,7 @@ public abstract class StandOutWindow extends Service {
 		 * 
 		 * @see {@link StandOutWindow#addFunctionality(View, int)}
 		 */
-		public static final int FLAG_ADD_FUNCTIONALITY_ALL_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_ADD_FUNCTIONALITY_ALL_DISABLE = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the system should disable adding the
@@ -286,7 +305,7 @@ public abstract class StandOutWindow extends Service {
 		 * 
 		 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
 		 */
-		public static final int FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE = 1 << flag_bit++;
 
 		/**
 		 * Setting this flag indicates that the system should disable adding the
@@ -299,7 +318,7 @@ public abstract class StandOutWindow extends Service {
 		 * 
 		 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
 		 */
-		public static final int FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE = 1 << flag_counter++;
+		public static final int FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE = 1 << flag_bit++;
 	}
 
 	/**
@@ -808,7 +827,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return A combination of flags.
 	 */
 	protected int getFlags(int id) {
-		return StandOutFlags.FLAG_DECORATION_NONE;
+		return 0;
 	}
 
 	/**
@@ -1397,16 +1416,21 @@ public abstract class StandOutWindow extends Service {
 			window = new Window(id);
 		}
 
+		if (window.visibility == Window.VISIBILITY_VISIBLE) {
+			throw new IllegalStateException("Tried to show(" + id
+					+ ") a window that is already shown.");
+		}
+
 		// alert callbacks and cancel if instructed
 		if (onShow(id, window)) {
 			Log.d(TAG, "Window " + id + " show cancelled by implementation.");
 			return null;
 		}
 
+		window.visibility = Window.VISIBILITY_VISIBLE;
+
 		// get animation
 		Animation animation = getShowAnimation(id);
-
-		window.shown = true;
 
 		// get the params corresponding to the id
 		LayoutParams params = window.getLayoutParams();
@@ -1474,8 +1498,13 @@ public abstract class StandOutWindow extends Service {
 		final Window window = getWindow(id);
 
 		if (window == null) {
-			Log.w(TAG, "Tried to hide(" + id + ") a null window.");
-			return;
+			throw new IllegalArgumentException("Tried to hide(" + id
+					+ ") a null window.");
+		}
+
+		if (window.visibility == Window.VISIBILITY_GONE) {
+			throw new IllegalStateException("Tried to hide(" + id
+					+ ") a window that is not shown.");
 		}
 
 		// alert callbacks and cancel if instructed
@@ -1486,13 +1515,13 @@ public abstract class StandOutWindow extends Service {
 
 		// check if hide enabled
 		if (Utils.isSet(window.flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
+			window.visibility = Window.VISIBILITY_TRANSITION;
+
 			// get the hidden notification for this view
 			Notification notification = getHiddenNotification(id);
 
 			// get animation
 			Animation animation = getHideAnimation(id);
-
-			window.shown = false;
 
 			try {
 				// animate
@@ -1511,6 +1540,7 @@ public abstract class StandOutWindow extends Service {
 						public void onAnimationEnd(Animation animation) {
 							// remove the window from the window manager
 							mWindowManager.removeView(window);
+							window.visibility = Window.VISIBILITY_GONE;
 						}
 					});
 					window.getChildAt(0).startAnimation(animation);
@@ -1542,12 +1572,16 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id of the window.
 	 */
-	protected final synchronized void close(int id) {
+	protected final synchronized void close(final int id) {
 		// get the view corresponding to the id
 		final Window window = getWindow(id);
 
 		if (window == null) {
-			Log.w(TAG, "Tried to close(" + id + ") a null window.");
+			throw new IllegalArgumentException("Tried to close(" + id
+					+ ") a null window.");
+		}
+
+		if (window.visibility == window.VISIBILITY_TRANSITION) {
 			return;
 		}
 
@@ -1557,18 +1591,15 @@ public abstract class StandOutWindow extends Service {
 			return;
 		}
 
+		// remove hidden notification
+		mNotificationManager.cancel(getClass().hashCode() + id);
+
 		unfocus(window);
 
-		// remove view from internal map
-		removeCache(id, getClass());
+		window.visibility = Window.VISIBILITY_TRANSITION;
 
 		// get animation
 		Animation animation = getCloseAnimation(id);
-
-		// remove hidden notification
-		if (!window.shown) {
-			mNotificationManager.cancel(getClass().hashCode() + id);
-		}
 
 		// remove window
 		try {
@@ -1588,23 +1619,40 @@ public abstract class StandOutWindow extends Service {
 					public void onAnimationEnd(Animation animation) {
 						// remove the window from the window manager
 						mWindowManager.removeView(window);
+						window.visibility = Window.VISIBILITY_GONE;
+
+						// remove view from internal map
+						removeCache(id, StandOutWindow.this.getClass());
+
+						// if we just released the last window, quit
+						if (getExistingIds().size() == 0) {
+							// tell Android to remove the persistent
+							// notification
+							// the Service will be shutdown by the system on low
+							// memory
+							startedForeground = false;
+							stopForeground(true);
+						}
 					}
 				});
 				window.getChildAt(0).startAnimation(animation);
 			} else {
 				// remove the window from the window manager
 				mWindowManager.removeView(window);
+
+				// remove view from internal map
+				removeCache(id, getClass());
+
+				// if we just released the last window, quit
+				if (getCacheSize(getClass()) == 0) {
+					// tell Android to remove the persistent notification
+					// the Service will be shutdown by the system on low memory
+					startedForeground = false;
+					stopForeground(true);
+				}
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
-		}
-
-		// if we just released the last window, quit
-		if (getCacheSize(getClass()) == 0) {
-			// tell Android to remove the persistent notification
-			// the Service will be shutdown by the system on low memory
-			startedForeground = false;
-			stopForeground(true);
 		}
 	}
 
@@ -1657,9 +1705,14 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Update the window corresponding to this id with the given params. You may
-	 * wish to use {@link Window#edit()} to get an {@link Editor}, which
-	 * simplifies resizing and repositioning.
+	 * Update the window corresponding to this id with the given params.
+	 * 
+	 * <p>
+	 * This method is now deprecated. You may wish to use {@link Window#edit()}
+	 * to get an {@link Editor}, which simplifies resizing and repositioning.
+	 * The Editor also will take care of take care of window size and position
+	 * constraints, as well as actions that occur when the window touches an
+	 * edge of the screen.
 	 * 
 	 * @param id
 	 *            The id of the window.
@@ -1668,25 +1721,10 @@ public abstract class StandOutWindow extends Service {
 	 * @param params
 	 *            The updated layout params to apply.
 	 */
+	@Deprecated
 	protected final void updateViewLayout(int id, Window window,
 			LayoutParams params) {
-		// alert callbacks and cancel if instructed
-		if (onUpdate(id, window, params)) {
-			Log.w(TAG, "Window " + id + " update cancelled by implementation.");
-			return;
-		}
-
-		if (window == null) {
-			Log.w(TAG, "Tried to updateViewLayout() a null window.");
-			return;
-		}
-
-		try {
-			window.setLayoutParams(params);
-			mWindowManager.updateViewLayout(window, params);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		updateViewLayout(id, params);
 	}
 
 	/**
@@ -1699,7 +1737,16 @@ public abstract class StandOutWindow extends Service {
 	protected final synchronized void bringToFront(int id) {
 		Window window = getWindow(id);
 		if (window == null) {
-			Log.w(TAG, "Tried to bringToFront() a null window.");
+			throw new IllegalArgumentException("Tried to bringToFront(" + id
+					+ ") a null window.");
+		}
+
+		if (window.visibility == Window.VISIBILITY_GONE) {
+			throw new IllegalStateException("Tried to bringToFront(" + id
+					+ ") a window that is not shown.");
+		}
+
+		if (window.visibility == Window.VISIBILITY_TRANSITION) {
 			return;
 		}
 
@@ -1736,17 +1783,22 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected final synchronized boolean focus(int id) {
 		// check if that window is focusable
-
 		final Window window = getWindow(id);
-		if (window != null) {
-			if (!Utils.isSet(window.flags,
-					StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
-				// remove focus from previously focused window
-				unfocus(sFocusedWindow);
-
-				return window.onFocus(true);
-			}
+		if (window == null) {
+			throw new IllegalArgumentException("Tried to focus(" + id
+					+ ") a null window.");
 		}
+
+		if (!Utils.isSet(window.flags,
+				StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
+			// remove focus from previously focused window
+			if (sFocusedWindow != null) {
+				unfocus(sFocusedWindow);
+			}
+
+			return window.onFocus(true);
+		}
+
 		return false;
 	}
 
@@ -1761,25 +1813,6 @@ public abstract class StandOutWindow extends Service {
 	protected final synchronized boolean unfocus(int id) {
 		Window window = getWindow(id);
 		return unfocus(window);
-	}
-
-	/**
-	 * Remove focus for the window, which could belong to another application.
-	 * Since we don't allow windows from different applications to directly
-	 * interact with each other, except for
-	 * {@link #sendData(Context, Class, int, int, Bundle, Class, int)}, this
-	 * method is private.
-	 * 
-	 * @param window
-	 *            The window to unfocus.
-	 * @return True if focus changed successfully, false if it failed.
-	 */
-	private synchronized boolean unfocus(Window window) {
-		if (window != null) {
-			return window.onFocus(false);
-		}
-
-		return false;
 	}
 
 	/**
@@ -1915,44 +1948,34 @@ public abstract class StandOutWindow extends Service {
 						|| Math.abs(totalDeltaY) >= params.threshold) {
 					window.touchInfo.moving = true;
 
-					// update the position of the window
-					if (event.getPointerCount() == 1) {
-						params.x += deltaX;
-						params.y += deltaY;
-					}
+					// if window is moveable
+					if (Utils.isSet(window.flags,
+							StandOutFlags.FLAG_BODY_MOVE_ENABLE)) {
 
-					updateViewLayout(id, window, params);
+						// update the position of the window
+						if (event.getPointerCount() == 1) {
+							params.x += deltaX;
+							params.y += deltaY;
+						}
+
+						window.edit().setPosition(params.x, params.y).commit();
+					}
 				}
 				break;
 			case MotionEvent.ACTION_UP:
 				window.touchInfo.moving = false;
 
-				// keep window within edges
 				if (event.getPointerCount() == 1) {
-					if (Utils.isSet(window.flags,
-							StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
-						if (params.gravity == (Gravity.TOP | Gravity.LEFT)) {
-							// only do this if gravity is TOP|LEFT
-							Display display = mWindowManager
-									.getDefaultDisplay();
-							int displayWidth = display.getWidth();
-							int displayHeight = display.getHeight();
 
-							params.x = Math.min(Math.max(params.x, 0),
-									displayWidth - params.width);
-							params.y = Math.min(Math.max(params.y, 0),
-									displayHeight - params.height);
-						}
+					// bring to front on tap
+					boolean tap = Math.abs(totalDeltaX) < params.threshold
+							&& Math.abs(totalDeltaY) < params.threshold;
+					if (tap
+							&& Utils.isSet(
+									window.flags,
+									StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP)) {
+						StandOutWindow.this.bringToFront(id);
 					}
-				}
-
-				// bring to front on tap
-				boolean tap = Math.abs(totalDeltaX) < params.threshold
-						&& Math.abs(totalDeltaY) < params.threshold;
-				if (tap
-						&& Utils.isSet(window.flags,
-								StandOutFlags.FLAG_WINDOW_BRING_TO_FRONT_ON_TAP)) {
-					StandOutWindow.this.bringToFront(id);
 				}
 
 				// bring to front on touch
@@ -2024,12 +2047,72 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
+	 * Remove focus for the window, which could belong to another application.
+	 * Since we don't allow windows from different applications to directly
+	 * interact with each other, except for
+	 * {@link #sendData(Context, Class, int, int, Bundle, Class, int)}, this
+	 * method is private.
+	 * 
+	 * @param window
+	 *            The window to unfocus.
+	 * @return True if focus changed successfully, false if it failed.
+	 */
+	private synchronized boolean unfocus(Window window) {
+		if (window == null) {
+			throw new IllegalArgumentException(
+					"Tried to unfocus a null window.");
+		}
+		return window.onFocus(false);
+	}
+
+	/**
+	 * Update the window corresponding to this id with the given params.
+	 * 
+	 * @param id
+	 *            The id of the window.
+	 * @param params
+	 *            The updated layout params to apply.
+	 */
+	private void updateViewLayout(int id, LayoutParams params) {
+		Window window = getWindow(id);
+
+		if (window == null) {
+			throw new IllegalArgumentException("Tried to updateViewLayout("
+					+ id + ") a null window.");
+		}
+
+		if (window.visibility == Window.VISIBILITY_GONE) {
+			return;
+		}
+
+		if (window.visibility == Window.VISIBILITY_TRANSITION) {
+			return;
+		}
+
+		// alert callbacks and cancel if instructed
+		if (onUpdate(id, window, params)) {
+			Log.w(TAG, "Window " + id + " update cancelled by implementation.");
+			return;
+		}
+
+		try {
+			window.setLayoutParams(params);
+			mWindowManager.updateViewLayout(window, params);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	/**
 	 * Special view that represents a floating window.
 	 * 
 	 * @author Mark Wei <markwei@gmail.com>
 	 * 
 	 */
 	public class Window extends FrameLayout {
+		public static final int VISIBILITY_GONE = 0;
+		public static final int VISIBILITY_VISIBLE = 1;
+		public static final int VISIBILITY_TRANSITION = 2;
 		/**
 		 * Context of the window.
 		 */
@@ -2045,9 +2128,9 @@ public abstract class StandOutWindow extends Service {
 		public int id;
 
 		/**
-		 * Whether the window is shown or hidden/closed.
+		 * Whether the window is shown, hidden/closed, or in transition.
 		 */
-		public boolean shown;
+		public int visibility;
 
 		/**
 		 * Whether the window is focused.
@@ -2113,12 +2196,11 @@ public abstract class StandOutWindow extends Service {
 					// pass all touch events to the implementation
 					boolean consumed = false;
 
-					// if set FLAG_BODY_MOVE_ENABLE, move the window
-					if (Utils.isSet(flags, StandOutFlags.FLAG_BODY_MOVE_ENABLE)) {
-						consumed = onTouchHandleMove(Window.this.id,
-								Window.this, v, event) || consumed;
-					}
+					// handle move and bring to front
+					consumed = onTouchHandleMove(Window.this.id, Window.this,
+							v, event) || consumed;
 
+					// alert implementation
 					consumed = onTouchBody(Window.this.id, Window.this, v,
 							event) || consumed;
 
@@ -2215,10 +2297,11 @@ public abstract class StandOutWindow extends Service {
 						touchInfo.dist = dist;
 
 						// scale the window with anchor point set to middle
-						edit().setSize(
-								(int) (touchInfo.firstWidth * touchInfo.scale),
-								(int) (touchInfo.firstHeight * touchInfo.scale),
-								.5f, .5f).commit();
+						edit().setAnchorPoint(.5f, .5f)
+								.setSize(
+										(int) (touchInfo.firstWidth * touchInfo.scale),
+										(int) (touchInfo.firstHeight * touchInfo.scale))
+								.commit();
 						break;
 				}
 			}
@@ -2317,7 +2400,9 @@ public abstract class StandOutWindow extends Service {
 				super.setLayoutParams(params);
 			} else {
 				throw new IllegalArgumentException(
-						"Window: LayoutParams must be an instance of StandOutWindow.LayoutParams.");
+						"Window"
+								+ id
+								+ ": LayoutParams must be an instance of StandOutWindow.LayoutParams.");
 			}
 		}
 
@@ -2554,16 +2639,67 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		/**
-		 * Convenient way to resize or reposition a Window.
+		 * Convenient way to resize or reposition a Window. The Editor allows
+		 * you to easily resize and reposition the window around anchor points.
 		 * 
 		 * @author Mark Wei <markwei@gmail.com>
 		 * 
 		 */
 		public class Editor {
+			/**
+			 * Special value for width, height, x, or y positions that
+			 * represents that the value should not be changed.
+			 */
+			public static final int UNCHANGED = Integer.MIN_VALUE;
+
+			/**
+			 * Layout params of the window associated with this Editor.
+			 */
 			StandOutWindow.LayoutParams mParams;
+
+			/**
+			 * The relative position of the anchor point. The anchor point is
+			 * only used by the {@link Editor}.
+			 * 
+			 * <p>
+			 * The anchor point effects the following methods:
+			 * 
+			 * <p>
+			 * {@link #setSize(int, int)} and {@link #setSize(float, float)}.
+			 * The window will expand or shrink around the anchor point.
+			 * 
+			 * <p>
+			 * Values must be between 0 and 1, inclusive. 0 means the left/top,
+			 * 0.5 is the center, 1 is the right/bottom.
+			 */
+			float anchorX, anchorY;
+
+			/**
+			 * Width and height of the screen.
+			 */
+			int displayWidth, displayHeight;
 
 			public Editor() {
 				mParams = getLayoutParams();
+				anchorX = anchorY = 0;
+
+				Display display = mWindowManager.getDefaultDisplay();
+				DisplayMetrics metrics = new DisplayMetrics();
+				display.getMetrics(metrics);
+				displayWidth = metrics.widthPixels;
+				displayHeight = (int) (metrics.heightPixels - 25 * metrics.density);
+			}
+
+			public Editor setAnchorPoint(float x, float y) {
+				if (x < 0 || x > 1 || y < 0 || y > 1) {
+					throw new IllegalArgumentException(
+							"Anchor point must be between 0 and 1, inclusive.");
+				}
+
+				anchorX = x;
+				anchorY = y;
+
+				return this;
 			}
 
 			/**
@@ -2574,47 +2710,55 @@ public abstract class StandOutWindow extends Service {
 			 * @return The same Editor, useful for method chaining.
 			 */
 			public Editor setSize(int width, int height) {
-				return setSize(width, height, 0, 0);
+				return setSize(width, height, false);
 			}
 
 			/**
-			 * Set the size of this window in absolute pixels. The window will
-			 * expand or shrink around the anchor point.
+			 * Set the size of this window in absolute pixels.
 			 * 
 			 * @param width
 			 * @param height
-			 * @param anchorX
-			 *            The relative x position of the anchor point. 0 means
-			 *            the left, 0.5 is the center, 1 is the right. Must be
-			 *            between 0 and 1, inclusive.
-			 * @param anchorY
-			 *            The relative y position of the anchor point. 0 means
-			 *            the top, 0.5 is the center, 1 is the bottom. Must be
-			 *            between 0 and 1, inclusive.
+			 * @param skip
+			 *            Don't call {@link #setPosition(int, int)} to avoid
+			 *            stack overflow.
 			 * @return The same Editor, useful for method chaining.
 			 */
-			public Editor setSize(int width, int height, float anchorX,
-					float anchorY) {
+			private Editor setSize(int width, int height, boolean skip) {
+				Log.d(TAG, String.format("setSize(%d, %d)", width, height));
 				if (mParams != null) {
 					if (anchorX < 0 || anchorX > 1 || anchorY < 0
 							|| anchorY > 1) {
-						throw new IllegalArgumentException(
+						throw new IllegalStateException(
 								"Anchor point must be between 0 and 1, inclusive.");
 					}
 
 					int lastWidth = mParams.width;
 					int lastHeight = mParams.height;
 
-					mParams.width = width;
-					mParams.height = height;
+					if (width != UNCHANGED) {
+						mParams.width = width;
+					}
+					if (height != UNCHANGED) {
+						mParams.height = height;
+					}
+
+					// set max width/height
+					int maxWidth = mParams.maxWidth;
+					int maxHeight = mParams.maxHeight;
+
+					if (Utils.isSet(flags,
+							StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
+						maxWidth = (int) Math.min(maxWidth, displayWidth);
+						maxHeight = (int) Math.min(maxHeight, displayHeight);
+					}
 
 					// keep window between min and max
-					mParams.width = Math.min(
-							Math.max(mParams.width, mParams.minWidth),
-							mParams.maxWidth);
+					mParams.width = Math
+							.min(Math.max(mParams.width, mParams.minWidth),
+									maxWidth);
 					mParams.height = Math.min(
 							Math.max(mParams.height, mParams.minHeight),
-							mParams.maxHeight);
+							maxHeight);
 
 					// keep window in aspect ratio
 					if (Utils.isSet(flags,
@@ -2631,64 +2775,90 @@ public abstract class StandOutWindow extends Service {
 						}
 					}
 
-					// sets the x and y correctly according to anchorX and
-					// anchorY
-					mParams.x = (int) (mParams.x + (lastWidth - mParams.width)
-							* anchorX);
-					mParams.y = (int) (mParams.y + (lastHeight - mParams.height)
-							* anchorY);
+					if (!skip) {
+						// set position based on anchor point
+						setPosition((int) (mParams.x + lastWidth * anchorX),
+								(int) (mParams.y + lastHeight * anchorY));
+					}
 				}
+
 				return this;
 			}
 
-			/**
-			 * Set the size of this window relative to the size of the display.
-			 * 
-			 * @param widthPercent
-			 *            The percentage of the screen to fill horizontally.
-			 *            Must be between 0 and 1, inclusive.
-			 * @param heightPercent
-			 *            The percentage of the screen to fill vertically. Must
-			 *            be between 0 and 1, inclusive.
-			 * @return The same Editor, useful for method chaining.
-			 */
-			public Editor setSize(float widthPercent, float heightPercent) {
-				return setSize(widthPercent, heightPercent, 0, 0);
+			public Editor setPosition(int x, int y) {
+				return setPosition(x, y, false);
 			}
 
-			/**
-			 * Set the size of this window relative to the size of the display.
-			 * 
-			 * @param widthPercent
-			 *            The percentage of the screen to fill horizontally.
-			 *            Must be between 0 and 1, inclusive.
-			 * @param heightPercent
-			 *            The percentage of the screen to fill vertically. Must
-			 *            be between 0 and 1, inclusive.
-			 * @param anchorX
-			 *            The relative x position of the anchor point. 0 means
-			 *            the left, 0.5 is the center, 1 is the right. Must be
-			 *            between 0 and 1, inclusive.
-			 * @param anchorY
-			 *            The relative y position of the anchor point. 0 means
-			 *            the top, 0.5 is the center, 1 is the bottom. Must be
-			 *            between 0 and 1, inclusive.
-			 * @return The same Editor, useful for method chaining.
-			 */
-			public Editor setSize(float widthPercent, float heightPercent,
-					float anchorX, float anchorY) {
+			private Editor setPosition(int x, int y, boolean skip) {
+				Log.d(TAG, String.format("setPosition(%d, %d)", x, y));
 				if (mParams != null) {
-					if (widthPercent < 0 || widthPercent > 1
-							|| heightPercent < 0 || heightPercent > 1) {
-						throw new IllegalArgumentException(
-								"Size percentage must be between 0 and 1, inclusive.");
+					if (anchorX < 0 || anchorX > 1 || anchorY < 0
+							|| anchorY > 1) {
+						throw new IllegalStateException(
+								"Anchor point must be between 0 and 1, inclusive.");
 					}
 
-					return setSize(
-							(int) (widthPercent * mParams.getDisplayWidth()),
-							(int) (heightPercent * mParams.getDisplayHeight()),
-							anchorX, anchorY);
+					// sets the x and y correctly according to anchorX and
+					// anchorY
+					if (x != UNCHANGED) {
+						mParams.x = (int) (x - mParams.width * anchorX);
+					}
+					if (y != UNCHANGED) {
+						mParams.y = (int) (y - mParams.height * anchorY);
+					}
+
+					if (Utils.isSet(flags,
+							StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
+						// if gravity is not TOP|LEFT throw exception
+						if (mParams.gravity != (Gravity.TOP | Gravity.LEFT)) {
+							throw new IllegalStateException(
+									"The window "
+											+ id
+											+ " gravity must be TOP|LEFT if FLAG_WINDOW_EDGE_LIMITS_ENABLE or FLAG_WINDOW_EDGE_TILE_ENABLE is set.");
+						}
+
+						// keep window inside edges
+						mParams.x = Math.min(Math.max(mParams.x, 0),
+								displayWidth - mParams.width);
+						mParams.y = Math.min(Math.max(mParams.y, 0),
+								displayHeight - mParams.height);
+
+						// tile window if hit edge
+						if (Utils.isSet(flags,
+								StandOutFlags.FLAG_WINDOW_EDGE_TILE_ENABLE)) {
+							boolean left = mParams.x == 0;
+							// boolean top = mParams.y == 0;
+							// boolean right = mParams.x == displayWidth
+							// - mParams.width;
+							// boolean bottom = mParams.x == displayHeight
+							// - mParams.height;
+
+							if (!skip) {
+								if (left) {
+									setAnchorPoint(0, 0).setPosition(0,
+											displayHeight / 2, true).setSize(
+											UNCHANGED, displayHeight, true);
+								}
+
+								// if (left && top) {
+								// setAnchorPoint(0, 0)
+								// .setPosition(0, 0, true).setSize(
+								// displayWidth / 2,
+								// displayHeight / 2, true);
+								// } else if (top) {
+								// setAnchorPoint(0, 0).setPosition(
+								// displayWidth / 2, 0, true).setSize(
+								// displayWidth, UNCHANGED, true);
+								// } else if (left) {
+								// setAnchorPoint(0, 0).setPosition(0,
+								// displayHeight / 2, true).setSize(
+								// UNCHANGED, displayHeight, true);
+								// }
+							}
+						}
+					}
 				}
+
 				return this;
 			}
 
@@ -2714,11 +2884,6 @@ public abstract class StandOutWindow extends Service {
 	 */
 	protected class LayoutParams extends WindowManager.LayoutParams {
 		/**
-		 * Special value for x or y position that represents the center of the
-		 * screen.
-		 */
-		public static final int CENTER = Integer.MIN_VALUE;
-		/**
 		 * Special value for x position that represents the left of the screen.
 		 */
 		public static final int LEFT = 0;
@@ -2735,8 +2900,25 @@ public abstract class StandOutWindow extends Service {
 		 * screen.
 		 */
 		public static final int BOTTOM = Integer.MAX_VALUE;
+		/**
+		 * Special value for x or y position that represents the center of the
+		 * screen.
+		 */
+		public static final int CENTER = Integer.MIN_VALUE;
+		/**
+		 * Special value for x or y position which requests that the system
+		 * determine the position.
+		 */
+		public static final int AUTO_POSITION = Integer.MIN_VALUE + 1;
 
+		/**
+		 * The distance that distinguishes a tap from a drag.
+		 */
 		public int threshold;
+
+		/**
+		 * Optional constraints of the window.
+		 */
 		public int minWidth, minHeight, maxWidth, maxHeight;
 
 		/**
@@ -2748,14 +2930,12 @@ public abstract class StandOutWindow extends Service {
 					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
 					PixelFormat.TRANSLUCENT);
 
-			int flags = getFlags(id);
+			int windowFlags = getFlags(id);
 
 			setFocusFlag(false);
 
-			if (Utils
-					.isSet(flags, StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
-				// windows stay within edges
-			} else {
+			if (!Utils.isSet(windowFlags,
+					StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
 				// windows may be moved beyond edges
 				flags |= FLAG_LAYOUT_NO_LIMITS;
 			}
@@ -2798,8 +2978,13 @@ public abstract class StandOutWindow extends Service {
 		 */
 		public LayoutParams(int id, int w, int h, int xpos, int ypos) {
 			this(id, w, h);
-			x = xpos;
-			y = ypos;
+
+			if (xpos != AUTO_POSITION) {
+				x = xpos;
+			}
+			if (ypos != AUTO_POSITION) {
+				y = ypos;
+			}
 
 			Display display = mWindowManager.getDefaultDisplay();
 			int width = display.getWidth();
@@ -2904,24 +3089,6 @@ public abstract class StandOutWindow extends Service {
 			} else {
 				flags = flags | LayoutParams.FLAG_NOT_FOCUSABLE;
 			}
-		}
-
-		/**
-		 * Get the width of the entire screen.
-		 * 
-		 * @return The display width.
-		 */
-		public int getDisplayWidth() {
-			return mWindowManager.getDefaultDisplay().getWidth();
-		}
-
-		/**
-		 * Get the height of the entire screen.
-		 * 
-		 * @return The display height.
-		 */
-		public int getDisplayHeight() {
-			return mWindowManager.getDefaultDisplay().getHeight();
 		}
 	}
 

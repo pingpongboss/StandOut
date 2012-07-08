@@ -530,15 +530,17 @@ public final class FloatingFolder extends StandOutWindow {
 				&& event.getAction() == MotionEvent.ACTION_MOVE) {
 			final LayoutParams params = (LayoutParams) window.getLayoutParams();
 
-			final View folder = window.findViewById(R.id.folder);
+			final View folderView = window.findViewById(R.id.folder);
 			final ImageView screenshot = (ImageView) window
 					.findViewById(R.id.preview);
+
+			FolderModel folder = mFolders.get(id);
 
 			// if touch edge
 			if (params.x <= 0) {
 				// first time touch edge
-				if (window.shown) {
-					window.shown = false;
+				if (folder.fullSize) {
+					folder.fullSize = false;
 
 					final Drawable drawable = getResources().getDrawable(
 							R.drawable.ic_menu_archive);
@@ -557,7 +559,7 @@ public final class FloatingFolder extends StandOutWindow {
 
 						@Override
 						public void onAnimationEnd(Animation animation) {
-							folder.setVisibility(View.GONE);
+							folderView.setVisibility(View.GONE);
 
 							// post so that the folder is invisible
 							// before
@@ -584,13 +586,13 @@ public final class FloatingFolder extends StandOutWindow {
 						}
 					});
 
-					folder.startAnimation(mFadeOut);
+					folderView.startAnimation(mFadeOut);
 				}
 			} else { // not touch edge
 
 				// first time not touch edge
-				if (!window.shown) {
-					window.shown = true;
+				if (!folder.fullSize) {
+					folder.fullSize = true;
 
 					mFadeOut.setAnimationListener(new AnimationListener() {
 
@@ -630,9 +632,9 @@ public final class FloatingFolder extends StandOutWindow {
 
 									updateViewLayout(id, window, params);
 
-									folder.setVisibility(View.VISIBLE);
+									folderView.setVisibility(View.VISIBLE);
 
-									folder.startAnimation(mFadeIn);
+									folderView.startAnimation(mFadeIn);
 								}
 							});
 						}
