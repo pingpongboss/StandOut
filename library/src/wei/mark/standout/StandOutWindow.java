@@ -2724,7 +2724,6 @@ public abstract class StandOutWindow extends Service {
 			 * @return The same Editor, useful for method chaining.
 			 */
 			private Editor setSize(int width, int height, boolean skip) {
-				Log.d(TAG, String.format("setSize(%d, %d)", width, height));
 				if (mParams != null) {
 					if (anchorX < 0 || anchorX > 1 || anchorY < 0
 							|| anchorY > 1) {
@@ -2785,12 +2784,28 @@ public abstract class StandOutWindow extends Service {
 				return this;
 			}
 
+			/**
+			 * Set the position of this window in absolute pixels.
+			 * 
+			 * @param x
+			 * @param y
+			 * @return The same Editor, useful for method chaining.
+			 */
 			public Editor setPosition(int x, int y) {
 				return setPosition(x, y, false);
 			}
 
+			/**
+			 * Set the position of this window in absolute pixels.
+			 * 
+			 * @param x
+			 * @param y
+			 * @param skip
+			 *            Don't call {@link #setPosition(int, int)} and
+			 *            {@link #setSize(int, int)} to avoid stack overflow.
+			 * @return The same Editor, useful for method chaining.
+			 */
 			private Editor setPosition(int x, int y, boolean skip) {
-				Log.d(TAG, String.format("setPosition(%d, %d)", x, y));
 				if (mParams != null) {
 					if (anchorX < 0 || anchorX > 1 || anchorY < 0
 							|| anchorY > 1) {
