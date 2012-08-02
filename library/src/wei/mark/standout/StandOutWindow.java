@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import wei.mark.standout.StandOutWindow.Window.Editor;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
