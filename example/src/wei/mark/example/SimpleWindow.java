@@ -1,6 +1,7 @@
 package wei.mark.example;
 
 import wei.mark.standout.StandOutWindow;
+import wei.mark.standout.constants.StandOutFlags;
 import android.content.Intent;
 import android.view.LayoutInflater;
 import android.widget.FrameLayout;

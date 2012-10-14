@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import wei.mark.standout.StandOutWindow;
+import wei.mark.standout.constants.StandOutFlags;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;

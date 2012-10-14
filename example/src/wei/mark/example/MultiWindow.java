@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wei.mark.standout.StandOutWindow;
+import wei.mark.standout.constants.StandOutFlags;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;

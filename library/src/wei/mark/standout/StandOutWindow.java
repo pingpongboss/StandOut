@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+import wei.mark.standout.constants.StandOutFlags;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -99,226 +101,6 @@ public abstract class StandOutWindow extends Service {
 	 * {@link #getHiddenNotification(int)}.
 	 */
 	public static final String ACTION_HIDE = "HIDE";
-
-	/**
-	 * Flags to be returned from {@link StandOutWindow#getFlags(int)}. This
-	 * class was created to avoid polluting the flags namespace.
-	 * 
-	 * @author Mark Wei <markwei@gmail.com>
-	 * 
-	 */
-	public static class StandOutFlags {
-		// This counter keeps track of which primary bit to set for each flag
-		private static int flag_bit = 0;
-
-		/**
-		 * Setting this flag indicates that the window wants the system provided
-		 * window decorations (titlebar, hide/close buttons, resize handle,
-		 * etc).
-		 */
-		public static final int FLAG_DECORATION_SYSTEM = 1 << flag_bit++;
-
-		/**
-		 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
-		 * indicates that the window decorator should NOT provide a close
-		 * button.
-		 * 
-		 * <p>
-		 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
-		 */
-		public static final int FLAG_DECORATION_CLOSE_DISABLE = FLAG_DECORATION_SYSTEM
-				| 1 << flag_bit++;
-
-		/**
-		 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
-		 * indicates that the window decorator should NOT provide a resize
-		 * handle.
-		 * 
-		 * <p>
-		 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
-		 */
-		public static final int FLAG_DECORATION_RESIZE_DISABLE = FLAG_DECORATION_SYSTEM
-				| 1 << flag_bit++;
-
-		/**
-		 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
-		 * indicates that the window decorator should NOT provide a resize
-		 * handle.
-		 * 
-		 * <p>
-		 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
-		 */
-		public static final int FLAG_DECORATION_MOVE_DISABLE = FLAG_DECORATION_SYSTEM
-				| 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the window can be moved by dragging
-		 * the body.
-		 * 
-		 * <p>
-		 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
-		 * always be moved by dragging the titlebar.
-		 */
-		public static final int FLAG_BODY_MOVE_ENABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that windows are able to be hidden, that
-		 * {@link StandOutWindow#getHiddenIcon(int)},
-		 * {@link StandOutWindow#getHiddenTitle(int)}, and
-		 * {@link StandOutWindow#getHiddenMessage(int)} are implemented, and
-		 * that the system window decorator should provide a hide button if
-		 * {@link #FLAG_DECORATION_SYSTEM} is set.
-		 */
-		public static final int FLAG_WINDOW_HIDE_ENABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the window should be brought to the
-		 * front upon user interaction.
-		 * 
-		 * <p>
-		 * Note that if you set this flag, there is a noticeable flashing of the
-		 * window during {@link MotionEvent#ACTION_UP}. This the hack that
-		 * allows the system to bring the window to the front.
-		 */
-		public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the window should be brought to the
-		 * front upon user tap.
-		 * 
-		 * <p>
-		 * Note that if you set this flag, there is a noticeable flashing of the
-		 * window during {@link MotionEvent#ACTION_UP}. This the hack that
-		 * allows the system to bring the window to the front.
-		 */
-		public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the system should keep the window's
-		 * position within the edges of the screen. If this flag is not set, the
-		 * window will be able to be dragged off of the screen.
-		 * 
-		 * <p>
-		 * If this flag is set, the window's {@link Gravity} is recommended to
-		 * be {@link Gravity#TOP} | {@link Gravity#LEFT}. If the gravity is
-		 * anything other than TOP|LEFT, then even though the window will be
-		 * displayed within the edges, it will behave as if the user can drag it
-		 * off the screen.
-		 * 
-		 */
-		public static final int FLAG_WINDOW_EDGE_LIMITS_ENABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the system should tile the window
-		 * when it hits the edge of the screen, mimicking the behavior of
-		 * Windows 7.
-		 * 
-		 * <p>
-		 * This flag also sets {@link #FLAG_WINDOW_EDGE_LIMITS_ENABLE}.
-		 * 
-		 */
-		public static final int FLAG_WINDOW_EDGE_TILE_ENABLE = FLAG_WINDOW_EDGE_LIMITS_ENABLE
-				| 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the system should keep the window's
-		 * aspect ratio constant when resizing.
-		 * 
-		 * <p>
-		 * The aspect ratio will only be enforced in
-		 * {@link StandOutWindow#onTouchHandleResize(int, Window, View, MotionEvent)}
-		 * . The aspect ratio will not be enforced if you set the width or
-		 * height of the window's LayoutParams manually.
-		 * 
-		 * @see StandOutWindow#onTouchHandleResize(int, Window, View,
-		 *      MotionEvent)
-		 */
-		public static final int FLAG_WINDOW_ASPECT_RATIO_ENABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the system should resize the window
-		 * when it detects a pinch-to-zoom gesture.
-		 * 
-		 * @see StandOutWindow.Window#onInterceptTouchEvent(MotionEvent)
-		 */
-		public static final int FLAG_WINDOW_PINCH_RESIZE_ENABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the window does not need focus. If
-		 * this flag is set, the system will not take care of setting and
-		 * unsetting the focus of windows based on user touch and key events.
-		 * 
-		 * <p>
-		 * You will most likely need focus if your window contains any of the
-		 * following: Button, ListView, EditText.
-		 * 
-		 * <p>
-		 * The benefit of disabling focus is that your window will not consume
-		 * any key events. Normally, focused windows will consume the Back and
-		 * Menu keys.
-		 * 
-		 * @see {@link StandOutWindow#focus(int)}
-		 * @see {@link StandOutWindow#unfocus(int)}
-		 * 
-		 */
-		public static final int FLAG_WINDOW_FOCUSABLE_DISABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the system should not change the
-		 * window's visual state when focus is changed. If this flag is set, the
-		 * implementation can choose to change the visual state in
-		 * {@link StandOutWindow#onFocusChange(int, Window, boolean)}.
-		 * 
-		 * @see {@link StandOutWindow.Window#onFocus(boolean)}
-		 * 
-		 */
-		public static final int FLAG_WINDOW_FOCUS_INDICATOR_DISABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the system should disable all
-		 * compatibility workarounds. The default behavior is to run
-		 * {@link StandOutWindow.Window#fixCompatibility(View, int)} on the view
-		 * returned by the implementation.
-		 * 
-		 * @see {@link StandOutWindow.Window#fixCompatibility(View, int)}
-		 */
-		public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the system should disable all
-		 * additional functionality. The default behavior is to run
-		 * {@link StandOutWindow.Window#addFunctionality(View, int)} on the view
-		 * returned by the implementation.
-		 * 
-		 * @see {@link StandOutWindow#addFunctionality(View, int)}
-		 */
-		public static final int FLAG_ADD_FUNCTIONALITY_ALL_DISABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the system should disable adding the
-		 * resize handle additional functionality to a custom View R.id.corner.
-		 * 
-		 * <p>
-		 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be
-		 * able to resize the window with the default corner.
-		 * 
-		 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
-		 */
-		public static final int FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE = 1 << flag_bit++;
-
-		/**
-		 * Setting this flag indicates that the system should disable adding the
-		 * drop down menu additional functionality to a custom View
-		 * R.id.window_icon.
-		 * 
-		 * <p>
-		 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be
-		 * able to show the drop down menu with the default window icon.
-		 * 
-		 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
-		 */
-		public static final int FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE = 1 << flag_bit++;
-	}
 
 	/**
 	 * Show a new window corresponding to the id, or restore a previously hidden
@@ -448,7 +230,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static Intent getShowIntent(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
-		boolean cached = isCached(id, cls);
+		boolean cached = sWindowCache.isCached(id, cls);
 		String action = cached ? ACTION_RESTORE : ACTION_SHOW;
 		Uri uri = cached ? Uri.parse("standout://" + cls + '/' + id) : null;
 		return new Intent(context, cls).putExtra("id", id).setAction(action)
@@ -550,125 +332,13 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	// internal map of ids to shown/hidden views
-	private static Map<Class<? extends StandOutWindow>, SparseArray<Window>> sWindows;
+	private static WindowCache sWindowCache;
 	private static Window sFocusedWindow;
 
 	// static constructors
 	static {
-		sWindows = new HashMap<Class<? extends StandOutWindow>, SparseArray<Window>>();
+		sWindowCache = new WindowCache();
 		sFocusedWindow = null;
-	}
-
-	/**
-	 * Returns whether the window corresponding to the class and id exists in
-	 * the {@link #sWindows} cache.
-	 * 
-	 * @param id
-	 *            The id representing the window.
-	 * @param cls
-	 *            Class corresponding to the window.
-	 * @return True if the window corresponding to the class and id exists in
-	 *         the cache, or false if it does not exist.
-	 */
-	private static boolean isCached(int id, Class<? extends StandOutWindow> cls) {
-		return getCache(id, cls) != null;
-	}
-
-	/**
-	 * Returns the window corresponding to the id from the {@link #sWindows}
-	 * cache.
-	 * 
-	 * @param id
-	 *            The id representing the window.
-	 * @param cls
-	 *            The class of the implementation of the window.
-	 * @return The window corresponding to the id if it exists in the cache, or
-	 *         null if it does not.
-	 */
-	private static Window getCache(int id, Class<? extends StandOutWindow> cls) {
-		SparseArray<Window> l2 = sWindows.get(cls);
-		if (l2 == null) {
-			return null;
-		}
-
-		return l2.get(id);
-	}
-
-	/**
-	 * Add the window corresponding to the id in the {@link #sWindows} cache.
-	 * 
-	 * @param id
-	 *            The id representing the window.
-	 * @param cls
-	 *            The class of the implementation of the window.
-	 * @param window
-	 *            The window to be put in the cache.
-	 */
-	private static void putCache(int id, Class<? extends StandOutWindow> cls,
-			Window window) {
-		SparseArray<Window> l2 = sWindows.get(cls);
-		if (l2 == null) {
-			l2 = new SparseArray<Window>();
-			sWindows.put(cls, l2);
-		}
-
-		l2.put(id, window);
-	}
-
-	/**
-	 * Remove the window corresponding to the id from the {@link #sWindows}
-	 * cache.
-	 * 
-	 * @param id
-	 *            The id representing the window.
-	 * @param cls
-	 *            The class of the implementation of the window.
-	 */
-	private static void removeCache(int id, Class<? extends StandOutWindow> cls) {
-		SparseArray<Window> l2 = sWindows.get(cls);
-		if (l2 != null) {
-			l2.remove(id);
-			if (l2.size() == 0) {
-				sWindows.remove(cls);
-			}
-		}
-	}
-
-	/**
-	 * Returns the size of the {@link #sWindows} cache.
-	 * 
-	 * @return True if the cache corresponding to this class is empty, false if
-	 *         it is not empty.
-	 * @param cls
-	 *            The class of the implementation of the window.
-	 */
-	private static int getCacheSize(Class<? extends StandOutWindow> cls) {
-		SparseArray<Window> l2 = sWindows.get(cls);
-		if (l2 == null) {
-			return 0;
-		}
-
-		return l2.size();
-	}
-
-	/**
-	 * Returns the ids in the {@link #sWindows} cache.
-	 * 
-	 * @param cls
-	 *            The class of the implementation of the window.
-	 * @return The ids representing the cached windows.
-	 */
-	private static Set<Integer> getCacheIds(Class<? extends StandOutWindow> cls) {
-		SparseArray<Window> l2 = sWindows.get(cls);
-		if (l2 == null) {
-			return new HashSet<Integer>();
-		}
-
-		Set<Integer> keys = new HashSet<Integer>();
-		for (int i = 0; i < l2.size(); i++) {
-			keys.add(l2.keyAt(i));
-		}
-		return keys;
 	}
 
 	// internal system services
@@ -1447,7 +1117,7 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		// add view to internal map
-		putCache(id, getClass(), window);
+		sWindowCache.putCache(id, getClass(), window);
 
 		// get the persistent notification
 		Notification notification = getPersistentNotification(id);
@@ -1580,7 +1250,7 @@ public abstract class StandOutWindow extends Service {
 					+ ") a null window.");
 		}
 
-		if (window.visibility == window.VISIBILITY_TRANSITION) {
+		if (window.visibility == Window.VISIBILITY_TRANSITION) {
 			return;
 		}
 
@@ -1621,7 +1291,7 @@ public abstract class StandOutWindow extends Service {
 						window.visibility = Window.VISIBILITY_GONE;
 
 						// remove view from internal map
-						removeCache(id, StandOutWindow.this.getClass());
+						sWindowCache.removeCache(id, StandOutWindow.this.getClass());
 
 						// if we just released the last window, quit
 						if (getExistingIds().size() == 0) {
@@ -1640,10 +1310,10 @@ public abstract class StandOutWindow extends Service {
 				mWindowManager.removeView(window);
 
 				// remove view from internal map
-				removeCache(id, getClass());
+				sWindowCache.removeCache(id, getClass());
 
 				// if we just released the last window, quit
-				if (getCacheSize(getClass()) == 0) {
+				if (sWindowCache.getCacheSize(getClass()) == 0) {
 					// tell Android to remove the persistent notification
 					// the Service will be shutdown by the system on low memory
 					startedForeground = false;
@@ -1840,7 +1510,7 @@ public abstract class StandOutWindow extends Service {
 	 *         closed.
 	 */
 	protected final boolean isExistingId(int id) {
-		return isCached(id, getClass());
+		return sWindowCache.isCached(id, getClass());
 	}
 
 	/**
@@ -1849,7 +1519,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return A set of ids, or an empty set.
 	 */
 	protected final Set<Integer> getExistingIds() {
-		return getCacheIds(getClass());
+		return sWindowCache.getCacheIds(getClass());
 	}
 
 	/**
@@ -1863,7 +1533,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return The window if it is shown/hidden, or null if it is closed.
 	 */
 	protected final Window getWindow(int id) {
-		return getCache(id, getClass());
+		return sWindowCache.getCache(id, getClass());
 	}
 
 	/**
@@ -2002,7 +1672,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param event
 	 * @return
 	 */
-	private boolean onTouchHandleResize(int id, Window window, View view,
+	boolean onTouchHandleResize(int id, Window window, View view,
 			MotionEvent event) {
 		StandOutWindow.LayoutParams params = (LayoutParams) window
 				.getLayoutParams();
@@ -2538,7 +2208,7 @@ public abstract class StandOutWindow extends Service {
 		 * @param root
 		 *            The view hierarchy that is part of the window.
 		 */
-		private void addFunctionality(View root) {
+		void addFunctionality(View root) {
 			// corner for resize
 			if (!Utils.isSet(flags,
 					StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE)) {
@@ -2590,7 +2260,7 @@ public abstract class StandOutWindow extends Service {
 		 * @param root
 		 *            The root view hierarchy to iterate through and check.
 		 */
-		private void fixCompatibility(View root) {
+		void fixCompatibility(View root) {
 			Queue<View> queue = new LinkedList<View>();
 			queue.add(root);
 
@@ -3072,7 +2742,7 @@ public abstract class StandOutWindow extends Service {
 			Display display = mWindowManager.getDefaultDisplay();
 			int displayWidth = display.getWidth();
 
-			int types = sWindows.size();
+			int types = sWindowCache.size();
 
 			int initialX = 100 * types;
 			int variableX = 100 * id;
@@ -3087,7 +2757,7 @@ public abstract class StandOutWindow extends Service {
 			int displayWidth = display.getWidth();
 			int displayHeight = display.getHeight();
 
-			int types = sWindows.size();
+			int types = sWindowCache.size();
 
 			int initialY = 100 * types;
 			int variableY = x + 200 * (100 * id) / (displayWidth - width);
