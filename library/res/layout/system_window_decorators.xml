@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/content"
     android:layout_width="200dp"
     android:layout_height="200dp"
@@ -8,7 +7,7 @@
 
     <LinearLayout
         android:id="@+id/titlebar"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="40dp"
         android:layout_alignParentTop="true"
         android:background="#000000"
@@ -29,9 +28,8 @@
             android:layout_marginLeft="4dp"
             android:layout_weight="1"
             android:maxLines="1"
-            android:text="Title"
             android:textSize="20sp"
-            tools:ignore="HardcodedText" />
+            android:ellipsize="end"/>
 
         <ImageView
             android:id="@+id/hide"
@@ -50,8 +48,8 @@
 
     <FrameLayout
         android:id="@+id/body"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_below="@+id/titlebar" >
     </FrameLayout>
 
