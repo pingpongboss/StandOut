@@ -42,6 +42,9 @@ import android.widget.TextView;
  * 
  * @author Mark Wei <markwei@gmail.com>
  * 
+ * Contributors:
+ * Jason <github.com/jasonconnery>
+ * 
  */
 public abstract class StandOutWindow extends Service {
 	static final String TAG = "StandOutWindow";
