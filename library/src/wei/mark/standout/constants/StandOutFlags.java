@@ -1,7 +1,7 @@
 package wei.mark.standout.constants;
 
 import wei.mark.standout.StandOutWindow;
-import wei.mark.standout.StandOutWindow.Window;
+import wei.mark.standout.ui.Window;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -144,7 +144,7 @@ public class StandOutFlags {
 	 * Setting this flag indicates that the system should resize the window
 	 * when it detects a pinch-to-zoom gesture.
 	 * 
-	 * @see StandOutWindow.Window#onInterceptTouchEvent(MotionEvent)
+	 * @see Window#onInterceptTouchEvent(MotionEvent)
 	 */
 	public static final int FLAG_WINDOW_PINCH_RESIZE_ENABLE = 1 << flag_bit++;
 
@@ -174,7 +174,7 @@ public class StandOutFlags {
 	 * implementation can choose to change the visual state in
 	 * {@link StandOutWindow#onFocusChange(int, Window, boolean)}.
 	 * 
-	 * @see {@link StandOutWindow.Window#onFocus(boolean)}
+	 * @see {@link Window#onFocus(boolean)}
 	 * 
 	 */
 	public static final int FLAG_WINDOW_FOCUS_INDICATOR_DISABLE = 1 << flag_bit++;
@@ -182,17 +182,17 @@ public class StandOutFlags {
 	/**
 	 * Setting this flag indicates that the system should disable all
 	 * compatibility workarounds. The default behavior is to run
-	 * {@link StandOutWindow.Window#fixCompatibility(View, int)} on the view
+	 * {@link Window#fixCompatibility(View, int)} on the view
 	 * returned by the implementation.
 	 * 
-	 * @see {@link StandOutWindow.Window#fixCompatibility(View, int)}
+	 * @see {@link Window#fixCompatibility(View, int)}
 	 */
 	public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_bit++;
 
 	/**
 	 * Setting this flag indicates that the system should disable all
 	 * additional functionality. The default behavior is to run
-	 * {@link StandOutWindow.Window#addFunctionality(View, int)} on the view
+	 * {@link Window#addFunctionality(View, int)} on the view
 	 * returned by the implementation.
 	 * 
 	 * @see {@link StandOutWindow#addFunctionality(View, int)}
@@ -207,7 +207,7 @@ public class StandOutFlags {
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be
 	 * able to resize the window with the default corner.
 	 * 
-	 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
+	 * @see {@link Window#addFunctionality(View, int)}
 	 */
 	public static final int FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE = 1 << flag_bit++;
 
@@ -220,7 +220,7 @@ public class StandOutFlags {
 	 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be
 	 * able to show the drop down menu with the default window icon.
 	 * 
-	 * @see {@link StandOutWindow.Window#addFunctionality(View, int)}
+	 * @see {@link Window#addFunctionality(View, int)}
 	 */
 	public static final int FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE = 1 << flag_bit++;
 }

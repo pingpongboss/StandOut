@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import wei.mark.standout.StandOutWindow.Window;
+import wei.mark.standout.ui.Window;
+
 import android.util.SparseArray;
 
 public class WindowCache {

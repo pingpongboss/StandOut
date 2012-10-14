@@ -1,16 +1,12 @@
 package wei.mark.standout;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 import wei.mark.standout.constants.StandOutFlags;
-
+import wei.mark.standout.ui.Window;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -22,9 +18,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -50,7 +44,7 @@ import android.widget.TextView;
  * 
  */
 public abstract class StandOutWindow extends Service {
-	private static final String TAG = "StandOutWindow";
+	static final String TAG = "StandOutWindow";
 
 	/**
 	 * StandOut window id: You may use this sample id for your first window.
@@ -332,8 +326,8 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	// internal map of ids to shown/hidden views
-	private static WindowCache sWindowCache;
-	private static Window sFocusedWindow;
+	static WindowCache sWindowCache;
+	static Window sFocusedWindow;
 
 	// static constructors
 	static {
@@ -342,9 +336,9 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	// internal system services
-	private WindowManager mWindowManager;
+	WindowManager mWindowManager;
 	private NotificationManager mNotificationManager;
-	private LayoutInflater mLayoutInflater;
+	LayoutInflater mLayoutInflater;
 
 	// internal state variables
 	private boolean startedForeground;
@@ -429,7 +423,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @return The name.
 	 */
-	protected abstract String getAppName();
+	public abstract String getAppName();
 
 	/**
 	 * Return the icon resource for every window in this implementation. The
@@ -438,7 +432,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @return The icon.
 	 */
-	protected abstract int getAppIcon();
+	public abstract int getAppIcon();
 
 	/**
 	 * Create a new {@link View} corresponding to the id, and add it as a child
@@ -459,7 +453,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param frame
 	 *            The {@link FrameLayout} to attach your view as a child to.
 	 */
-	protected abstract void createAndAttachView(int id, FrameLayout frame);
+	public abstract void createAndAttachView(int id, FrameLayout frame);
 
 	/**
 	 * Return the {@link StandOutWindow#LayoutParams} for the corresponding id.
@@ -477,7 +471,7 @@ public abstract class StandOutWindow extends Service {
 	 *         returned will be reused whenever possible, minimizing the number
 	 *         of times getParams() will be called.
 	 */
-	protected abstract LayoutParams getParams(int id, Window window);
+	public abstract StandOutLayoutParams getParams(int id, Window window);
 
 	/**
 	 * Implement this method to change modify the behavior and appearance of the
@@ -495,7 +489,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return A combination of flags.
 	 */
-	protected int getFlags(int id) {
+	public int getFlags(int id) {
 		return 0;
 	}
 
@@ -507,7 +501,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The title of the window.
 	 */
-	protected String getTitle(int id) {
+	public String getTitle(int id) {
 		return getAppName();
 	}
 
@@ -519,7 +513,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The icon of the window.
 	 */
-	protected int getIcon(int id) {
+	public int getIcon(int id) {
 		return getAppIcon();
 	}
 
@@ -531,7 +525,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window shown.
 	 * @return The title for the persistent notification.
 	 */
-	protected String getPersistentNotificationTitle(int id) {
+	public String getPersistentNotificationTitle(int id) {
 		return getAppName() + " Running";
 	}
 
@@ -543,7 +537,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window shown.
 	 * @return The message for the persistent notification.
 	 */
-	protected String getPersistentNotificationMessage(int id) {
+	public String getPersistentNotificationMessage(int id) {
 		return "";
 	}
 
@@ -559,7 +553,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window shown.
 	 * @return The intent for the persistent notification.
 	 */
-	protected Intent getPersistentNotificationIntent(int id) {
+	public Intent getPersistentNotificationIntent(int id) {
 		return null;
 	}
 
@@ -570,7 +564,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @return The icon.
 	 */
-	protected int getHiddenIcon() {
+	public int getHiddenIcon() {
 		return getAppIcon();
 	}
 
@@ -582,7 +576,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the hidden window.
 	 * @return The title for the hidden notification.
 	 */
-	protected String getHiddenNotificationTitle(int id) {
+	public String getHiddenNotificationTitle(int id) {
 		return getAppName() + " Hidden";
 	}
 
@@ -594,7 +588,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the hidden window.
 	 * @return The message for the hidden notification.
 	 */
-	protected String getHiddenNotificationMessage(int id) {
+	public String getHiddenNotificationMessage(int id) {
 		return "";
 	}
 
@@ -610,7 +604,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the hidden window.
 	 * @return The intent for the hidden notification.
 	 */
-	protected Intent getHiddenNotificationIntent(int id) {
+	public Intent getHiddenNotificationIntent(int id) {
 		return null;
 	}
 
@@ -638,7 +632,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return The {@link Notification} corresponding to the id, or null if
 	 *         you've previously returned a notification.
 	 */
-	protected Notification getPersistentNotification(int id) {
+	public Notification getPersistentNotification(int id) {
 		// basic notification stuff
 		// http://developer.android.com/guide/topics/ui/notifiers/notifications.html
 		int icon = getAppIcon();
@@ -685,7 +679,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The {@link Notification} corresponding to the id or null.
 	 */
-	protected Notification getHiddenNotification(int id) {
+	public Notification getHiddenNotification(int id) {
 		// same basics as getPersistentNotification()
 		int icon = getHiddenIcon();
 		long when = System.currentTimeMillis();
@@ -720,7 +714,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The animation to play or null.
 	 */
-	protected Animation getShowAnimation(int id) {
+	public Animation getShowAnimation(int id) {
 		return AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
 	}
 
@@ -732,7 +726,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The animation to play or null.
 	 */
-	protected Animation getHideAnimation(int id) {
+	public Animation getHideAnimation(int id) {
 		return AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
 	}
 
@@ -744,7 +738,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The animation to play or null.
 	 */
-	protected Animation getCloseAnimation(int id) {
+	public Animation getCloseAnimation(int id) {
 		return AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
 	}
 
@@ -754,7 +748,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @return The theme to set on the window, or 0 for device default.
 	 */
-	protected int getThemeStyle() {
+	public int getThemeStyle() {
 		return 0;
 	}
 
@@ -773,7 +767,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return The drop down menu to be anchored to the icon, or null to have no
 	 *         dropdown menu.
 	 */
-	protected PopupWindow getDropDown(final int id) {
+	public PopupWindow getDropDown(final int id) {
 		final List<DropDownListItem> items;
 
 		List<DropDownListItem> dropDownListItems = getDropDownItems(id);
@@ -799,7 +793,8 @@ public abstract class StandOutWindow extends Service {
 		list.setOrientation(LinearLayout.VERTICAL);
 
 		final PopupWindow dropDown = new PopupWindow(list,
-				LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, true);
+				StandOutLayoutParams.WRAP_CONTENT,
+				StandOutLayoutParams.WRAP_CONTENT, true);
 
 		for (final DropDownListItem item : items) {
 			ViewGroup listItem = (ViewGroup) mLayoutInflater.inflate(
@@ -839,7 +834,7 @@ public abstract class StandOutWindow extends Service {
 	 * @return The list of items to show in the drop down menu, or null or empty
 	 *         to have no dropdown menu.
 	 */
-	protected List<DropDownListItem> getDropDownItems(int id) {
+	public List<DropDownListItem> getDropDownItems(int id) {
 		return null;
 	}
 
@@ -861,7 +856,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param event
 	 *            See linked method.
 	 */
-	protected boolean onTouchBody(int id, Window window, View view,
+	public boolean onTouchBody(int id, Window window, View view,
 			MotionEvent event) {
 		return false;
 	}
@@ -880,7 +875,7 @@ public abstract class StandOutWindow extends Service {
 	 *            See linked method.
 	 * @see {@link #onTouchHandleMove(int, Window, View, MotionEvent)}
 	 */
-	protected void onMove(int id, Window window, View view, MotionEvent event) {
+	public void onMove(int id, Window window, View view, MotionEvent event) {
 	}
 
 	/**
@@ -897,7 +892,7 @@ public abstract class StandOutWindow extends Service {
 	 *            See linked method.
 	 * @see {@link #onTouchHandleResize(int, Window, View, MotionEvent)}
 	 */
-	protected void onResize(int id, Window window, View view, MotionEvent event) {
+	public void onResize(int id, Window window, View view, MotionEvent event) {
 	}
 
 	/**
@@ -913,7 +908,7 @@ public abstract class StandOutWindow extends Service {
 	 *         continue.
 	 * @see #show(int)
 	 */
-	protected boolean onShow(int id, Window window) {
+	public boolean onShow(int id, Window window) {
 		return false;
 	}
 
@@ -931,7 +926,7 @@ public abstract class StandOutWindow extends Service {
 	 *         continue.
 	 * @see #hide(int)
 	 */
-	protected boolean onHide(int id, Window window) {
+	public boolean onHide(int id, Window window) {
 		return false;
 	}
 
@@ -948,7 +943,7 @@ public abstract class StandOutWindow extends Service {
 	 *         continue.
 	 * @see #close(int)
 	 */
-	protected boolean onClose(int id, Window window) {
+	public boolean onClose(int id, Window window) {
 		return false;
 	}
 
@@ -961,7 +956,7 @@ public abstract class StandOutWindow extends Service {
 	 *         continue.
 	 * @see #closeAll()
 	 */
-	protected boolean onCloseAll() {
+	public boolean onCloseAll() {
 		return false;
 	}
 
@@ -986,7 +981,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The sending window's id. Provided if the sender wants a
 	 *            result.
 	 */
-	protected void onReceiveData(int id, int requestCode, Bundle data,
+	public void onReceiveData(int id, int requestCode, Bundle data,
 			Class<? extends StandOutWindow> fromCls, int fromId) {
 	}
 
@@ -1003,10 +998,9 @@ public abstract class StandOutWindow extends Service {
 	 *            The updated layout params.
 	 * @return Return true to cancel the window from being updated, or false to
 	 *         continue.
-	 * @see #updateViewLayout(int, Window, LayoutParams)
+	 * @see #updateViewLayout(int, Window, StandOutLayoutParams)
 	 */
-	protected boolean onUpdate(int id, Window window,
-			StandOutWindow.LayoutParams params) {
+	public boolean onUpdate(int id, Window window, StandOutLayoutParams params) {
 		return false;
 	}
 
@@ -1023,7 +1017,7 @@ public abstract class StandOutWindow extends Service {
 	 *         or false to continue.
 	 * @see #bringToFront(int)
 	 */
-	protected boolean onBringToFront(int id, Window window) {
+	public boolean onBringToFront(int id, Window window) {
 		return false;
 	}
 
@@ -1042,7 +1036,7 @@ public abstract class StandOutWindow extends Service {
 	 *         false to continue.
 	 * @see #focus(int)
 	 */
-	protected boolean onFocusChange(int id, Window window, boolean focus) {
+	public boolean onFocusChange(int id, Window window, boolean focus) {
 		return false;
 	}
 
@@ -1061,7 +1055,7 @@ public abstract class StandOutWindow extends Service {
 	 *         false to let the window handle the key event.
 	 * @see {@link Window#dispatchKeyEvent(KeyEvent)}
 	 */
-	protected boolean onKeyEvent(int id, Window window, KeyEvent event) {
+	public boolean onKeyEvent(int id, Window window, KeyEvent event) {
 		return false;
 	}
 
@@ -1073,7 +1067,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The window shown.
 	 */
-	protected final synchronized Window show(int id) {
+	public final synchronized Window show(int id) {
 		// get the window corresponding to the id
 		Window cachedWindow = getWindow(id);
 		final Window window;
@@ -1082,7 +1076,7 @@ public abstract class StandOutWindow extends Service {
 		if (cachedWindow != null) {
 			window = cachedWindow;
 		} else {
-			window = new Window(id);
+			window = new Window(this, id);
 		}
 
 		if (window.visibility == Window.VISIBILITY_VISIBLE) {
@@ -1102,7 +1096,7 @@ public abstract class StandOutWindow extends Service {
 		Animation animation = getShowAnimation(id);
 
 		// get the params corresponding to the id
-		LayoutParams params = window.getLayoutParams();
+		StandOutLayoutParams params = window.getLayoutParams();
 
 		try {
 			// add the view to the window manager
@@ -1162,7 +1156,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id of the window.
 	 */
-	protected final synchronized void hide(int id) {
+	public final synchronized void hide(int id) {
 		// get the view corresponding to the id
 		final Window window = getWindow(id);
 
@@ -1241,7 +1235,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id of the window.
 	 */
-	protected final synchronized void close(final int id) {
+	public final synchronized void close(final int id) {
 		// get the view corresponding to the id
 		final Window window = getWindow(id);
 
@@ -1291,7 +1285,8 @@ public abstract class StandOutWindow extends Service {
 						window.visibility = Window.VISIBILITY_GONE;
 
 						// remove view from internal map
-						sWindowCache.removeCache(id, StandOutWindow.this.getClass());
+						sWindowCache.removeCache(id,
+								StandOutWindow.this.getClass());
 
 						// if we just released the last window, quit
 						if (getExistingIds().size() == 0) {
@@ -1328,7 +1323,7 @@ public abstract class StandOutWindow extends Service {
 	/**
 	 * Close all existing windows.
 	 */
-	protected final synchronized void closeAll() {
+	public final synchronized void closeAll() {
 		// alert callbacks and cancel if instructed
 		if (onCloseAll()) {
 			Log.w(TAG, "Windows close all cancelled by implementation.");
@@ -1366,34 +1361,11 @@ public abstract class StandOutWindow extends Service {
 	 *            A bundle of parceleable data to be sent to the receiving
 	 *            window.
 	 */
-	protected final void sendData(int fromId,
+	public final void sendData(int fromId,
 			Class<? extends StandOutWindow> toCls, int toId, int requestCode,
 			Bundle data) {
 		StandOutWindow.sendData(this, toCls, toId, requestCode, data,
 				getClass(), fromId);
-	}
-
-	/**
-	 * Update the window corresponding to this id with the given params.
-	 * 
-	 * <p>
-	 * This method is now deprecated. You may wish to use {@link Window#edit()}
-	 * to get an {@link Editor}, which simplifies resizing and repositioning.
-	 * The Editor also will take care of take care of window size and position
-	 * constraints, as well as actions that occur when the window touches an
-	 * edge of the screen.
-	 * 
-	 * @param id
-	 *            The id of the window.
-	 * @param window
-	 *            The window to update.
-	 * @param params
-	 *            The updated layout params to apply.
-	 */
-	@Deprecated
-	protected final void updateViewLayout(int id, Window window,
-			LayoutParams params) {
-		updateViewLayout(id, params);
 	}
 
 	/**
@@ -1403,7 +1375,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param id
 	 *            The id of the window to bring to the front.
 	 */
-	protected final synchronized void bringToFront(int id) {
+	public final synchronized void bringToFront(int id) {
 		Window window = getWindow(id);
 		if (window == null) {
 			throw new IllegalArgumentException("Tried to bringToFront(" + id
@@ -1426,7 +1398,7 @@ public abstract class StandOutWindow extends Service {
 			return;
 		}
 
-		LayoutParams params = window.getLayoutParams();
+		StandOutLayoutParams params = window.getLayoutParams();
 
 		// remove from window manager then add back
 		try {
@@ -1450,7 +1422,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return True if focus changed successfully, false if it failed.
 	 */
-	protected final synchronized boolean focus(int id) {
+	public final synchronized boolean focus(int id) {
 		// check if that window is focusable
 		final Window window = getWindow(id);
 		if (window == null) {
@@ -1479,7 +1451,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return True if focus changed successfully, false if it failed.
 	 */
-	protected final synchronized boolean unfocus(int id) {
+	public final synchronized boolean unfocus(int id) {
 		Window window = getWindow(id);
 		return unfocus(window);
 	}
@@ -1490,7 +1462,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @return The unique id.
 	 */
-	protected final int getUniqueId() {
+	public final int getUniqueId() {
 		int unique = DEFAULT_ID;
 		for (int id : getExistingIds()) {
 			unique = Math.max(unique, id + 1);
@@ -1509,7 +1481,7 @@ public abstract class StandOutWindow extends Service {
 	 *         hidden, or false if it has never been shown or was previously
 	 *         closed.
 	 */
-	protected final boolean isExistingId(int id) {
+	public final boolean isExistingId(int id) {
 		return sWindowCache.isCached(id, getClass());
 	}
 
@@ -1518,7 +1490,7 @@ public abstract class StandOutWindow extends Service {
 	 * 
 	 * @return A set of ids, or an empty set.
 	 */
-	protected final Set<Integer> getExistingIds() {
+	public final Set<Integer> getExistingIds() {
 		return sWindowCache.getCacheIds(getClass());
 	}
 
@@ -1532,8 +1504,24 @@ public abstract class StandOutWindow extends Service {
 	 *            The id of the window.
 	 * @return The window if it is shown/hidden, or null if it is closed.
 	 */
-	protected final Window getWindow(int id) {
+	public final Window getWindow(int id) {
 		return sWindowCache.getCache(id, getClass());
+	}
+
+	/**
+	 * Return the window that currently has focus.
+	 * 
+	 * @return The window that has focus.
+	 */
+	public final Window getFocusedWindow() {
+		return sFocusedWindow;
+	}
+
+	/**
+	 * Sets the window that currently has focus.
+	 */
+	public final void setFocusedWindow(Window window) {
+		sFocusedWindow = window;
 	}
 
 	/**
@@ -1546,7 +1534,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param text
 	 *            The new title.
 	 */
-	protected final void setTitle(int id, String text) {
+	public final void setTitle(int id, String text) {
 		Window window = getWindow(id);
 		if (window != null) {
 			View title = window.findViewById(R.id.title);
@@ -1566,7 +1554,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param drawableRes
 	 *            The new icon.
 	 */
-	protected final void setIcon(int id, int drawableRes) {
+	public final void setIcon(int id, int drawableRes) {
 		Window window = getWindow(id);
 		if (window != null) {
 			View icon = window.findViewById(R.id.window_icon);
@@ -1587,9 +1575,9 @@ public abstract class StandOutWindow extends Service {
 	 * @param event
 	 * @return
 	 */
-	private boolean onTouchHandleMove(int id, Window window, View view,
+	public boolean onTouchHandleMove(int id, Window window, View view,
 			MotionEvent event) {
-		LayoutParams params = window.getLayoutParams();
+		StandOutLayoutParams params = window.getLayoutParams();
 
 		// how much you have to move in either direction in order for the
 		// gesture to be a move and not tap
@@ -1672,9 +1660,9 @@ public abstract class StandOutWindow extends Service {
 	 * @param event
 	 * @return
 	 */
-	boolean onTouchHandleResize(int id, Window window, View view,
+	public boolean onTouchHandleResize(int id, Window window, View view,
 			MotionEvent event) {
-		StandOutWindow.LayoutParams params = (LayoutParams) window
+		StandOutLayoutParams params = (StandOutLayoutParams) window
 				.getLayoutParams();
 
 		switch (event.getAction()) {
@@ -1726,7 +1714,7 @@ public abstract class StandOutWindow extends Service {
 	 *            The window to unfocus.
 	 * @return True if focus changed successfully, false if it failed.
 	 */
-	private synchronized boolean unfocus(Window window) {
+	public synchronized boolean unfocus(Window window) {
 		if (window == null) {
 			throw new IllegalArgumentException(
 					"Tried to unfocus a null window.");
@@ -1742,7 +1730,7 @@ public abstract class StandOutWindow extends Service {
 	 * @param params
 	 *            The updated layout params to apply.
 	 */
-	private void updateViewLayout(int id, LayoutParams params) {
+	public void updateViewLayout(int id, StandOutLayoutParams params) {
 		Window window = getWindow(id);
 
 		if (window == null) {
@@ -1773,800 +1761,12 @@ public abstract class StandOutWindow extends Service {
 	}
 
 	/**
-	 * Special view that represents a floating window.
-	 * 
-	 * @author Mark Wei <markwei@gmail.com>
-	 * 
-	 */
-	public class Window extends FrameLayout {
-		public static final int VISIBILITY_GONE = 0;
-		public static final int VISIBILITY_VISIBLE = 1;
-		public static final int VISIBILITY_TRANSITION = 2;
-		/**
-		 * Context of the window.
-		 */
-		StandOutWindow context;
-		/**
-		 * Class of the window, indicating which application the window belongs
-		 * to.
-		 */
-		public Class<? extends StandOutWindow> cls;
-		/**
-		 * Id of the window.
-		 */
-		public int id;
-
-		/**
-		 * Whether the window is shown, hidden/closed, or in transition.
-		 */
-		public int visibility;
-
-		/**
-		 * Whether the window is focused.
-		 */
-		public boolean focused;
-
-		/**
-		 * Original params from {@link StandOutWindow#getParams(int, Window)}.
-		 */
-		public StandOutWindow.LayoutParams originalParams;
-		/**
-		 * Original flags from {@link StandOutWindow#getFlags(int)}.
-		 */
-		public int flags;
-
-		/**
-		 * Touch information of the window.
-		 */
-		public TouchInfo touchInfo;
-
-		/**
-		 * Data attached to the window.
-		 */
-		public Bundle data;
-
-		public Window(int id) {
-			super(StandOutWindow.this);
-
-			setTheme(getThemeStyle());
-
-			this.context = StandOutWindow.this;
-
-			this.cls = context.getClass();
-			this.id = id;
-			this.originalParams = getParams(id, this);
-			this.flags = getFlags(id);
-			this.touchInfo = new TouchInfo();
-			touchInfo.ratio = (float) originalParams.width
-					/ originalParams.height;
-			this.data = new Bundle();
-
-			// create the window contents
-			View content;
-			FrameLayout body;
-
-			if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_SYSTEM)) {
-				// requested system window decorations
-				content = getSystemDecorations();
-				body = (FrameLayout) content.findViewById(R.id.body);
-			} else {
-				// did not request decorations. will provide own implementation
-				content = new FrameLayout(context);
-				content.setId(R.id.content);
-				body = (FrameLayout) content;
-			}
-
-			addView(content);
-
-			body.setOnTouchListener(new OnTouchListener() {
-
-				@Override
-				public boolean onTouch(View v, MotionEvent event) {
-					// pass all touch events to the implementation
-					boolean consumed = false;
-
-					// handle move and bring to front
-					consumed = onTouchHandleMove(Window.this.id, Window.this,
-							v, event) || consumed;
-
-					// alert implementation
-					consumed = onTouchBody(Window.this.id, Window.this, v,
-							event) || consumed;
-
-					return consumed;
-				}
-			});
-
-			// attach the view corresponding to the id from the
-			// implementation
-			createAndAttachView(id, body);
-
-			// make sure the implementation attached the view
-			if (body.getChildCount() == 0) {
-				throw new RuntimeException(
-						"You must attach your view to the given frame in createAndAttachView()");
-			}
-
-			// implement StandOut specific workarounds
-			if (!Utils.isSet(flags,
-					StandOutFlags.FLAG_FIX_COMPATIBILITY_ALL_DISABLE)) {
-				fixCompatibility(body);
-			}
-			// implement StandOut specific additional functionality
-			if (!Utils.isSet(flags,
-					StandOutFlags.FLAG_ADD_FUNCTIONALITY_ALL_DISABLE)) {
-				addFunctionality(body);
-			}
-
-			// attach the existing tag from the frame to the window
-			setTag(body.getTag());
-		}
-
-		@Override
-		public boolean onInterceptTouchEvent(MotionEvent event) {
-			StandOutWindow.LayoutParams params = getLayoutParams();
-
-			// focus window
-			if (event.getAction() == MotionEvent.ACTION_DOWN) {
-				if (sFocusedWindow != this) {
-					focus(id);
-				}
-			}
-
-			// multitouch
-			if (event.getPointerCount() >= 2
-					&& Utils.isSet(flags,
-							StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE)
-					&& (event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_POINTER_DOWN) {
-				touchInfo.scale = 1;
-				touchInfo.dist = -1;
-				touchInfo.firstWidth = params.width;
-				touchInfo.firstHeight = params.height;
-				return true;
-			}
-
-			return false;
-		}
-
-		@Override
-		public boolean onTouchEvent(MotionEvent event) {
-			// handle touching outside
-			switch (event.getAction()) {
-				case MotionEvent.ACTION_OUTSIDE:
-					// unfocus window
-					if (sFocusedWindow == this) {
-						unfocus(this);
-					}
-
-					// notify implementation that ACTION_OUTSIDE occurred
-					onTouchBody(id, this, this, event);
-					break;
-			}
-
-			// handle multitouch
-			if (event.getPointerCount() >= 2
-					&& Utils.isSet(flags,
-							StandOutFlags.FLAG_WINDOW_PINCH_RESIZE_ENABLE)) {
-				// 2 fingers or more
-
-				float x0 = event.getX(0);
-				float y0 = event.getY(0);
-				float x1 = event.getX(1);
-				float y1 = event.getY(1);
-
-				double dist = Math.sqrt(Math.pow(x0 - x1, 2)
-						+ Math.pow(y0 - y1, 2));
-
-				switch (event.getAction() & MotionEvent.ACTION_MASK) {
-					case MotionEvent.ACTION_MOVE:
-						if (touchInfo.dist == -1) {
-							touchInfo.dist = dist;
-						}
-						touchInfo.scale *= dist / touchInfo.dist;
-						touchInfo.dist = dist;
-
-						// scale the window with anchor point set to middle
-						edit().setAnchorPoint(.5f, .5f)
-								.setSize(
-										(int) (touchInfo.firstWidth * touchInfo.scale),
-										(int) (touchInfo.firstHeight * touchInfo.scale))
-								.commit();
-						break;
-				}
-			}
-
-			return true;
-		}
-
-		@Override
-		public boolean dispatchKeyEvent(KeyEvent event) {
-			if (onKeyEvent(id, this, event)) {
-				Log.d(TAG, "Window " + id + " key event " + event
-						+ " cancelled by implementation.");
-				return false;
-			}
-
-			if (event.getAction() == KeyEvent.ACTION_UP) {
-				switch (event.getKeyCode()) {
-					case KeyEvent.KEYCODE_BACK:
-						unfocus(this);
-						return true;
-				}
-			}
-
-			return super.dispatchKeyEvent(event);
-		}
-
-		/**
-		 * Request or remove the focus from this window.
-		 * 
-		 * @param focus
-		 *            Whether we want to gain or lose focus.
-		 * @return True if focus changed successfully, false if it failed.
-		 */
-		public boolean onFocus(boolean focus) {
-			if (!Utils
-					.isSet(flags, StandOutFlags.FLAG_WINDOW_FOCUSABLE_DISABLE)) {
-				// window is focusable
-
-				if (focus == focused) {
-					// window already focused/unfocused
-					return false;
-				}
-
-				focused = focus;
-
-				// alert callbacks and cancel if instructed
-				if (context.onFocusChange(id, this, focus)) {
-					Log.d(TAG, "Window " + id + " focus change "
-							+ (focus ? "(true)" : "(false)")
-							+ " cancelled by implementation.");
-					focused = !focus;
-					return false;
-				}
-
-				if (!Utils.isSet(flags,
-						StandOutFlags.FLAG_WINDOW_FOCUS_INDICATOR_DISABLE)) {
-					// change visual state
-					View content = findViewById(R.id.content);
-					if (focus) {
-						// gaining focus
-						content.setBackgroundResource(R.drawable.border_focused);
-					} else {
-						// losing focus
-						if (Utils.isSet(flags,
-								StandOutFlags.FLAG_DECORATION_SYSTEM)) {
-							// system decorations
-							content.setBackgroundResource(R.drawable.border);
-						} else {
-							// no decorations
-							content.setBackgroundResource(0);
-						}
-					}
-				}
-
-				// set window manager params
-				StandOutWindow.LayoutParams params = getLayoutParams();
-				params.setFocusFlag(focus);
-				context.updateViewLayout(id, this, params);
-
-				if (focus) {
-					sFocusedWindow = this;
-				} else {
-					if (sFocusedWindow == this) {
-						sFocusedWindow = null;
-					}
-				}
-
-				return true;
-			}
-			return false;
-		}
-
-		@Override
-		public void setLayoutParams(ViewGroup.LayoutParams params) {
-			if (params instanceof StandOutWindow.LayoutParams) {
-				super.setLayoutParams(params);
-			} else {
-				throw new IllegalArgumentException(
-						"Window"
-								+ id
-								+ ": LayoutParams must be an instance of StandOutWindow.LayoutParams.");
-			}
-		}
-
-		/**
-		 * Convenience method to start editting the size and position of this
-		 * window. Make sure you call {@link Editor#commit()} when you are done
-		 * to update the window.
-		 * 
-		 * @return The Editor associated with this window.
-		 */
-		public Editor edit() {
-			return new Editor();
-		}
-
-		@Override
-		public StandOutWindow.LayoutParams getLayoutParams() {
-			StandOutWindow.LayoutParams params = (StandOutWindow.LayoutParams) super
-					.getLayoutParams();
-			if (params == null) {
-				params = originalParams;
-			}
-			return params;
-		}
-
-		/**
-		 * Returns the system window decorations if the implementation sets
-		 * {@link #FLAG_DECORATION_SYSTEM}.
-		 * 
-		 * <p>
-		 * The system window decorations support hiding, closing, moving, and
-		 * resizing.
-		 * 
-		 * @return The frame view containing the system window decorations.
-		 */
-		private View getSystemDecorations() {
-			final View decorations = mLayoutInflater.inflate(
-					R.layout.system_window_decorators, null);
-
-			// icon
-			final ImageView icon = (ImageView) decorations
-					.findViewById(R.id.window_icon);
-			icon.setImageResource(getAppIcon());
-			icon.setOnClickListener(new OnClickListener() {
-
-				@Override
-				public void onClick(View v) {
-					PopupWindow dropDown = getDropDown(id);
-					if (dropDown != null) {
-						dropDown.showAsDropDown(icon);
-					}
-				}
-			});
-
-			// title
-			TextView title = (TextView) decorations.findViewById(R.id.title);
-			title.setText(getTitle(id));
-
-			// hide
-			View hide = decorations.findViewById(R.id.hide);
-			hide.setOnClickListener(new OnClickListener() {
-
-				@Override
-				public void onClick(View v) {
-					hide(id);
-				}
-			});
-			hide.setVisibility(View.GONE);
-
-			// close
-			View close = decorations.findViewById(R.id.close);
-			close.setOnClickListener(new OnClickListener() {
-
-				@Override
-				public void onClick(View v) {
-					close(id);
-				}
-			});
-
-			// move
-			View titlebar = decorations.findViewById(R.id.titlebar);
-			titlebar.setOnTouchListener(new OnTouchListener() {
-
-				@Override
-				public boolean onTouch(View v, MotionEvent event) {
-					// handle dragging to move
-					boolean consumed = onTouchHandleMove(id, Window.this, v,
-							event);
-					return consumed;
-				}
-			});
-
-			// resize
-			View corner = decorations.findViewById(R.id.corner);
-			corner.setOnTouchListener(new OnTouchListener() {
-
-				@Override
-				public boolean onTouch(View v, MotionEvent event) {
-					// handle dragging to move
-					boolean consumed = onTouchHandleResize(id, Window.this, v,
-							event);
-
-					return consumed;
-				}
-			});
-
-			// set window appearance and behavior based on flags
-			if (Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
-				hide.setVisibility(View.VISIBLE);
-			}
-			if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_CLOSE_DISABLE)) {
-				close.setVisibility(View.GONE);
-			}
-			if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_MOVE_DISABLE)) {
-				titlebar.setOnTouchListener(null);
-			}
-			if (Utils
-					.isSet(flags, StandOutFlags.FLAG_DECORATION_RESIZE_DISABLE)) {
-				corner.setVisibility(View.GONE);
-			}
-
-			return decorations;
-		}
-
-		/**
-		 * Implement StandOut specific additional functionalities.
-		 * 
-		 * <p>
-		 * Currently, this method does the following:
-		 * 
-		 * <p>
-		 * Attach resize handles: For every View found to have id R.id.corner,
-		 * attach an OnTouchListener that implements resizing the window.
-		 * 
-		 * @param root
-		 *            The view hierarchy that is part of the window.
-		 */
-		void addFunctionality(View root) {
-			// corner for resize
-			if (!Utils.isSet(flags,
-					StandOutFlags.FLAG_ADD_FUNCTIONALITY_RESIZE_DISABLE)) {
-				View corner = root.findViewById(R.id.corner);
-				if (corner != null) {
-					corner.setOnTouchListener(new OnTouchListener() {
-
-						@Override
-						public boolean onTouch(View v, MotionEvent event) {
-							// handle dragging to move
-							boolean consumed = onTouchHandleResize(id,
-									Window.this, v, event);
-
-							return consumed;
-						}
-					});
-				}
-			}
-
-			// window_icon for drop down
-			if (!Utils.isSet(flags,
-					StandOutFlags.FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE)) {
-				final View icon = root.findViewById(R.id.window_icon);
-				if (icon != null) {
-					icon.setOnClickListener(new OnClickListener() {
-
-						@Override
-						public void onClick(View v) {
-							PopupWindow dropDown = getDropDown(id);
-							if (dropDown != null) {
-								dropDown.showAsDropDown(icon);
-							}
-						}
-					});
-				}
-			}
-		}
-
-		/**
-		 * Iterate through each View in the view hiearchy and implement StandOut
-		 * specific compatibility workarounds.
-		 * 
-		 * <p>
-		 * Currently, this method does the following:
-		 * 
-		 * <p>
-		 * Nothing yet.
-		 * 
-		 * @param root
-		 *            The root view hierarchy to iterate through and check.
-		 */
-		void fixCompatibility(View root) {
-			Queue<View> queue = new LinkedList<View>();
-			queue.add(root);
-
-			View view = null;
-			while ((view = queue.poll()) != null) {
-				// do nothing yet
-
-				// iterate through children
-				if (view instanceof ViewGroup) {
-					ViewGroup group = (ViewGroup) view;
-					for (int i = 0; i < group.getChildCount(); i++) {
-						queue.add(group.getChildAt(i));
-					}
-				}
-			}
-		}
-
-		/**
-		 * This class holds temporal touch and gesture information. Mainly used
-		 * to hold temporary data for onTouchEvent(MotionEvent).
-		 * 
-		 * @author Mark Wei <markwei@gmail.com>
-		 * 
-		 */
-		public class TouchInfo {
-			/**
-			 * The state of the window.
-			 */
-			public int firstX, firstY, lastX, lastY;
-			public double dist, scale, firstWidth, firstHeight;
-			public float ratio;
-
-			/**
-			 * Whether we're past the move threshold already.
-			 */
-			public boolean moving;
-
-			@Override
-			public String toString() {
-				return String
-						.format("WindowTouchInfo { firstX=%d, firstY=%d,lastX=%d, lastY=%d, firstWidth=%d, firstHeight=%d }",
-								firstX, firstY, lastX, lastY, firstWidth,
-								firstHeight);
-			}
-		}
-
-		/**
-		 * Convenient way to resize or reposition a Window. The Editor allows
-		 * you to easily resize and reposition the window around anchor points.
-		 * 
-		 * @author Mark Wei <markwei@gmail.com>
-		 * 
-		 */
-		public class Editor {
-			/**
-			 * Special value for width, height, x, or y positions that
-			 * represents that the value should not be changed.
-			 */
-			public static final int UNCHANGED = Integer.MIN_VALUE;
-
-			/**
-			 * Layout params of the window associated with this Editor.
-			 */
-			StandOutWindow.LayoutParams mParams;
-
-			/**
-			 * The relative position of the anchor point. The anchor point is
-			 * only used by the {@link Editor}.
-			 * 
-			 * <p>
-			 * The anchor point effects the following methods:
-			 * 
-			 * <p>
-			 * {@link #setSize(int, int)} and {@link #setSize(float, float)}.
-			 * The window will expand or shrink around the anchor point.
-			 * 
-			 * <p>
-			 * Values must be between 0 and 1, inclusive. 0 means the left/top,
-			 * 0.5 is the center, 1 is the right/bottom.
-			 */
-			float anchorX, anchorY;
-
-			/**
-			 * Width and height of the screen.
-			 */
-			int displayWidth, displayHeight;
-
-			public Editor() {
-				mParams = getLayoutParams();
-				anchorX = anchorY = 0;
-
-				Display display = mWindowManager.getDefaultDisplay();
-				DisplayMetrics metrics = new DisplayMetrics();
-				display.getMetrics(metrics);
-				displayWidth = metrics.widthPixels;
-				displayHeight = (int) (metrics.heightPixels - 25 * metrics.density);
-			}
-
-			public Editor setAnchorPoint(float x, float y) {
-				if (x < 0 || x > 1 || y < 0 || y > 1) {
-					throw new IllegalArgumentException(
-							"Anchor point must be between 0 and 1, inclusive.");
-				}
-
-				anchorX = x;
-				anchorY = y;
-
-				return this;
-			}
-
-			/**
-			 * Set the size of this window in absolute pixels.
-			 * 
-			 * @param width
-			 * @param height
-			 * @return The same Editor, useful for method chaining.
-			 */
-			public Editor setSize(int width, int height) {
-				return setSize(width, height, false);
-			}
-
-			/**
-			 * Set the size of this window in absolute pixels.
-			 * 
-			 * @param width
-			 * @param height
-			 * @param skip
-			 *            Don't call {@link #setPosition(int, int)} to avoid
-			 *            stack overflow.
-			 * @return The same Editor, useful for method chaining.
-			 */
-			private Editor setSize(int width, int height, boolean skip) {
-				if (mParams != null) {
-					if (anchorX < 0 || anchorX > 1 || anchorY < 0
-							|| anchorY > 1) {
-						throw new IllegalStateException(
-								"Anchor point must be between 0 and 1, inclusive.");
-					}
-
-					int lastWidth = mParams.width;
-					int lastHeight = mParams.height;
-
-					if (width != UNCHANGED) {
-						mParams.width = width;
-					}
-					if (height != UNCHANGED) {
-						mParams.height = height;
-					}
-
-					// set max width/height
-					int maxWidth = mParams.maxWidth;
-					int maxHeight = mParams.maxHeight;
-
-					if (Utils.isSet(flags,
-							StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
-						maxWidth = (int) Math.min(maxWidth, displayWidth);
-						maxHeight = (int) Math.min(maxHeight, displayHeight);
-					}
-
-					// keep window between min and max
-					mParams.width = Math
-							.min(Math.max(mParams.width, mParams.minWidth),
-									maxWidth);
-					mParams.height = Math.min(
-							Math.max(mParams.height, mParams.minHeight),
-							maxHeight);
-
-					// keep window in aspect ratio
-					if (Utils.isSet(flags,
-							StandOutFlags.FLAG_WINDOW_ASPECT_RATIO_ENABLE)) {
-						int ratioWidth = (int) (mParams.height * touchInfo.ratio);
-						int ratioHeight = (int) (mParams.width / touchInfo.ratio);
-						if (ratioHeight >= mParams.minHeight
-								&& ratioHeight <= mParams.maxHeight) {
-							// width good adjust height
-							mParams.height = ratioHeight;
-						} else {
-							// height good adjust width
-							mParams.width = ratioWidth;
-						}
-					}
-
-					if (!skip) {
-						// set position based on anchor point
-						setPosition((int) (mParams.x + lastWidth * anchorX),
-								(int) (mParams.y + lastHeight * anchorY));
-					}
-				}
-
-				return this;
-			}
-
-			/**
-			 * Set the position of this window in absolute pixels.
-			 * 
-			 * @param x
-			 * @param y
-			 * @return The same Editor, useful for method chaining.
-			 */
-			public Editor setPosition(int x, int y) {
-				return setPosition(x, y, false);
-			}
-
-			/**
-			 * Set the position of this window in absolute pixels.
-			 * 
-			 * @param x
-			 * @param y
-			 * @param skip
-			 *            Don't call {@link #setPosition(int, int)} and
-			 *            {@link #setSize(int, int)} to avoid stack overflow.
-			 * @return The same Editor, useful for method chaining.
-			 */
-			private Editor setPosition(int x, int y, boolean skip) {
-				if (mParams != null) {
-					if (anchorX < 0 || anchorX > 1 || anchorY < 0
-							|| anchorY > 1) {
-						throw new IllegalStateException(
-								"Anchor point must be between 0 and 1, inclusive.");
-					}
-
-					// sets the x and y correctly according to anchorX and
-					// anchorY
-					if (x != UNCHANGED) {
-						mParams.x = (int) (x - mParams.width * anchorX);
-					}
-					if (y != UNCHANGED) {
-						mParams.y = (int) (y - mParams.height * anchorY);
-					}
-
-					if (Utils.isSet(flags,
-							StandOutFlags.FLAG_WINDOW_EDGE_LIMITS_ENABLE)) {
-						// if gravity is not TOP|LEFT throw exception
-						if (mParams.gravity != (Gravity.TOP | Gravity.LEFT)) {
-							throw new IllegalStateException(
-									"The window "
-											+ id
-											+ " gravity must be TOP|LEFT if FLAG_WINDOW_EDGE_LIMITS_ENABLE or FLAG_WINDOW_EDGE_TILE_ENABLE is set.");
-						}
-
-						// keep window inside edges
-						mParams.x = Math.min(Math.max(mParams.x, 0),
-								displayWidth - mParams.width);
-						mParams.y = Math.min(Math.max(mParams.y, 0),
-								displayHeight - mParams.height);
-
-						// tile window if hit edge
-						if (Utils.isSet(flags,
-								StandOutFlags.FLAG_WINDOW_EDGE_TILE_ENABLE)) {
-							boolean left = mParams.x == 0;
-							// boolean top = mParams.y == 0;
-							// boolean right = mParams.x == displayWidth
-							// - mParams.width;
-							// boolean bottom = mParams.x == displayHeight
-							// - mParams.height;
-
-							if (!skip) {
-								if (left) {
-									setAnchorPoint(0, 0).setPosition(0,
-											displayHeight / 2, true).setSize(
-											UNCHANGED, displayHeight, true);
-								}
-
-								// if (left && top) {
-								// setAnchorPoint(0, 0)
-								// .setPosition(0, 0, true).setSize(
-								// displayWidth / 2,
-								// displayHeight / 2, true);
-								// } else if (top) {
-								// setAnchorPoint(0, 0).setPosition(
-								// displayWidth / 2, 0, true).setSize(
-								// displayWidth, UNCHANGED, true);
-								// } else if (left) {
-								// setAnchorPoint(0, 0).setPosition(0,
-								// displayHeight / 2, true).setSize(
-								// UNCHANGED, displayHeight, true);
-								// }
-							}
-						}
-					}
-				}
-
-				return this;
-			}
-
-			/**
-			 * Commit the changes to this window. Updates the layout. This
-			 * Editor cannot be used after you commit.
-			 */
-			public void commit() {
-				if (mParams != null) {
-					StandOutWindow.this.updateViewLayout(id, Window.this,
-							mParams);
-					mParams = null;
-				}
-			}
-		}
-	}
-
-	/**
 	 * LayoutParams specific to floating StandOut windows.
 	 * 
 	 * @author Mark Wei <markwei@gmail.com>
 	 * 
 	 */
-	protected class LayoutParams extends WindowManager.LayoutParams {
+	public class StandOutLayoutParams extends WindowManager.LayoutParams {
 		/**
 		 * Special value for x position that represents the left of the screen.
 		 */
@@ -2609,9 +1809,10 @@ public abstract class StandOutWindow extends Service {
 		 * @param id
 		 *            The id of the window.
 		 */
-		public LayoutParams(int id) {
-			super(200, 200, TYPE_PHONE, LayoutParams.FLAG_NOT_TOUCH_MODAL
-					| LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+		public StandOutLayoutParams(int id) {
+			super(200, 200, TYPE_PHONE,
+					StandOutLayoutParams.FLAG_NOT_TOUCH_MODAL
+							| StandOutLayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
 					PixelFormat.TRANSLUCENT);
 
 			int windowFlags = getFlags(id);
@@ -2642,7 +1843,7 @@ public abstract class StandOutWindow extends Service {
 		 * @param h
 		 *            The height of the window.
 		 */
-		public LayoutParams(int id, int w, int h) {
+		public StandOutLayoutParams(int id, int w, int h) {
 			this(id);
 			width = w;
 			height = h;
@@ -2660,7 +1861,7 @@ public abstract class StandOutWindow extends Service {
 		 * @param ypos
 		 *            The y position of the window.
 		 */
-		public LayoutParams(int id, int w, int h, int xpos, int ypos) {
+		public StandOutLayoutParams(int id, int w, int h, int xpos, int ypos) {
 			this(id, w, h);
 
 			if (xpos != AUTO_POSITION) {
@@ -2703,7 +1904,7 @@ public abstract class StandOutWindow extends Service {
 		 * @param minHeight
 		 *            The mininum height of the window.
 		 */
-		public LayoutParams(int id, int w, int h, int xpos, int ypos,
+		public StandOutLayoutParams(int id, int w, int h, int xpos, int ypos,
 				int minWidth, int minHeight) {
 			this(id, w, h, xpos, ypos);
 
@@ -2730,7 +1931,7 @@ public abstract class StandOutWindow extends Service {
 		 *            The touch distance threshold that distinguishes a tap from
 		 *            a drag.
 		 */
-		public LayoutParams(int id, int w, int h, int xpos, int ypos,
+		public StandOutLayoutParams(int id, int w, int h, int xpos, int ypos,
 				int minWidth, int minHeight, int threshold) {
 			this(id, w, h, xpos, ypos, minWidth, minHeight);
 
@@ -2767,11 +1968,11 @@ public abstract class StandOutWindow extends Service {
 			return rawY % (displayHeight - height);
 		}
 
-		private void setFocusFlag(boolean focused) {
+		public void setFocusFlag(boolean focused) {
 			if (focused) {
-				flags = flags ^ LayoutParams.FLAG_NOT_FOCUSABLE;
+				flags = flags ^ StandOutLayoutParams.FLAG_NOT_FOCUSABLE;
 			} else {
-				flags = flags | LayoutParams.FLAG_NOT_FOCUSABLE;
+				flags = flags | StandOutLayoutParams.FLAG_NOT_FOCUSABLE;
 			}
 		}
 	}
