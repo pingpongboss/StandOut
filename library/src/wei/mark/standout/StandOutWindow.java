@@ -1,10 +1,5 @@
 package wei.mark.standout;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
 import wei.mark.standout.constants.StandOutFlags;
 import wei.mark.standout.ui.Window;
 import android.app.Notification;
@@ -36,6 +31,11 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Extend this class to easily create and manage floating StandOut windows.
@@ -1588,8 +1588,14 @@ public abstract class StandOutWindow extends Service {
 		int totalDeltaX = window.touchInfo.lastX - window.touchInfo.firstX;
 		int totalDeltaY = window.touchInfo.lastY - window.touchInfo.firstY;
 
-		switch (event.getAction()) {
-			case MotionEvent.ACTION_DOWN:
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                // perform haptic feedback if requested
+                if(Utils.isSet(window.flags, StandOutFlags.
+                        FLAG_ADD_FUNCTIONALITY_HAPTIC_FEEDBACK)){
+                    ((Vibrator) getSystemService(VIBRATOR_SERVICE))
+                            .vibrate(50); // 50ms
+                }
 				window.touchInfo.lastX = (int) event.getRawX();
 				window.touchInfo.lastY = (int) event.getRawY();
 

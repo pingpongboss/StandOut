@@ -211,4 +211,13 @@ public class StandOutFlags {
 	 * @see {@link Window#addFunctionality(View, int)}
 	 */
 	public static final int FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE = 1 << flag_bit++;
+    
+    /**
+     * Setting this flag indicates that the system should perform a haptic
+     * feedback when {@link MotionEvent#ACTION_MOVE} is executed either on
+     * body or title bar. Requires permission "android.permission.VIBRATE"
+     * 
+     * @see StandOutWindow.Window
+     */
+    public static final int FLAG_ADD_FUNCTIONALITY_HAPTIC_FEEDBACK = 1 << flag_bit++;
 }
