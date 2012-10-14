@@ -323,13 +323,13 @@ public class Window extends FrameLayout {
 
 	@Override
 	public void setLayoutParams(ViewGroup.LayoutParams params) {
-		if (params instanceof LayoutParams) {
+		if (params instanceof StandOutLayoutParams) {
 			super.setLayoutParams(params);
 		} else {
 			throw new IllegalArgumentException(
 					"Window"
 							+ id
-							+ ": LayoutParams must be an instance of StandOutWindow.LayoutParams.");
+							+ ": LayoutParams must be an instance of StandOutLayoutParams.");
 		}
 	}
 

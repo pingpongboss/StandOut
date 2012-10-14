@@ -1,5 +1,6 @@
 package wei.mark.example;
 
+import wei.mark.standout.ui.Window;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,7 +14,7 @@ public class WidgetsWindow extends MultiWindow {
 	public static final int DATA_CHANGED_TEXT = 0;
 
 	@Override
-	protected void createAndAttachView(final int id, FrameLayout frame) {
+	public void createAndAttachView(final int id, FrameLayout frame) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		View view = inflater.inflate(R.layout.widgets, frame, true);
 
@@ -48,18 +49,18 @@ public class WidgetsWindow extends MultiWindow {
 	}
 
 	@Override
-	protected LayoutParams getParams(int id, Window window) {
-		return new LayoutParams(id, 300, 500, LayoutParams.RIGHT,
-				LayoutParams.BOTTOM);
+	public StandOutLayoutParams getParams(int id, Window window) {
+		return new StandOutLayoutParams(id, 300, 500,
+				StandOutLayoutParams.RIGHT, StandOutLayoutParams.BOTTOM);
 	}
 
 	@Override
-	protected String getAppName() {
+	public String getAppName() {
 		return "WidgetWindow";
 	}
 
 	@Override
-	protected int getThemeStyle() {
+	public int getThemeStyle() {
 		return android.R.style.Theme_Light;
 	}
 }

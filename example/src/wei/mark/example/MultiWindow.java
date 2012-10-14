@@ -5,6 +5,7 @@ import java.util.List;
 
 import wei.mark.standout.StandOutWindow;
 import wei.mark.standout.constants.StandOutFlags;
+import wei.mark.standout.ui.Window;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -34,22 +35,22 @@ import android.widget.Toast;
 public class MultiWindow extends StandOutWindow {
 
 	@Override
-	protected String getAppName() {
+	public String getAppName() {
 		return "MultiWindow";
 	}
 
 	@Override
-	protected int getAppIcon() {
+	public int getAppIcon() {
 		return android.R.drawable.ic_menu_add;
 	}
 
 	@Override
-	protected String getTitle(int id) {
+	public String getTitle(int id) {
 		return getAppName() + " " + id;
 	}
 
 	@Override
-	protected void createAndAttachView(int id, FrameLayout frame) {
+	public void createAndAttachView(int id, FrameLayout frame) {
 		// create a new layout from body.xml
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		View view = inflater.inflate(R.layout.body, frame, true);
@@ -60,16 +61,17 @@ public class MultiWindow extends StandOutWindow {
 
 	// every window is initially same size
 	@Override
-	protected LayoutParams getParams(int id, Window window) {
-		return new LayoutParams(id, 400, 300, LayoutParams.AUTO_POSITION,
-				LayoutParams.AUTO_POSITION, 100, 100);
+	public StandOutLayoutParams getParams(int id, Window window) {
+		return new StandOutLayoutParams(id, 400, 300,
+				StandOutLayoutParams.AUTO_POSITION,
+				StandOutLayoutParams.AUTO_POSITION, 100, 100);
 	}
 
 	// we want the system window decorations, we want to drag the body, we want
 	// the ability to hide windows, and we want to tap the window to bring to
 	// front
 	@Override
-	protected int getFlags(int id) {
+	public int getFlags(int id) {
 		return StandOutFlags.FLAG_DECORATION_SYSTEM
 				| StandOutFlags.FLAG_BODY_MOVE_ENABLE
 				| StandOutFlags.FLAG_WINDOW_HIDE_ENABLE
@@ -80,44 +82,44 @@ public class MultiWindow extends StandOutWindow {
 	}
 
 	@Override
-	protected String getPersistentNotificationTitle(int id) {
+	public String getPersistentNotificationTitle(int id) {
 		return getAppName() + " Running";
 	}
 
 	@Override
-	protected String getPersistentNotificationMessage(int id) {
+	public String getPersistentNotificationMessage(int id) {
 		return "Click to add a new " + getAppName();
 	}
 
 	// return an Intent that creates a new MultiWindow
 	@Override
-	protected Intent getPersistentNotificationIntent(int id) {
+	public Intent getPersistentNotificationIntent(int id) {
 		return StandOutWindow.getShowIntent(this, getClass(), getUniqueId());
 	}
 
 	@Override
-	protected int getHiddenIcon() {
+	public int getHiddenIcon() {
 		return android.R.drawable.ic_menu_info_details;
 	}
 
 	@Override
-	protected String getHiddenNotificationTitle(int id) {
+	public String getHiddenNotificationTitle(int id) {
 		return getAppName() + " Hidden";
 	}
 
 	@Override
-	protected String getHiddenNotificationMessage(int id) {
+	public String getHiddenNotificationMessage(int id) {
 		return "Click to restore #" + id;
 	}
 
 	// return an Intent that restores the MultiWindow
 	@Override
-	protected Intent getHiddenNotificationIntent(int id) {
+	public Intent getHiddenNotificationIntent(int id) {
 		return StandOutWindow.getShowIntent(this, getClass(), id);
 	}
 
 	@Override
-	protected Animation getShowAnimation(int id) {
+	public Animation getShowAnimation(int id) {
 		if (isExistingId(id)) {
 			// restore
 			return AnimationUtils.loadAnimation(this,
@@ -129,13 +131,13 @@ public class MultiWindow extends StandOutWindow {
 	}
 
 	@Override
-	protected Animation getHideAnimation(int id) {
+	public Animation getHideAnimation(int id) {
 		return AnimationUtils.loadAnimation(this,
 				android.R.anim.slide_out_right);
 	}
 
 	@Override
-	protected List<DropDownListItem> getDropDownItems(int id) {
+	public List<DropDownListItem> getDropDownItems(int id) {
 		List<DropDownListItem> items = new ArrayList<DropDownListItem>();
 		items.add(new DropDownListItem(android.R.drawable.ic_menu_help,
 				"About", new Runnable() {
@@ -163,7 +165,7 @@ public class MultiWindow extends StandOutWindow {
 	}
 
 	@Override
-	protected void onReceiveData(int id, int requestCode, Bundle data,
+	public void onReceiveData(int id, int requestCode, Bundle data,
 			Class<? extends StandOutWindow> fromCls, int fromId) {
 		// receive data from WidgetsWindow's button press
 		// to show off the data sending framework

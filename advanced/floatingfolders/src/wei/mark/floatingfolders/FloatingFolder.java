@@ -12,6 +12,7 @@ import java.util.List;
 
 import wei.mark.standout.StandOutWindow;
 import wei.mark.standout.constants.StandOutFlags;
+import wei.mark.standout.ui.Window;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -85,17 +86,17 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
-	protected String getAppName() {
+	public String getAppName() {
 		return "Floating Folders";
 	}
 
 	@Override
-	protected int getAppIcon() {
+	public int getAppIcon() {
 		return R.drawable.ic_launcher;
 	}
 
 	@Override
-	protected void createAndAttachView(final int id, FrameLayout frame) {
+	public void createAndAttachView(final int id, FrameLayout frame) {
 		LayoutInflater inflater = LayoutInflater.from(this);
 
 		// choose which type of window to show
@@ -204,10 +205,11 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
-	protected LayoutParams getParams(int id, Window window) {
+	public StandOutLayoutParams getParams(int id, Window window) {
 		if (APP_SELECTOR_ID == id) {
-			return new LayoutParams(id, 400, LayoutParams.FILL_PARENT,
-					LayoutParams.CENTER, LayoutParams.TOP);
+			return new StandOutLayoutParams(id, 400,
+					StandOutLayoutParams.FILL_PARENT,
+					StandOutLayoutParams.CENTER, StandOutLayoutParams.TOP);
 		} else {
 			FolderModel folder = mFolders.get(id);
 			int width = folder.width;
@@ -219,12 +221,12 @@ public final class FloatingFolder extends StandOutWindow {
 			if (height == 0) {
 				height = 400;
 			}
-			return new LayoutParams(id, width, height, 50, 50);
+			return new StandOutLayoutParams(id, width, height, 50, 50);
 		}
 	}
 
 	@Override
-	protected int getFlags(int id) {
+	public int getFlags(int id) {
 		if (APP_SELECTOR_ID == id) {
 			return super.getFlags(id);
 		} else {
@@ -235,7 +237,7 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
-	protected void onReceiveData(int id, int requestCode, Bundle data,
+	public void onReceiveData(int id, int requestCode, Bundle data,
 			Class<? extends StandOutWindow> fromCls, int fromId) {
 		switch (requestCode) {
 			case APP_SELECTOR_CODE:
@@ -452,7 +454,7 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
-	protected void onResize(int id, Window window, View view, MotionEvent event) {
+	public void onResize(int id, Window window, View view, MotionEvent event) {
 		if (event.getAction() == MotionEvent.ACTION_UP) {
 			resizeToGridAndSave(id, -1);
 		}
@@ -501,10 +503,10 @@ public final class FloatingFolder extends StandOutWindow {
 							* flow.getChildHeight();
 				}
 
-				LayoutParams params = window.getLayoutParams();
+				StandOutLayoutParams params = window.getLayoutParams();
 				params.width = width;
 				params.height = height;
-				updateViewLayout(id, window, params);
+				updateViewLayout(id, params);
 
 				folder.width = width;
 				folder.height = height;
@@ -515,7 +517,7 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
-	protected boolean onFocusChange(int id, Window window, boolean focus) {
+	public boolean onFocusChange(int id, Window window, boolean focus) {
 		if (id == APP_SELECTOR_ID && !focus) {
 			close(APP_SELECTOR_ID);
 			return false;
@@ -525,11 +527,12 @@ public final class FloatingFolder extends StandOutWindow {
 	}
 
 	@Override
-	protected boolean onTouchBody(final int id, final Window window,
+	public boolean onTouchBody(final int id, final Window window,
 			final View view, MotionEvent event) {
 		if (id != APP_SELECTOR_ID
 				&& event.getAction() == MotionEvent.ACTION_MOVE) {
-			final LayoutParams params = (LayoutParams) window.getLayoutParams();
+			final StandOutLayoutParams params = (StandOutLayoutParams) window
+					.getLayoutParams();
 
 			final View folderView = window.findViewById(R.id.folder);
 			final ImageView screenshot = (ImageView) window
@@ -578,7 +581,7 @@ public final class FloatingFolder extends StandOutWindow {
 									params.height = drawable
 											.getIntrinsicHeight();
 
-									updateViewLayout(id, window, params);
+									updateViewLayout(id, params);
 
 									screenshot.setVisibility(View.VISIBLE);
 									screenshot.startAnimation(mFadeIn);
@@ -617,8 +620,8 @@ public final class FloatingFolder extends StandOutWindow {
 
 								@Override
 								public void run() {
-									LayoutParams originalParams = getParams(id,
-											window);
+									StandOutLayoutParams originalParams = getParams(
+											id, window);
 
 									Drawable drawable = screenshot
 											.getDrawable();
@@ -631,7 +634,7 @@ public final class FloatingFolder extends StandOutWindow {
 									params.width = originalParams.width;
 									params.height = originalParams.height;
 
-									updateViewLayout(id, window, params);
+									updateViewLayout(id, params);
 
 									folderView.setVisibility(View.VISIBLE);
 
@@ -649,16 +652,16 @@ public final class FloatingFolder extends StandOutWindow {
 		return false;
 	}
 
-	protected String getPersistentNotificationMessage(int id) {
+	public String getPersistentNotificationMessage(int id) {
 		return "Click to close all windows.";
 	}
 
-	protected Intent getPersistentNotificationIntent(int id) {
+	public Intent getPersistentNotificationIntent(int id) {
 		return StandOutWindow.getCloseAllIntent(this, FloatingFolder.class);
 	}
 
 	@Override
-	protected List<DropDownListItem> getDropDownItems(final int id) {
+	public List<DropDownListItem> getDropDownItems(final int id) {
 		List<DropDownListItem> items = new ArrayList<DropDownListItem>();
 		FolderModel folder = mFolders.get(id);
 
