@@ -729,40 +729,6 @@ public class Window extends FrameLayout {
 							- mParams.width);
 					mParams.y = Math.min(Math.max(mParams.y, 0), displayHeight
 							- mParams.height);
-
-					// tile window if hit edge
-					if (Utils.isSet(flags,
-							StandOutFlags.FLAG_WINDOW_EDGE_TILE_ENABLE)) {
-						boolean left = mParams.x == 0;
-						// boolean top = mParams.y == 0;
-						// boolean right = mParams.x == displayWidth
-						// - mParams.width;
-						// boolean bottom = mParams.x == displayHeight
-						// - mParams.height;
-
-						if (!skip) {
-							if (left) {
-								setAnchorPoint(0, 0).setPosition(0,
-										displayHeight / 2, true).setSize(
-										UNCHANGED, displayHeight, true);
-							}
-
-							// if (left && top) {
-							// setAnchorPoint(0, 0)
-							// .setPosition(0, 0, true).setSize(
-							// displayWidth / 2,
-							// displayHeight / 2, true);
-							// } else if (top) {
-							// setAnchorPoint(0, 0).setPosition(
-							// displayWidth / 2, 0, true).setSize(
-							// displayWidth, UNCHANGED, true);
-							// } else if (left) {
-							// setAnchorPoint(0, 0).setPosition(0,
-							// displayHeight / 2, true).setSize(
-							// UNCHANGED, displayHeight, true);
-							// }
-						}
-					}
 				}
 			}
 

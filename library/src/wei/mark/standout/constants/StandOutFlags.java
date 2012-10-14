@@ -114,18 +114,6 @@ public class StandOutFlags {
 	public static final int FLAG_WINDOW_EDGE_LIMITS_ENABLE = 1 << flag_bit++;
 
 	/**
-	 * Setting this flag indicates that the system should tile the window
-	 * when it hits the edge of the screen, mimicking the behavior of
-	 * Windows 7.
-	 * 
-	 * <p>
-	 * This flag also sets {@link #FLAG_WINDOW_EDGE_LIMITS_ENABLE}.
-	 * 
-	 */
-	public static final int FLAG_WINDOW_EDGE_TILE_ENABLE = FLAG_WINDOW_EDGE_LIMITS_ENABLE
-			| 1 << flag_bit++;
-
-	/**
 	 * Setting this flag indicates that the system should keep the window's
 	 * aspect ratio constant when resizing.
 	 * 
