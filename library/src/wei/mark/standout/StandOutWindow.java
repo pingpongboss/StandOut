@@ -1646,6 +1646,11 @@ public abstract class StandOutWindow extends Service {
                         }
 
                         window.edit().setPosition(params.x, params.y).commit();
+                        
+                        // after window has been moved atleast once, this
+                        // state is not reverted. It can be reverted manually by
+                        // calling "window.setMoved(false)"
+                        window.setMoved(true);
                     }
                 }
                 break;
