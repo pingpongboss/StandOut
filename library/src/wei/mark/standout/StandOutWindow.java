@@ -1643,7 +1643,10 @@ public abstract class StandOutWindow extends Service {
                         || Math.abs(totalDeltaX) >= params.threshold
                         || Math.abs(totalDeltaY) >= params.threshold) {
                     window.touchInfo.moving = true;
-
+                    
+                    if(disableMoving){
+                        break;
+                    }
 
                     // update the position of the window
                     if (event.getPointerCount() == 1) {
