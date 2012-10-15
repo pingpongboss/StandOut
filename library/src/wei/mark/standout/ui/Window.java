@@ -449,9 +449,6 @@ public class Window extends FrameLayout {
         if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_CLOSE_DISABLE)) {
             close.setVisibility(View.GONE);
         }
-        if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_MOVE_DISABLE)) {
-            titlebar.setOnTouchListener(null);
-        }
         if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_RESIZE_DISABLE)) {
             corner.setVisibility(View.GONE);
         }

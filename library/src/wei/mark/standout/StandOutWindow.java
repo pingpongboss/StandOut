@@ -1610,6 +1610,15 @@ public abstract class StandOutWindow extends Service {
 
         int totalDeltaX = window.touchInfo.lastX - window.touchInfo.firstX;
         int totalDeltaY = window.touchInfo.lastY - window.touchInfo.firstY;
+        
+        // disable moving if FLAG_BODY_MOVE_ENABLE is not set and body
+        // is requesting to move the window, or if FLAG_DECORATION_MOVE_DISABLE
+        // is set and Titlebar is requesting to move the window
+        boolean disableMoving = ((!Utils.isSet(window.flags,
+                StandOutFlags.FLAG_BODY_MOVE_ENABLE) && view
+                instanceof FrameLayout) || (Utils.isSet(window.flags,
+                StandOutFlags.FLAG_DECORATION_MOVE_DISABLE) && view
+                instanceof LinearLayout));
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
@@ -1635,23 +1644,19 @@ public abstract class StandOutWindow extends Service {
                         || Math.abs(totalDeltaY) >= params.threshold) {
                     window.touchInfo.moving = true;
 
-                    // if window is moveable
-                    if (Utils.isSet(window.flags,
-                            StandOutFlags.FLAG_BODY_MOVE_ENABLE)) {
 
-                        // update the position of the window
-                        if (event.getPointerCount() == 1) {
-                            params.x += deltaX;
-                            params.y += deltaY;
-                        }
-
-                        window.edit().setPosition(params.x, params.y).commit();
-                        
-                        // after window has been moved atleast once, this
-                        // state is not reverted. It can be reverted manually by
-                        // calling "window.setMoved(false)"
-                        window.setMoved(true);
+                    // update the position of the window
+                    if (event.getPointerCount() == 1) {
+                        params.x += deltaX;
+                        params.y += deltaY;
                     }
+
+                    window.edit().setPosition(params.x, params.y).commit();
+                        
+                    // after window has been moved atleast once, this
+                    // state is not reverted. It can be reverted manually by
+                    // calling "window.setMoved(false)"
+                    window.setMoved(true);
                 }
                 break;
             case MotionEvent.ACTION_UP:
