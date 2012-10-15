@@ -263,9 +263,11 @@ public abstract class StandOutWindow extends Service {
         Intent intent = new Intent(context, cls);
         intent.setAction(action);
         intent.setData(uri);
-        intent.putExtra("id", id);
-        if (data != null) {
-            intent.putExtra("data", data);
+        if(data != null){  	
+            data.putInt("id", id);
+            intent.putExtras(data);
+        } else {
+            intent.putExtra("id", id);
         }
         return intent;
     }
