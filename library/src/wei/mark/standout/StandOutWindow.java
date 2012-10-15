@@ -573,7 +573,7 @@ public abstract class StandOutWindow extends Service {
      * @return The title for the persistent notification.
      */
     public String getPersistentNotificationTitle(int id) {
-        return getAppName() + " Running";
+        return getAppName() + " " + getString(R.string.running);
     }
 
     /**
@@ -624,7 +624,7 @@ public abstract class StandOutWindow extends Service {
      * @return The title for the hidden notification.
      */
     public String getHiddenNotificationTitle(int id) {
-        return getAppName() + " Hidden";
+        return getAppName() + " " + getString(R.string.hidden);
     }
 
     /**
@@ -824,8 +824,7 @@ public abstract class StandOutWindow extends Service {
             Menu menu = popupMenu.getMenu();
             popupMenu.getMenuInflater().inflate(R.menu.window_popup_menu, menu);
             // Set entry text to "Close app name"
-            menu.getItem(0).setTitle(getString(R.string.close) + " " + 
-                    getString(R.string.app_name));
+            menu.getItem(0).setTitle(getString(R.string.close);
             popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                 public boolean onMenuItemClick(MenuItem item) {
                     if (item.getItemId() == R.id.window_close) {
