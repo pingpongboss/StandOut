@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="window_icon">Window icon</string>
+    <string name="description">Description</string>
+    <string name="hidden">Hidden</string>
+    <string name="running">Running</string>
     <string name="hide">Hide</string>
     <string name="close">Close</string>
     <string name="corner">Corner</string>
-
+    <string name="quit">Quit</string>
 </resources>
