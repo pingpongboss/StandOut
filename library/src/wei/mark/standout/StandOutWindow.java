@@ -1,7 +1,5 @@
 package wei.mark.standout;
 
-import wei.mark.standout.constants.StandOutFlags;
-import wei.mark.standout.ui.Window;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -13,29 +11,22 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Vibrator;
 import android.util.Log;
-import android.view.Display;
-import android.view.Gravity;
-import android.view.KeyEvent;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.view.WindowManager;
+import android.view.*;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.PopupWindow;
-import android.widget.TextView;
+import android.widget.*;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import wei.mark.standout.constants.StandOutFlags;
+import wei.mark.standout.ui.Window;
 
 /**
  * Extend this class to easily create and manage floating StandOut windows.
@@ -756,88 +747,63 @@ public abstract class StandOutWindow extends Service {
     }
 
     /**
-     * You probably want to leave this method alone and implement
-     * {@link #getDropDownItems(int)} instead. Only implement this method if you
-     * want more control over the drop down menu.
-     * 
-     * <p>
-     * Implement this method to set a custom drop down menu when the user clicks
-     * on the icon of the window corresponding to the id. The icon is only shown
-     * when {@link StandOutFlags#FLAG_DECORATION_SYSTEM} is set.
-     * 
-     * @param id
-     *            The id of the window.
-     * @return The drop down menu to be anchored to the icon, or null to have no
-     *         dropdown menu.
-     */
-    public PopupWindow getDropDown(final int id) {
-        final List<DropDownListItem> items;
+      * You probably want to leave this method alone and implement
+      * {@link #getPopupMenuItems(int)} instead.
+      * 
+      * <p>
+      * Implement this method will allow you to set a custom popup menu when 
+      * the user clicks on the icon of the window corresponding to the id. 
+      * The icon is only shown when {@link StandOutFlags#FLAG_DECORATION_SYSTEM} 
+      * is set.
+      * 
+      * @param id
+      *            The id of the window.
+      * @param view
+      *            A view to use as reference for inflating menu
+      * @return The {@link PopupMenu} to be shown.
+      */
+    public PopupMenu getPopupMenu(final int id, View view) {
+        PopupMenu popupMenu = getPopupMenuItems(id, view);
+        if (popupMenu == null) {
+            // Add default popupmenu
+            popupMenu = new PopupMenu(getApplicationContext(), view);
 
-        List<DropDownListItem> dropDownListItems = getDropDownItems(id);
-        if (dropDownListItems != null) {
-            items = dropDownListItems;
-        } else {
-            items = new ArrayList<StandOutWindow.DropDownListItem>();
-        }
+            Menu menu = popupMenu.getMenu();
+            popupMenu.getMenuInflater().inflate(R.menu.window_popup_menu, menu);
+            // Set entry text to "Close app name"
+            menu.getItem(0).setTitle(getString(R.string.close) + " " + 
+                    getString(R.string.app_name));
+            popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                public boolean onMenuItemClick(MenuItem item) {
+                    if (item.getItemId() == R.id.window_close) {
+                        new Runnable() {
 
-        // add default drop down items
-        items.add(new DropDownListItem(
-                android.R.drawable.ic_menu_close_clear_cancel, "Quit "
-                        + getAppName(), new Runnable() {
+                            @Override
+                            public void run() {
+                                closeAll();
+                            }
 
-                    @Override
-                    public void run() {
-                        closeAll();
+                        }.run();
                     }
-                }));
-
-        // turn item list into views in PopupWindow
-        LinearLayout list = new LinearLayout(this);
-        list.setOrientation(LinearLayout.VERTICAL);
-
-        final PopupWindow dropDown = new PopupWindow(list,
-                StandOutLayoutParams.WRAP_CONTENT,
-                StandOutLayoutParams.WRAP_CONTENT, true);
-
-        for (final DropDownListItem item : items) {
-            ViewGroup listItem = (ViewGroup) mLayoutInflater.inflate(
-                    R.layout.drop_down_list_item, null);
-            list.addView(listItem);
-
-            ImageView icon = (ImageView) listItem.findViewById(R.id.icon);
-            icon.setImageResource(item.icon);
-
-            TextView description = (TextView) listItem
-                    .findViewById(R.id.description);
-            description.setText(item.description);
-
-            listItem.setOnClickListener(new OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    item.action.run();
-                    dropDown.dismiss();
+                    return true;
                 }
             });
         }
-
-        Drawable background = getResources().getDrawable(
-                android.R.drawable.editbox_dropdown_dark_frame);
-        dropDown.setBackgroundDrawable(background);
-        return dropDown;
+        return popupMenu;
     }
 
     /**
-     * Implement this method to populate the drop down menu when the user clicks
-     * on the icon of the window corresponding to the id. The icon is only shown
-     * when {@link StandOutFlags#FLAG_DECORATION_SYSTEM} is set.
-     * 
-     * @param id
-     *            The id of the window.
-     * @return The list of items to show in the drop down menu, or null or empty
-     *         to have no dropdown menu.
-     */
-    public List<DropDownListItem> getDropDownItems(int id) {
+      * Implement this method to populate the popup menu when the user clicks
+      * on the icon of the window corresponding to the id.
+      * 
+      * @param id
+      *            The id of the window.
+      * 
+      * @param view
+      *            A view to use as reference for inflating menu
+      * @return The {@link PopupMenu} to be shown.
+      */
+    public PopupMenu getPopupMenuItems(int id, View view) {
         return null;
     }
 
@@ -1983,24 +1949,6 @@ public abstract class StandOutWindow extends Service {
             } else {
                 flags = flags | StandOutLayoutParams.FLAG_NOT_FOCUSABLE;
             }
-        }
-    }
-
-    protected class DropDownListItem {
-        public int icon;
-        public String description;
-        public Runnable action;
-
-        public DropDownListItem(int icon, String description, Runnable action) {
-            super();
-            this.icon = icon;
-            this.description = description;
-            this.action = action;
-        }
-
-        @Override
-        public String toString() {
-            return description;
         }
     }
 }

@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 /**
@@ -373,12 +374,11 @@ public class Window extends FrameLayout {
                 .findViewById(R.id.window_icon);
         icon.setImageResource(mContext.getAppIcon());
         icon.setOnClickListener(new OnClickListener() {
-
             @Override
             public void onClick(View v) {
-                PopupWindow dropDown = mContext.getDropDown(id);
-                if (dropDown != null) {
-                    dropDown.showAsDropDown(icon);
+                PopupMenu popup = getPopupMenu(id, v);
+                if (popup != null) {
+                    popup.show();
                 }
             }
         });
@@ -485,18 +485,18 @@ public class Window extends FrameLayout {
             }
         }
 
-        // window_icon for drop down
+        // window_icon for popup
         if (!Utils.isSet(flags,
-                StandOutFlags.FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE)) {
+                StandOutFlags.FLAG_ADD_FUNCTIONALITY_POPUP_MENU_DISABLE)) {
             final View icon = root.findViewById(R.id.window_icon);
             if (icon != null) {
                 icon.setOnClickListener(new OnClickListener() {
 
                     @Override
                     public void onClick(View v) {
-                        PopupWindow dropDown = mContext.getDropDown(id);
-                        if (dropDown != null) {
-                            dropDown.showAsDropDown(icon);
+                        PopupMenu popup = getPopupMenu(id, v);
+                        if (popup != null) {
+                            popup.show();
                         }
                     }
                 });

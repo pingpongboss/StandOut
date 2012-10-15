@@ -201,16 +201,15 @@ public class StandOutFlags {
 
     /**
      * Setting this flag indicates that the system should disable adding the
-     * drop down menu additional functionality to a custom View
-     * R.id.window_icon.
+     * popup menu to the window icon
      * 
      * <p>
      * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be
-     * able to show the drop down menu with the default window icon.
+     * able to show the popup menu with the default window icon.
      * 
-     * @see {@link Window#addFunctionality(View, int)}
+     * @see StandOutWindow.Window#addFunctionality(View, int)
      */
-    public static final int FLAG_ADD_FUNCTIONALITY_DROP_DOWN_DISABLE = 1 << flag_bit++;
+    public static final int FLAG_ADD_FUNCTIONALITY_POPUP_MENU_DISABLE = 1 << flag_bit++;
     
     /**
      * Setting this flag indicates that the system should perform a haptic
