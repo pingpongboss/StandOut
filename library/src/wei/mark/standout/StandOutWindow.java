@@ -108,7 +108,30 @@ public abstract class StandOutWindow extends Service {
      */
     public static void show(Context context,
             Class<? extends StandOutWindow> cls, int id) {
-        context.startService(getShowIntent(context, cls, id));
+        context.startService(getShowIntent(context, cls, null, id));
+    }
+
+    /**
+     * Show a new window corresponding to the id, or restore a previously hidden
+     * window, Allowing to pass Bundles on creation
+     * 
+     * @param context
+     *            A Context of the application package implementing this class.
+     * @param cls
+     *            The Service extending {@link StandOutWindow} that will be used
+     *            to create and manage the window.
+     * @param data
+     *            The {@link Bundle} to be passed on creation
+     * @param id
+     *            The id representing this window. If the id exists, and the
+     *            corresponding window was previously hidden, then that window
+     *            will be restored.
+     * 
+     * @see #show(int)
+     */
+    public static void show(Context context,
+            Class<? extends StandOutWindow> cls, Bundle data, int id) {
+        context.startService(getShowIntent(context, cls, data, id));
     }
 
     /**
@@ -218,11 +241,41 @@ public abstract class StandOutWindow extends Service {
      */
     public static Intent getShowIntent(Context context,
             Class<? extends StandOutWindow> cls, int id) {
-        boolean cached = sWindowCache.isCached(id, cls);
+        return getShowIntent(context, cls, null, id);
+    }
+    
+    /**
+     * See {@link #show(Context, Class, int)}.
+     * 
+     * @param context
+     *            A Context of the application package implementing this class.
+     * @param cls
+     *            The Service extending {@link StandOutWindow} that will be used
+     *            to create and manage the window.
+     * @param data
+     *            The {@link Bundle} to be passed on creation
+     * @param id
+     *            The id representing this window. If the id exists, and the
+     *            corresponding window was previously hidden, then that window
+     *            will be restored.
+     * @return An {@link Intent} to use with
+     *         {@link StandOutWindow#getShowIntent(Context, Class<? extends StandOutWindow>, int)}.
+     */
+    public static Intent getShowIntent(Context context,
+            Class<? extends StandOutWindow> cls, Bundle data, int id) {
+        boolean cached = isCached(id, cls);
         String action = cached ? ACTION_RESTORE : ACTION_SHOW;
         Uri uri = cached ? Uri.parse("standout://" + cls + '/' + id) : null;
-        return new Intent(context, cls).putExtra("id", id).setAction(action)
-                .setData(uri);
+        Intent intent = new Intent(context, cls);
+        intent.setAction(action);
+        intent.setData(uri);
+        if(data != null){
+            data.putInt("id", id);
+            intent.putExtras(data);
+        } else {
+            intent.putExtra("id", id);
+        }
+        return intent;
     }
 
     /**
