@@ -1,5 +1,9 @@
 package wei.mark.standout;
 
+import java.util.LinkedList;
+import java.util.Set;
+import wei.mark.standout.constants.StandOutFlags;
+import wei.mark.standout.ui.Window;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -7,26 +11,16 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Vibrator;
 import android.util.Log;
-import android.view.View.OnClickListener;
 import android.view.*;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.widget.*;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
-import wei.mark.standout.constants.StandOutFlags;
-import wei.mark.standout.ui.Window;
 
 /**
  * Extend this class to easily create and manage floating StandOut windows.
@@ -263,17 +257,15 @@ public abstract class StandOutWindow extends Service {
      */
     public static Intent getShowIntent(Context context,
             Class<? extends StandOutWindow> cls, Bundle data, int id) {
-        boolean cached = isCached(id, cls);
+        boolean cached = sWindowCache.isCached(id, cls);
         String action = cached ? ACTION_RESTORE : ACTION_SHOW;
         Uri uri = cached ? Uri.parse("standout://" + cls + '/' + id) : null;
         Intent intent = new Intent(context, cls);
         intent.setAction(action);
         intent.setData(uri);
-        if(data != null){
-            data.putInt("id", id);
-            intent.putExtras(data);
-        } else {
-            intent.putExtra("id", id);
+        intent.putExtra("id", id);
+        if (data != null) {
+            intent.putExtra("data", data);
         }
         return intent;
     }
@@ -656,6 +648,17 @@ public abstract class StandOutWindow extends Service {
     }
 
     /**
+     * Return the vibration duration that will be executed
+     * at {@link MotionEvent.ACTION_DOWN}
+     * 
+     * 
+     * @return The delay in milliseconds
+     */
+    public int getVibrateOnTouch(){
+        return 0;
+    }
+
+    /**
      * Return a persistent {@link Notification} for the corresponding id. You
      * must return a notification for AT LEAST the first id to be requested.
      * Once the persistent notification is shown, further calls to
@@ -824,7 +827,7 @@ public abstract class StandOutWindow extends Service {
             Menu menu = popupMenu.getMenu();
             popupMenu.getMenuInflater().inflate(R.menu.window_popup_menu, menu);
             // Set entry text to "Close app name"
-            menu.getItem(0).setTitle(getString(R.string.close);
+            menu.getItem(0).setTitle(getString(R.string.close));
             popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                 public boolean onMenuItemClick(MenuItem item) {
                     if (item.getItemId() == R.id.window_close) {
@@ -1608,12 +1611,10 @@ public abstract class StandOutWindow extends Service {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                // perform haptic feedback if requested
-                if(Utils.isSet(window.flags, StandOutFlags.
-                        FLAG_ADD_FUNCTIONALITY_HAPTIC_FEEDBACK)){
-                    ((Vibrator) getSystemService(VIBRATOR_SERVICE))
-                            .vibrate(50); // 50ms
-                }
+                // perform haptic feedback
+                ((Vibrator) getSystemService(VIBRATOR_SERVICE))
+                        .vibrate(getVibrateOnTouch());
+
                 window.touchInfo.lastX = (int) event.getRawX();
                 window.touchInfo.lastY = (int) event.getRawY();
 

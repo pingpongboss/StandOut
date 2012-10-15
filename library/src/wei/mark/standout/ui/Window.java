@@ -376,7 +376,7 @@ public class Window extends FrameLayout {
         icon.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                PopupMenu popup = getPopupMenu(id, v);
+                PopupMenu popup = mContext.getPopupMenu(id, v);
                 if (popup != null) {
                     popup.show();
                 }
@@ -494,7 +494,7 @@ public class Window extends FrameLayout {
 
                     @Override
                     public void onClick(View v) {
-                        PopupMenu popup = getPopupMenu(id, v);
+                        PopupMenu popup = mContext.getPopupMenu(id, v);
                         if (popup != null) {
                             popup.show();
                         }
