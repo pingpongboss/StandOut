@@ -795,7 +795,10 @@ public abstract class StandOutWindow extends Service {
 		LinearLayout list = new LinearLayout(this);
 		list.setOrientation(LinearLayout.VERTICAL);
 
-		final PopupWindow dropDown = new PopupWindow(list,
+		ScrollView scroller = new ScrollView(this);
+		scroller.addView(list);
+
+		final PopupWindow dropDown = new PopupWindow(scroller,
 				StandOutLayoutParams.WRAP_CONTENT,
 				StandOutLayoutParams.WRAP_CONTENT, true);
 
