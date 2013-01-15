@@ -41,6 +41,13 @@
             android:contentDescription="@string/hide" />
 
         <ImageView
+            android:id="@+id/maximize"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/maximize"
+            android:contentDescription="@string/maximize" />
+
+        <ImageView
             android:id="@+id/close"
             android:layout_width="32dp"
             android:layout_height="32dp"

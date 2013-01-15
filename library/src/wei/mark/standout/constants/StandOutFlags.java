@@ -18,15 +18,13 @@ public class StandOutFlags {
 
 	/**
 	 * Setting this flag indicates that the window wants the system provided
-	 * window decorations (titlebar, hide/close buttons, resize handle,
-	 * etc).
+	 * window decorations (titlebar, hide/close buttons, resize handle, etc).
 	 */
 	public static final int FLAG_DECORATION_SYSTEM = 1 << flag_bit++;
 
 	/**
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
-	 * indicates that the window decorator should NOT provide a close
-	 * button.
+	 * Setting this flag indicates that the window decorator should NOT provide
+	 * a close button.
 	 * 
 	 * <p>
 	 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
@@ -35,9 +33,8 @@ public class StandOutFlags {
 			| 1 << flag_bit++;
 
 	/**
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
-	 * indicates that the window decorator should NOT provide a resize
-	 * handle.
+	 * Setting this flag indicates that the window decorator should NOT provide
+	 * a resize handle.
 	 * 
 	 * <p>
 	 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
@@ -46,9 +43,18 @@ public class StandOutFlags {
 			| 1 << flag_bit++;
 
 	/**
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, setting this flag
-	 * indicates that the window decorator should NOT provide a resize
-	 * handle.
+	 * Setting this flag indicates that the window decorator should NOT provide
+	 * a resize handle.
+	 * 
+	 * <p>
+	 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
+	 */
+	public static final int FLAG_DECORATION_MAXIMIZE_DISABLE = FLAG_DECORATION_SYSTEM
+			| 1 << flag_bit++;
+
+	/**
+	 * Setting this flag indicates that the window decorator should NOT provide
+	 * a resize handle.
 	 * 
 	 * <p>
 	 * This flag also sets {@link #FLAG_DECORATION_SYSTEM}.
@@ -57,12 +63,12 @@ public class StandOutFlags {
 			| 1 << flag_bit++;
 
 	/**
-	 * Setting this flag indicates that the window can be moved by dragging
-	 * the body.
+	 * Setting this flag indicates that the window can be moved by dragging the
+	 * body.
 	 * 
 	 * <p>
 	 * Note that if {@link #FLAG_DECORATION_SYSTEM} is set, the window can
-	 * always be moved by dragging the titlebar.
+	 * always be moved by dragging the titlebar regardless of this flag.
 	 */
 	public static final int FLAG_BODY_MOVE_ENABLE = 1 << flag_bit++;
 
@@ -70,8 +76,8 @@ public class StandOutFlags {
 	 * Setting this flag indicates that windows are able to be hidden, that
 	 * {@link StandOutWindow#getHiddenIcon(int)},
 	 * {@link StandOutWindow#getHiddenTitle(int)}, and
-	 * {@link StandOutWindow#getHiddenMessage(int)} are implemented, and
-	 * that the system window decorator should provide a hide button if
+	 * {@link StandOutWindow#getHiddenMessage(int)} are implemented, and that
+	 * the system window decorator should provide a hide button if
 	 * {@link #FLAG_DECORATION_SYSTEM} is set.
 	 */
 	public static final int FLAG_WINDOW_HIDE_ENABLE = 1 << flag_bit++;
@@ -82,8 +88,8 @@ public class StandOutFlags {
 	 * 
 	 * <p>
 	 * Note that if you set this flag, there is a noticeable flashing of the
-	 * window during {@link MotionEvent#ACTION_UP}. This the hack that
-	 * allows the system to bring the window to the front.
+	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
+	 * the system to bring the window to the front.
 	 */
 	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TOUCH = 1 << flag_bit++;
 
@@ -93,8 +99,8 @@ public class StandOutFlags {
 	 * 
 	 * <p>
 	 * Note that if you set this flag, there is a noticeable flashing of the
-	 * window during {@link MotionEvent#ACTION_UP}. This the hack that
-	 * allows the system to bring the window to the front.
+	 * window during {@link MotionEvent#ACTION_UP}. This the hack that allows
+	 * the system to bring the window to the front.
 	 */
 	public static final int FLAG_WINDOW_BRING_TO_FRONT_ON_TAP = 1 << flag_bit++;
 
@@ -104,11 +110,10 @@ public class StandOutFlags {
 	 * window will be able to be dragged off of the screen.
 	 * 
 	 * <p>
-	 * If this flag is set, the window's {@link Gravity} is recommended to
-	 * be {@link Gravity#TOP} | {@link Gravity#LEFT}. If the gravity is
-	 * anything other than TOP|LEFT, then even though the window will be
-	 * displayed within the edges, it will behave as if the user can drag it
-	 * off the screen.
+	 * If this flag is set, the window's {@link Gravity} is recommended to be
+	 * {@link Gravity#TOP} | {@link Gravity#LEFT}. If the gravity is anything
+	 * other than TOP|LEFT, then even though the window will be displayed within
+	 * the edges, it will behave as if the user can drag it off the screen.
 	 * 
 	 */
 	public static final int FLAG_WINDOW_EDGE_LIMITS_ENABLE = 1 << flag_bit++;
@@ -120,35 +125,34 @@ public class StandOutFlags {
 	 * <p>
 	 * The aspect ratio will only be enforced in
 	 * {@link StandOutWindow#onTouchHandleResize(int, Window, View, MotionEvent)}
-	 * . The aspect ratio will not be enforced if you set the width or
-	 * height of the window's LayoutParams manually.
+	 * . The aspect ratio will not be enforced if you set the width or height of
+	 * the window's LayoutParams manually.
 	 * 
-	 * @see StandOutWindow#onTouchHandleResize(int, Window, View,
-	 *      MotionEvent)
+	 * @see StandOutWindow#onTouchHandleResize(int, Window, View, MotionEvent)
 	 */
 	public static final int FLAG_WINDOW_ASPECT_RATIO_ENABLE = 1 << flag_bit++;
 
 	/**
-	 * Setting this flag indicates that the system should resize the window
-	 * when it detects a pinch-to-zoom gesture.
+	 * Setting this flag indicates that the system should resize the window when
+	 * it detects a pinch-to-zoom gesture.
 	 * 
 	 * @see Window#onInterceptTouchEvent(MotionEvent)
 	 */
 	public static final int FLAG_WINDOW_PINCH_RESIZE_ENABLE = 1 << flag_bit++;
 
 	/**
-	 * Setting this flag indicates that the window does not need focus. If
-	 * this flag is set, the system will not take care of setting and
-	 * unsetting the focus of windows based on user touch and key events.
+	 * Setting this flag indicates that the window does not need focus. If this
+	 * flag is set, the system will not take care of setting and unsetting the
+	 * focus of windows based on user touch and key events.
 	 * 
 	 * <p>
 	 * You will most likely need focus if your window contains any of the
 	 * following: Button, ListView, EditText.
 	 * 
 	 * <p>
-	 * The benefit of disabling focus is that your window will not consume
-	 * any key events. Normally, focused windows will consume the Back and
-	 * Menu keys.
+	 * The benefit of disabling focus is that your window will not consume any
+	 * key events. Normally, focused windows will consume the Back and Menu
+	 * keys.
 	 * 
 	 * @see {@link StandOutWindow#focus(int)}
 	 * @see {@link StandOutWindow#unfocus(int)}
@@ -170,18 +174,18 @@ public class StandOutFlags {
 	/**
 	 * Setting this flag indicates that the system should disable all
 	 * compatibility workarounds. The default behavior is to run
-	 * {@link Window#fixCompatibility(View, int)} on the view
-	 * returned by the implementation.
+	 * {@link Window#fixCompatibility(View, int)} on the view returned by the
+	 * implementation.
 	 * 
 	 * @see {@link Window#fixCompatibility(View, int)}
 	 */
 	public static final int FLAG_FIX_COMPATIBILITY_ALL_DISABLE = 1 << flag_bit++;
 
 	/**
-	 * Setting this flag indicates that the system should disable all
-	 * additional functionality. The default behavior is to run
-	 * {@link Window#addFunctionality(View, int)} on the view
-	 * returned by the implementation.
+	 * Setting this flag indicates that the system should disable all additional
+	 * functionality. The default behavior is to run
+	 * {@link Window#addFunctionality(View, int)} on the view returned by the
+	 * implementation.
 	 * 
 	 * @see {@link StandOutWindow#addFunctionality(View, int)}
 	 */
@@ -192,8 +196,8 @@ public class StandOutFlags {
 	 * resize handle additional functionality to a custom View R.id.corner.
 	 * 
 	 * <p>
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be
-	 * able to resize the window with the default corner.
+	 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be able
+	 * to resize the window with the default corner.
 	 * 
 	 * @see {@link Window#addFunctionality(View, int)}
 	 */
@@ -205,8 +209,8 @@ public class StandOutFlags {
 	 * R.id.window_icon.
 	 * 
 	 * <p>
-	 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be
-	 * able to show the drop down menu with the default window icon.
+	 * If {@link #FLAG_DECORATION_SYSTEM} is set, the user will always be able
+	 * to show the drop down menu with the default window icon.
 	 * 
 	 * @see {@link Window#addFunctionality(View, int)}
 	 */
