@@ -386,20 +386,17 @@ public abstract class StandOutWindow extends Service {
 			} else if (ACTION_CLOSE_ALL.equals(action)) {
 				closeAll();
 			} else if (ACTION_SEND_DATA.equals(action)) {
-				if (isExistingId(id) || id == DISREGARD_ID) {
-					Bundle data = intent
-							.getBundleExtra("wei.mark.standout.data");
-					int requestCode = intent.getIntExtra("requestCode", 0);
-					@SuppressWarnings("unchecked")
-					Class<? extends StandOutWindow> fromCls = (Class<? extends StandOutWindow>) intent
-							.getSerializableExtra("wei.mark.standout.fromCls");
-					int fromId = intent.getIntExtra("fromId", DEFAULT_ID);
-
-					onReceiveData(id, requestCode, data, fromCls, fromId);
-				} else {
+				if (!isExistingId(id) && id != DISREGARD_ID) {
 					Log.w(TAG,
-							"Failed to send data to non-existant window. Make sure toId is either an existing window's id, or is DISREGARD_ID.");
+							"Sending data to non-existant window. If this is not intended, make sure toId is either an existing window's id or DISREGARD_ID.");
 				}
+				Bundle data = intent.getBundleExtra("wei.mark.standout.data");
+				int requestCode = intent.getIntExtra("requestCode", 0);
+				@SuppressWarnings("unchecked")
+				Class<? extends StandOutWindow> fromCls = (Class<? extends StandOutWindow>) intent
+						.getSerializableExtra("wei.mark.standout.fromCls");
+				int fromId = intent.getIntExtra("fromId", DEFAULT_ID);
+				onReceiveData(id, requestCode, data, fromCls, fromId);
 			}
 		} else {
 			Log.w(TAG, "Tried to onStartCommand() with a null intent.");

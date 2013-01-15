@@ -1,5 +1,7 @@
 package wei.mark.standout.ui;
 
+import java.util.Locale;
+
 /**
  * This class holds temporal touch and gesture information. Mainly used to hold
  * temporary data for onTouchEvent(MotionEvent).
@@ -23,7 +25,8 @@ public class TouchInfo {
 	@Override
 	public String toString() {
 		return String
-				.format("WindowTouchInfo { firstX=%d, firstY=%d,lastX=%d, lastY=%d, firstWidth=%d, firstHeight=%d }",
+				.format(Locale.US,
+						"WindowTouchInfo { firstX=%d, firstY=%d,lastX=%d, lastY=%d, firstWidth=%d, firstHeight=%d }",
 						firstX, firstY, lastX, lastY, firstWidth, firstHeight);
 	}
 }

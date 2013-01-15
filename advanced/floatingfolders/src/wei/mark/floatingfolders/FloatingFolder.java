@@ -251,7 +251,11 @@ public final class FloatingFolder extends StandOutWindow {
 				final ActivityInfo app = data.getParcelable("app");
 				Log.d("FloatingFolder", "Received app: " + app);
 
-				View window = getWindow(id);
+				Window window = getWindow(id);
+				if (window == null) {
+					return;
+				}
+
 				ViewGroup flow = (ViewGroup) window.findViewById(R.id.flow);
 
 				addAppToFolder(id, app, flow);

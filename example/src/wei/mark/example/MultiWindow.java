@@ -2,6 +2,7 @@ package wei.mark.example;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import wei.mark.standout.StandOutWindow;
 import wei.mark.standout.constants.StandOutFlags;
@@ -170,9 +171,16 @@ public class MultiWindow extends StandOutWindow {
 		// to show off the data sending framework
 		switch (requestCode) {
 			case WidgetsWindow.DATA_CHANGED_TEXT:
+				Window window = getWindow(id);
+				if (window == null) {
+					String errorText = String.format(Locale.US,
+							"%s received data but Window id: %d is not open.",
+							getAppName(), id);
+					Toast.makeText(this, errorText, Toast.LENGTH_SHORT).show();
+					return;
+				}
 				String changedText = data.getString("changedText");
-				TextView status = (TextView) getWindow(id)
-						.findViewById(R.id.id);
+				TextView status = (TextView) window.findViewById(R.id.id);
 				status.setTextSize(20);
 				status.setText("Received data from WidgetsWindow: "
 						+ changedText);
