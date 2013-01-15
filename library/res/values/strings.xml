@@ -4,5 +4,6 @@
     <string name="hide">Hide</string>
     <string name="close">Close</string>
     <string name="corner">Corner</string>
+    <string name="maximize">Maximize</string>
 
 </resources>

@@ -75,6 +75,11 @@ public class Window extends FrameLayout {
 	public Bundle data;
 
 	/**
+	 * Width and height of the screen.
+	 */
+	int displayWidth, displayHeight;
+
+	/**
 	 * Context of the window.
 	 */
 	private final StandOutWindow mContext;
@@ -99,6 +104,10 @@ public class Window extends FrameLayout {
 		this.touchInfo = new TouchInfo();
 		touchInfo.ratio = (float) originalParams.width / originalParams.height;
 		this.data = new Bundle();
+		DisplayMetrics metrics = mContext.getResources()
+				.getDisplayMetrics();
+		displayWidth = metrics.widthPixels;
+		displayHeight = (int) (metrics.heightPixels - 25 * metrics.density);
 
 		// create the window contents
 		View content;
@@ -398,6 +407,42 @@ public class Window extends FrameLayout {
 		});
 		hide.setVisibility(View.GONE);
 
+		// maximize
+		View maximize = decorations.findViewById(R.id.maximize);
+		maximize.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				StandOutLayoutParams params = getLayoutParams();
+				boolean isMaximized = data
+						.getBoolean(WindowDataKeys.IS_MAXIMIZED);
+				if (isMaximized && params.width == displayWidth
+						&& params.height == displayHeight && params.x == 0
+						&& params.y == 0) {
+					data.putBoolean(WindowDataKeys.IS_MAXIMIZED, false);
+					int oldWidth = data.getInt(
+							WindowDataKeys.WIDTH_BEFORE_MAXIMIZE, -1);
+					int oldHeight = data.getInt(
+							WindowDataKeys.HEIGHT_BEFORE_MAXIMIZE, -1);
+					int oldX = data
+							.getInt(WindowDataKeys.X_BEFORE_MAXIMIZE, -1);
+					int oldY = data
+							.getInt(WindowDataKeys.Y_BEFORE_MAXIMIZE, -1);
+					edit().setSize(oldWidth, oldHeight).setPosition(oldX, oldY)
+							.commit();
+				} else {
+					data.putBoolean(WindowDataKeys.IS_MAXIMIZED, true);
+					data.putInt(WindowDataKeys.WIDTH_BEFORE_MAXIMIZE,
+							params.width);
+					data.putInt(WindowDataKeys.HEIGHT_BEFORE_MAXIMIZE,
+							params.height);
+					data.putInt(WindowDataKeys.X_BEFORE_MAXIMIZE, params.x);
+					data.putInt(WindowDataKeys.Y_BEFORE_MAXIMIZE, params.y);
+					edit().setSize(1f, 1f).setPosition(0, 0).commit();
+				}
+			}
+		});
+
 		// close
 		View close = decorations.findViewById(R.id.close);
 		close.setOnClickListener(new OnClickListener() {
@@ -438,6 +483,9 @@ public class Window extends FrameLayout {
 		// set window appearance and behavior based on flags
 		if (Utils.isSet(flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
 			hide.setVisibility(View.VISIBLE);
+		}
+		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_MAXIMIZE_DISABLE)) {
+			maximize.setVisibility(View.GONE);
 		}
 		if (Utils.isSet(flags, StandOutFlags.FLAG_DECORATION_CLOSE_DISABLE)) {
 			close.setVisibility(View.GONE);
@@ -555,15 +603,17 @@ public class Window extends FrameLayout {
 		StandOutLayoutParams mParams;
 
 		/**
-		 * The relative position of the anchor point. The anchor point is only
-		 * used by the {@link Editor}.
+		 * The position of the anchor point as a percentage of the window's
+		 * width/height. The anchor point is only used by the {@link Editor}.
 		 * 
 		 * <p>
 		 * The anchor point effects the following methods:
 		 * 
 		 * <p>
-		 * {@link #setSize(int, int)} and {@link #setSize(float, float)}. The
-		 * window will expand or shrink around the anchor point.
+		 * {@link #setSize(float, float)}, {@link #setSize(int, int)},
+		 * {@link #setPosition(int, int)}, {@link #setPosition(int, int)}.
+		 * 
+		 * The window will move, expand, or shrink around the anchor point.
 		 * 
 		 * <p>
 		 * Values must be between 0 and 1, inclusive. 0 means the left/top, 0.5
@@ -571,19 +621,9 @@ public class Window extends FrameLayout {
 		 */
 		float anchorX, anchorY;
 
-		/**
-		 * Width and height of the screen.
-		 */
-		int displayWidth, displayHeight;
-
 		public Editor() {
 			mParams = getLayoutParams();
 			anchorX = anchorY = 0;
-
-			DisplayMetrics metrics = mContext.getResources()
-					.getDisplayMetrics();
-			displayWidth = metrics.widthPixels;
-			displayHeight = (int) (metrics.heightPixels - 25 * metrics.density);
 		}
 
 		public Editor setAnchorPoint(float x, float y) {
@@ -599,7 +639,28 @@ public class Window extends FrameLayout {
 		}
 
 		/**
-		 * Set the size of this window in absolute pixels.
+		 * Set the size of this window as percentages of max screen size. The
+		 * window will expand and shrink around the top-left corner, unless
+		 * you've set a different anchor point with
+		 * {@link #setAnchorPoint(float, float)}.
+		 * 
+		 * Changes will not applied until you {@link #commit()}.
+		 * 
+		 * @param percentWidth
+		 * @param percentHeight
+		 * @return The same Editor, useful for method chaining.
+		 */
+		public Editor setSize(float percentWidth, float percentHeight) {
+			return setSize((int) (displayWidth * percentWidth),
+					(int) (displayHeight * percentHeight));
+		}
+
+		/**
+		 * Set the size of this window in absolute pixels. The window will
+		 * expand and shrink around the top-left corner, unless you've set a
+		 * different anchor point with {@link #setAnchorPoint(float, float)}.
+		 * 
+		 * Changes will not applied until you {@link #commit()}.
 		 * 
 		 * @param width
 		 * @param height
@@ -610,7 +671,11 @@ public class Window extends FrameLayout {
 		}
 
 		/**
-		 * Set the size of this window in absolute pixels.
+		 * Set the size of this window in absolute pixels. The window will
+		 * expand and shrink around the top-left corner, unless you've set a
+		 * different anchor point with {@link #setAnchorPoint(float, float)}.
+		 * 
+		 * Changes will not applied until you {@link #commit()}.
 		 * 
 		 * @param width
 		 * @param height
@@ -678,7 +743,29 @@ public class Window extends FrameLayout {
 		}
 
 		/**
-		 * Set the position of this window in absolute pixels.
+		 * Set the position of this window as percentages of max screen size.
+		 * The window's top-left corner will be positioned at the given x and y,
+		 * unless you've set a different anchor point with
+		 * {@link #setAnchorPoint(float, float)}.
+		 * 
+		 * Changes will not applied until you {@link #commit()}.
+		 * 
+		 * @param percentWidth
+		 * @param percentHeight
+		 * @return The same Editor, useful for method chaining.
+		 */
+		public Editor setPosition(float percentWidth, float percentHeight) {
+			return setPosition((int) (displayWidth * percentWidth),
+					(int) (displayHeight * percentHeight));
+		}
+
+		/**
+		 * Set the position of this window in absolute pixels. The window's
+		 * top-left corner will be positioned at the given x and y, unless
+		 * you've set a different anchor point with
+		 * {@link #setAnchorPoint(float, float)}.
+		 * 
+		 * Changes will not applied until you {@link #commit()}.
 		 * 
 		 * @param x
 		 * @param y
@@ -689,7 +776,12 @@ public class Window extends FrameLayout {
 		}
 
 		/**
-		 * Set the position of this window in absolute pixels.
+		 * Set the position of this window in absolute pixels. The window's
+		 * top-left corner will be positioned at the given x and y, unless
+		 * you've set a different anchor point with
+		 * {@link #setAnchorPoint(float, float)}.
+		 * 
+		 * Changes will not applied until you {@link #commit()}.
 		 * 
 		 * @param x
 		 * @param y
@@ -745,5 +837,13 @@ public class Window extends FrameLayout {
 				mParams = null;
 			}
 		}
+	}
+
+	public static class WindowDataKeys {
+		public static final String IS_MAXIMIZED = "isMaximized";
+		public static final String WIDTH_BEFORE_MAXIMIZE = "widthBeforeMaximize";
+		public static final String HEIGHT_BEFORE_MAXIMIZE = "heightBeforeMaximize";
+		public static final String X_BEFORE_MAXIMIZE = "xBeforeMaximize";
+		public static final String Y_BEFORE_MAXIMIZE = "yBeforeMaximize";
 	}
 }

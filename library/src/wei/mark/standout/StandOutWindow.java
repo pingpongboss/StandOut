@@ -42,8 +42,7 @@ import android.widget.TextView;
  * 
  * @author Mark Wei <markwei@gmail.com>
  * 
- * Contributors:
- * Jason <github.com/jasonconnery>
+ *         Contributors: Jason <github.com/jasonconnery>
  * 
  */
 public abstract class StandOutWindow extends Service {
