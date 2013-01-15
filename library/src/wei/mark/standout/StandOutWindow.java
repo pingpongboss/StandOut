@@ -35,7 +35,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
@@ -796,10 +795,7 @@ public abstract class StandOutWindow extends Service {
 		LinearLayout list = new LinearLayout(this);
 		list.setOrientation(LinearLayout.VERTICAL);
 
-		ScrollView scroller = new ScrollView(this);
-		scroller.addView(list);
-
-		final PopupWindow dropDown = new PopupWindow(scroller,
+		final PopupWindow dropDown = new PopupWindow(list,
 				StandOutLayoutParams.WRAP_CONTENT,
 				StandOutLayoutParams.WRAP_CONTENT, true);
 
