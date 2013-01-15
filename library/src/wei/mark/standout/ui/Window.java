@@ -241,6 +241,7 @@ public class Window extends FrameLayout {
 							.commit();
 					break;
 			}
+			mContext.onResize(id, this, this, event);
 		}
 
 		return true;
