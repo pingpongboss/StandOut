@@ -136,7 +136,7 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static void hide(Context context,
 			Class<? extends StandOutWindow> cls, int id) {
-		context.startService(getShowIntent(context, cls, id));
+		context.startService(getHideIntent(context, cls, id));
 	}
 
 	/**
