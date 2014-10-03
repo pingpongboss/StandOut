@@ -1100,6 +1100,12 @@ public abstract class StandOutWindow extends Service {
 		StandOutLayoutParams params = window.getLayoutParams();
 
 		try {
+			// force remove the view from the window manager to prevent adding it again
+			mWindowManager.removeView(window);
+		} catch(IllegalArgumentException ex) {
+		}
+
+		try {
 			// add the view to the window manager
 			mWindowManager.addView(window, params);
 
