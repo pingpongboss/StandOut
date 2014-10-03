@@ -1078,15 +1078,17 @@ public abstract class StandOutWindow extends Service {
 			window = new Window(this, id);
 		}
 
-		if (window.visibility == Window.VISIBILITY_VISIBLE) {
-			throw new IllegalStateException("Tried to show(" + id
-					+ ") a window that is already shown.");
-		}
-
 		// alert callbacks and cancel if instructed
 		if (onShow(id, window)) {
 			Log.d(TAG, "Window " + id + " show cancelled by implementation.");
 			return null;
+		}
+
+		// focus an already shown window
+		if (window.visibility == Window.VISIBILITY_VISIBLE) {
+			Log.d(TAG, "Window " + id + " is already shown.");
+			focus(id);
+			return window;
 		}
 
 		window.visibility = Window.VISIBILITY_VISIBLE;
@@ -1164,15 +1166,15 @@ public abstract class StandOutWindow extends Service {
 					+ ") a null window.");
 		}
 
-		if (window.visibility == Window.VISIBILITY_GONE) {
-			throw new IllegalStateException("Tried to hide(" + id
-					+ ") a window that is not shown.");
-		}
-
 		// alert callbacks and cancel if instructed
 		if (onHide(id, window)) {
-			Log.w(TAG, "Window " + id + " hide cancelled by implementation.");
+			Log.d(TAG, "Window " + id + " hide cancelled by implementation.");
 			return;
+		}
+
+		// ignore if window is already hidden
+		if (window.visibility == Window.VISIBILITY_GONE) {
+			Log.d(TAG, "Window " + id + " is already hidden.");
 		}
 
 		// check if hide enabled
