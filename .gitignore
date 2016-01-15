@@ -16,3 +16,9 @@ gen/
 local.properties
 
 .DS_Store
+
+## Directory-based project format:
+.idea/
+integrationExample/.idea/
+
+*.iml
