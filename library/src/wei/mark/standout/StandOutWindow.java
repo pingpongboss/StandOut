@@ -345,6 +345,9 @@ public abstract class StandOutWindow extends Service {
 	// internal state variables
 	private boolean startedForeground;
 
+	// currently topmost window
+	private int topmostWindowId = -1;
+
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
@@ -1146,6 +1149,7 @@ public abstract class StandOutWindow extends Service {
 		}
 
 		focus(id);
+		topmostWindowId = id;
 
 		return window;
 	}
@@ -1412,6 +1416,17 @@ public abstract class StandOutWindow extends Service {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+
+		topmostWindowId = id;
+	}
+
+	/**
+	 * Retrieve the topmost window id.
+	 *
+	 * @return Window id of the topmost window.
+	 */
+	public final int getTopmostWindowId() {
+		return topmostWindowId;
 	}
 
 	/**
