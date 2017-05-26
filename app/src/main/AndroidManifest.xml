@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="hyperionics.com.standouttest">
+
+    <!-- The SYSTEM_ALERT_WINDOW permission is for Android versions 5.xx and lower only -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity android:name="wei.mark.standouttest.MainActivity"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service android:name="wei.mark.standouttest.MostBasicWindow" >
+        </service>
+        <service android:name="wei.mark.standouttest.SimpleWindow" >
+        </service>
+        <service android:name="wei.mark.standouttest.MultiWindow" >
+        </service>
+        <service android:name="wei.mark.standouttest.WidgetsWindow" >
+        </service>
+        <service android:name="wei.mark.standouttest.floatingfolders.FloatingFolder" >
+        </service>
+
+    </application>
+
+</manifest>
