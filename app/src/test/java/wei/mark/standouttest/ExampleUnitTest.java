@@ -1,4 +1,4 @@
-package hyperionics.com.standouttest;
+package wei.mark.standouttest;
 
 import org.junit.Test;
 

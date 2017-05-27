@@ -656,7 +656,7 @@ public abstract class StandOutWindow extends Service {
 					PendingIntent.FLAG_UPDATE_CURRENT);
 		}
 
-		Notification notification = new NotificationCompat.Builder(this)
+		Notification notification = new NotificationCompat.Builder(getApplicationContext())
 				.setSmallIcon(icon)
 				.setContentTitle(contentTitle)
 				.setContentText(contentText)
@@ -665,9 +665,6 @@ public abstract class StandOutWindow extends Service {
 				.setWhen(when)
 				.setVisibility(NotificationCompat.VISIBILITY_PUBLIC).build();
 
-//		Notification notification = new Notification(icon, tickerText, when);
-//		notification.setLatestEventInfo(c, contentTitle, contentText,
-//				contentIntent);
 		return notification;
 	}
 
@@ -708,7 +705,7 @@ public abstract class StandOutWindow extends Service {
 					// flag updates existing persistent notification
 					PendingIntent.FLAG_UPDATE_CURRENT);
 		}
-		Notification notification = new NotificationCompat.Builder(this)
+		Notification notification = new NotificationCompat.Builder(getApplicationContext())
 				.setSmallIcon(icon)
 				.setContentTitle(contentTitle)
 				.setContentText(contentText)
@@ -717,9 +714,6 @@ public abstract class StandOutWindow extends Service {
 				.setWhen(when)
 				.setVisibility(NotificationCompat.VISIBILITY_PUBLIC).build();
 
-//		Notification notification = new Notification(icon, tickerText, when);
-//		notification.setLatestEventInfo(c, contentTitle, contentText,
-//				contentIntent);
 		return notification;
 	}
 

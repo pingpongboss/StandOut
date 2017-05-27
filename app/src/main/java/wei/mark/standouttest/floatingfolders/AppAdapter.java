@@ -13,7 +13,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import hyperionics.com.standouttest.R;
+import wei.mark.standouttest.R;
 
 public class AppAdapter extends ArrayAdapter<ActivityInfo> {
 	class ViewHolder {

@@ -1,6 +1,5 @@
 package wei.mark.standouttest;
 
-import hyperionics.com.standouttest.R;
 import wei.mark.standout.ui.Window;
 import android.os.Bundle;
 import android.view.LayoutInflater;

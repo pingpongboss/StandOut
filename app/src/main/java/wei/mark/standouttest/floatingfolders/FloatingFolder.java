@@ -10,10 +10,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import hyperionics.com.standouttest.R;
 import wei.mark.standout.StandOutWindow;
 import wei.mark.standout.constants.StandOutFlags;
 import wei.mark.standout.ui.Window;
+import wei.mark.standouttest.R;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;

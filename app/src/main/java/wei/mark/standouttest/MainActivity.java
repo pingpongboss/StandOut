@@ -7,7 +7,6 @@ import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import hyperionics.com.standouttest.R;
 import wei.mark.standouttest.floatingfolders.FloatingFolder;
 import wei.mark.standout.StandOutWindow;
 
@@ -18,7 +17,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
         if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(this)) {
             /** if not construct intent to request permission */
@@ -38,11 +36,12 @@ public class MainActivity extends AppCompatActivity {
         StandOutWindow.closeAll(this, WidgetsWindow.class);
         StandOutWindow.closeAll(this, FloatingFolder.class);
 
+        // Remove comments as needed to test different parts of the library
 //        StandOutWindow.show(this, MostBasicWindow.class, StandOutWindow.DEFAULT_ID);
 //        StandOutWindow.show(this, SimpleWindow.class, StandOutWindow.DEFAULT_ID);
-//        StandOutWindow.show(this, MultiWindow.class, StandOutWindow.DEFAULT_ID);
+        StandOutWindow.show(this, MultiWindow.class, StandOutWindow.DEFAULT_ID);
         StandOutWindow.show(this, WidgetsWindow.class, StandOutWindow.DEFAULT_ID);
-        FloatingFolder.showFolders(this);
+//        FloatingFolder.showFolders(this);
 
         finish();
     }
