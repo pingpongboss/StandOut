@@ -77,7 +77,7 @@ public class Window extends FrameLayout {
 	/**
 	 * Width and height of the screen.
 	 */
-	int displayWidth, displayHeight;
+	static int displayWidth, displayHeight;
 
 	/**
 	 * Context of the window.
@@ -104,11 +104,7 @@ public class Window extends FrameLayout {
 		this.touchInfo = new TouchInfo();
 		touchInfo.ratio = (float) originalParams.width / originalParams.height;
 		this.data = new Bundle();
-		DisplayMetrics metrics = mContext.getResources()
-				.getDisplayMetrics();
-		displayWidth = metrics.widthPixels;
-		displayHeight = (int) (metrics.heightPixels - 25 * metrics.density);
-
+		updateScreenSize(mContext);
 		// create the window contents
 		View content;
 		FrameLayout body;
@@ -168,6 +164,12 @@ public class Window extends FrameLayout {
 
 		// attach the existing tag from the frame to the window
 		setTag(body.getTag());
+	}
+
+	public static void updateScreenSize(Context context) {
+		DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+		displayWidth = metrics.widthPixels;
+		displayHeight = (int) (metrics.heightPixels - 25 * metrics.density);
 	}
 
 	@Override
