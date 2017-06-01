@@ -13,12 +13,14 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -36,6 +38,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.RemoteViews;
 import android.widget.TextView;
 
 /**
@@ -92,14 +95,19 @@ public abstract class StandOutWindow extends Service {
 	 */
 	public static final String ACTION_SEND_DATA = "SEND_DATA";
 
-	/**
-	 * Intent action: Hide an existing window with an existing id. To enable the
-	 * ability to restore this window, make sure you implement
-	 * {@link #getHiddenNotification(int)}.
-	 */
-	public static final String ACTION_HIDE = "HIDE";
+    /**
+     * Intent action: Hide an existing window with an existing id. To enable the
+     * ability to restore this window, make sure you implement
+     * {@link #getHiddenNotification(int)}.
+     */
+    public static final String ACTION_HIDE = "HIDE";
 
-	/**
+    /**
+     * Intent action: Toggle visibility of an existing window with an existing id.
+     */
+    public static final String ACTION_TOGGLE_VIS = "TOGGLE_VIS";
+
+    /**
 	 * Show a new window corresponding to the id, or restore a previously hidden
 	 * window.
 	 * 
@@ -234,28 +242,49 @@ public abstract class StandOutWindow extends Service {
 				.setData(uri);
 	}
 
-	/**
-	 * See {@link #hide(Context, Class, int)}.
-	 * 
-	 * @param context
-	 *            A Context of the application package implementing this class.
-	 * @param cls
-	 *            The Service extending {@link StandOutWindow} that is managing
-	 *            the window.
-	 * @param id
-	 *            The id representing this window. If the id exists, and the
-	 *            corresponding window was previously hidden, then that window
-	 *            will be restored.
-	 * @return An {@link Intent} to use with
-	 *         {@link Context#startService(Intent)}.
-	 */
-	public static Intent getHideIntent(Context context,
-			Class<? extends StandOutWindow> cls, int id) {
-		return new Intent(context, cls).putExtra("id", id).setAction(
-				ACTION_HIDE);
-	}
+    /**
+     * See {@link #hide(Context, Class, int)}.
+     *
+     * @param context
+     *            A Context of the application package implementing this class.
+     * @param cls
+     *            The Service extending {@link StandOutWindow} that is managing
+     *            the window.
+     * @param id
+     *            The id representing this window. If the id exists, and the
+     *            corresponding window was previously hidden, then that window
+     *            will be restored.
+     * @return An {@link Intent} to use with
+     *         {@link Context#startService(Intent)}.
+     */
+    public static Intent getHideIntent(Context context,
+                                       Class<? extends StandOutWindow> cls, int id) {
+        return new Intent(context, cls).putExtra("id", id).setAction(
+                ACTION_HIDE);
+    }
 
-	/**
+    /**
+     * See {@link #hide(Context, Class, int)}.
+     *
+     * @param context
+     *            A Context of the application package implementing this class.
+     * @param cls
+     *            The Service extending {@link StandOutWindow} that is managing
+     *            the window.
+     * @param id
+     *            The id representing this window. If the id exists, and the
+     *            corresponding window was previously hidden, then that window
+     *            will be restored. If it's visible, it will be hidden.
+     * @return An {@link Intent} to use with
+     *         {@link Context#startService(Intent)}.
+     */
+    public static Intent getToggleVisIntent(Context context,
+                                       Class<? extends StandOutWindow> cls, int id) {
+        return new Intent(context, cls).putExtra("id", id).setAction(
+                ACTION_TOGGLE_VIS);
+    }
+
+    /**
 	 * See {@link #close(Context, Class, int)}.
 	 * 
 	 * @param context
@@ -381,7 +410,9 @@ public abstract class StandOutWindow extends Service {
 			if (ACTION_SHOW.equals(action) || ACTION_RESTORE.equals(action)) {
 				show(id);
 			} else if (ACTION_HIDE.equals(action)) {
-				hide(id);
+                hide(id);
+            } else if (ACTION_TOGGLE_VIS.equals(action)) {
+                toggleVis(id);
 			} else if (ACTION_CLOSE.equals(action)) {
 				close(id);
 			} else if (ACTION_CLOSE_ALL.equals(action)) {
@@ -608,6 +639,10 @@ public abstract class StandOutWindow extends Service {
 		return null;
 	}
 
+	public RemoteViews getPersistentNotificationRemoteViews(int id) {
+        return null;
+    }
+
 	/**
 	 * Return a persistent {@link Notification} for the corresponding id. You
 	 * must return a notification for AT LEAST the first id to be requested.
@@ -656,17 +691,28 @@ public abstract class StandOutWindow extends Service {
 					PendingIntent.FLAG_UPDATE_CURRENT);
 		}
 
-		Notification notification = new NotificationCompat.Builder(getApplicationContext())
+		NotificationCompat.Builder nb = new NotificationCompat.Builder(getApplicationContext())
 				.setSmallIcon(icon)
 				.setContentTitle(contentTitle)
 				.setContentText(contentText)
 				.setTicker(tickerText)
 				.setContentIntent(contentIntent)
-				.setWhen(when)
-				.setVisibility(NotificationCompat.VISIBILITY_PUBLIC).build();
+                // don't want it on lock screen, but still shows if no secure lock or user
+                // selected not to hide sensitive notifications...
+                .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+				.setWhen(when);
+        RemoteViews rv = getPersistentNotificationRemoteViews(id);
+        if (rv != null)
+            nb.setContent(rv);
 
-		return notification;
+		return nb.build();
 	}
+
+	@Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Window.updateScreenSize(this);
+    }
 
 	/**
 	 * Return a hidden {@link Notification} for the corresponding id. The system
@@ -686,6 +732,11 @@ public abstract class StandOutWindow extends Service {
 	 * @return The {@link Notification} corresponding to the id or null.
 	 */
 	public Notification getHiddenNotification(int id) {
+		// the difference here is we are providing the same id
+		Intent notificationIntent = getHiddenNotificationIntent(id);
+		if (notificationIntent == null)
+			return null;
+
 		// same basics as getPersistentNotification()
 		int icon = getHiddenIcon();
 		long when = System.currentTimeMillis();
@@ -693,9 +744,6 @@ public abstract class StandOutWindow extends Service {
 		String contentTitle = getHiddenNotificationTitle(id);
 		String contentText = getHiddenNotificationMessage(id);
 		String tickerText = String.format("%s: %s", contentTitle, contentText);
-
-		// the difference here is we are providing the same id
-		Intent notificationIntent = getHiddenNotificationIntent(id);
 
 		PendingIntent contentIntent = null;
 
@@ -1070,6 +1118,38 @@ public abstract class StandOutWindow extends Service {
 		return false;
 	}
 
+	public final void updatePersistentNotification(int id) {
+        Notification notification = getPersistentNotification(id);
+
+        // show the notification
+        if (notification != null) {
+            notification.flags = notification.flags
+                    | Notification.FLAG_NO_CLEAR;
+
+            // only show notification if not shown before
+            if (!startedForeground) {
+                // tell Android system to show notification
+                startForeground(
+                        getClass().hashCode() + ONGOING_NOTIFICATION_ID,
+                        notification);
+                startedForeground = true;
+            } else {
+                // update notification if shown before
+                mNotificationManager.notify(getClass().hashCode()
+                        + ONGOING_NOTIFICATION_ID, notification);
+            }
+        } else {
+            // notification can only be null if it was provided before
+            if (!startedForeground) {
+                throw new RuntimeException("Your StandOutWindow service must"
+                        + "provide a persistent notification."
+                        + "The notification prevents Android"
+                        + "from killing your service in low"
+                        + "memory situations.");
+            }
+        }
+    }
+
 	/**
 	 * Show or restore a window corresponding to the id. Return the window that
 	 * was shown/restored.
@@ -1127,35 +1207,7 @@ public abstract class StandOutWindow extends Service {
 		sWindowCache.putCache(id, getClass(), window);
 
 		// get the persistent notification
-		Notification notification = getPersistentNotification(id);
-
-		// show the notification
-		if (notification != null) {
-			notification.flags = notification.flags
-					| Notification.FLAG_NO_CLEAR;
-
-			// only show notification if not shown before
-			if (!startedForeground) {
-				// tell Android system to show notification
-				startForeground(
-						getClass().hashCode() + ONGOING_NOTIFICATION_ID,
-						notification);
-				startedForeground = true;
-			} else {
-				// update notification if shown before
-				mNotificationManager.notify(getClass().hashCode()
-						+ ONGOING_NOTIFICATION_ID, notification);
-			}
-		} else {
-			// notification can only be null if it was provided before
-			if (!startedForeground) {
-				throw new RuntimeException("Your StandOutWindow service must"
-						+ "provide a persistent notification."
-						+ "The notification prevents Android"
-						+ "from killing your service in low"
-						+ "memory situations.");
-			}
-		}
+        updatePersistentNotification(id);
 
 		focus(id);
 
@@ -1193,9 +1245,6 @@ public abstract class StandOutWindow extends Service {
 		if (Utils.isSet(window.flags, StandOutFlags.FLAG_WINDOW_HIDE_ENABLE)) {
 			window.visibility = Window.VISIBILITY_TRANSITION;
 
-			// get the hidden notification for this view
-			Notification notification = getHiddenNotification(id);
-
 			// get animation
 			Animation animation = getHideAnimation(id);
 
@@ -1228,19 +1277,42 @@ public abstract class StandOutWindow extends Service {
 				ex.printStackTrace();
 			}
 
-			// display the notification
-			notification.flags = notification.flags
-					| Notification.FLAG_NO_CLEAR
-					| Notification.FLAG_AUTO_CANCEL;
+			// get the hidden notification for this view
+			Notification notification = getHiddenNotification(id);
+			if (notification != null) {
+				// display the notification
+				notification.flags = notification.flags
+						| Notification.FLAG_NO_CLEAR
+						| Notification.FLAG_AUTO_CANCEL;
 
-			mNotificationManager.notify(getClass().hashCode() + id,
-					notification);
-
+				mNotificationManager.notify(getClass().hashCode() + id,
+						notification);
+			}
+			else {
+                // Update persistent nofification
+                updatePersistentNotification(id);
+            }
 		} else {
 			// if hide not enabled, close window
 			close(id);
 		}
 	}
+
+	public final synchronized void toggleVis(final int id) {
+        // get the view corresponding to the id
+        final Window window = getWindow(id);
+
+        if (window == null) {
+            throw new IllegalArgumentException("Tried to toggle visibility(" + id
+                    + ") a null window.");
+        }
+
+        // ignore if window is already hidden
+        if (window.visibility == Window.VISIBILITY_GONE)
+            show(id);
+        else
+            hide(id);
+    }
 
 	/**
 	 * Close a window corresponding to the id.
